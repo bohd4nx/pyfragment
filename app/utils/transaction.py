@@ -1,0 +1,36 @@
+import logging
+from typing import Tuple, Optional
+
+from tonutils.client import TonapiClient
+from tonutils.wallet import WalletV5R1
+from tonutils.wallet.messages import TransferMessage
+
+logger = logging.getLogger(__name__)
+
+
+class TransactionProcessor:
+    def __init__(self, config: dict, clean_decode_func):
+        self.config = config
+        self._clean_decode = clean_decode_func
+
+    async def process_transaction(self, transaction_data: dict) -> Tuple[bool, Optional[str], Optional[str]]:
+        if "transaction" not in transaction_data or "messages" not in transaction_data["transaction"]:
+            return False, "Invalid transaction", None
+
+        client = TonapiClient(api_key=self.config['api_key'], is_testnet=False)
+        wallet, _, _, _ = WalletV5R1.from_mnemonic(client=client, mnemonic=self.config['seed'])
+
+        try:
+            message = transaction_data["transaction"]["messages"][0]
+            payload = self._clean_decode(message["payload"])
+
+            messages = [TransferMessage(
+                destination=message["address"],
+                amount=int(message["amount"]) / 1000000000,
+                body=payload
+            )]
+
+            tx_hash = await wallet.batch_transfer_messages(messages=messages)
+            return True, None, tx_hash
+        except Exception as e:
+            return False, str(e), None
