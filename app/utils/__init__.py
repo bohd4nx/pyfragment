@@ -1,5 +1,5 @@
-from .api_client import ApiClient
-from .linkWallet import WalletLinker
+from .client import ApiClient
 from .transaction import TransactionProcessor
+from .wallet import WalletLinker
 
 __all__ = ['TransactionProcessor', 'WalletLinker', 'ApiClient']
