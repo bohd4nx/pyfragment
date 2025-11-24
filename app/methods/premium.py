@@ -1,7 +1,5 @@
 import base64
 import logging
-import re
-import string
 import time
 
 import httpx
@@ -9,7 +7,7 @@ from tonutils.client import TonapiClient
 from tonutils.wallet import WalletV5R1
 
 from app.core.config import Config
-from app.utils import TransactionProcessor, WalletLinker, ApiClient
+from app.utils import TransactionProcessor, WalletLinker, ApiClient, clean_decode
 
 logger = logging.getLogger(__name__)
 
@@ -31,19 +29,9 @@ class FragmentPremium:
             'x-requested-with': 'XMLHttpRequest'
         }
 
-        self.transaction_processor = TransactionProcessor(self.config, self._clean_decode)
+        self.transaction_processor = TransactionProcessor(self.config, clean_decode)
         self.wallet_linker = WalletLinker(self.config, self.headers, self.transaction_processor)
         self.api_client = ApiClient(self.config, self.headers, self.wallet_linker)
-
-    @staticmethod
-    def _clean_decode(s):
-        b = base64.b64decode(re.sub(r'[^A-Za-z0-9+/=]', '', s.strip()) + "=" * (-len(s) % 4))
-        t = next(
-            (b[i:].decode('utf-8', 'ignore') for i in range(20) if
-             b[i:].decode('utf-8', 'ignore').startswith("Telegram Premium")),
-            b.decode('utf-8', 'ignore')
-        )
-        return ''.join(c for c in t if c in string.printable or c in '\n\r\t ').strip()
 
     async def _get_account_info(self):
         client = TonapiClient(api_key=self.config['api_key'], is_testnet=False)
@@ -67,7 +55,12 @@ class FragmentPremium:
             search_data = {"query": username, "months": months, "method": "searchPremiumGiftRecipient"}
             search_resp = await client.post(f"https://fragment.com/api?hash={self.config['hash']}",
                                             headers=self.headers, data=search_data)
-            search_result = search_resp.json()
+
+            try:
+                search_result = search_resp.json()
+            except Exception as e:
+                logger.error(f"Failed to parse search response: {e}")
+                return {"success": False, "error": f"Invalid response from Fragment API: {str(e)}"}
 
             recipient = search_result.get("found", {}).get("recipient")
             if not recipient:
@@ -80,7 +73,14 @@ class FragmentPremium:
             init_data = {"recipient": recipient, "months": months, "method": "initGiftPremiumRequest"}
             init_resp = await client.post(f"https://fragment.com/api?hash={self.config['hash']}",
                                           headers=self.headers, data=init_data)
-            init_result = init_resp.json()
+
+            try:
+                init_result = init_resp.json()
+            except Exception as e:
+                logger.error(f"Failed to parse init response: {e}")
+                logger.error(f"Response status: {init_resp.status_code}")
+                logger.error(f"Response content: {init_resp.content[:200]}")
+                return {"success": False, "error": f"Invalid response from Fragment API: {str(e)}"}
 
             req_id = init_result.get("req_id")
             if not req_id:

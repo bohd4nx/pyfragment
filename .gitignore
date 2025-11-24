@@ -20,6 +20,10 @@ logs/
 # Environment variables
 .env
 
+# Test files
+tests/
+*.test.py
+
 # System files
 .DS_Store
 Thumbs.db

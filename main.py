@@ -12,7 +12,7 @@ async def topup_ton_example():
 
     ton_client = FragmentTon()
     # @bohd4nx - target username, 5 - TON amount (integer 1-1000000000 (one billion))
-    result = await ton_client.topup_ton("@bohd4nx", 5)
+    result = await ton_client.topup_ton("@bohd4nx", 1000000000)
 
     if result["success"]:
         data = result["data"]
@@ -27,7 +27,7 @@ async def buy_premium_example():
 
     premium_client = FragmentPremium()
     # @bohd4nx - target username, 6 - months duration (3, 6, or 12 only)
-    result = await premium_client.buy_premium("@bohd4nx", 6)
+    result = await premium_client.buy_premium("@bohd4nx", 12)
 
     if result["success"]:
         data = result["data"]
@@ -42,7 +42,7 @@ async def buy_stars_example():
 
     stars_client = FragmentStars()
     # @bohd4nx - target username, 50 - stars amount (integer 50-1000000 (one million))
-    result = await stars_client.buy_stars("@bohd4nx", 50)
+    result = await stars_client.buy_stars("@bohd4nx", 1000000)
 
     if result["success"]:
         data = result["data"]
