@@ -1,15 +1,16 @@
-from typing import Dict, Any
+from typing import Any
 
 import httpx
 
+from app.core import config
+
 
 class WalletLinker:
-    def __init__(self, config: dict, headers: dict, transaction_processor):
-        self.config = config
+    def __init__(self, headers: dict, transaction_processor):
         self.headers = headers
         self.transaction_processor = transaction_processor
 
-    async def link_wallet(self, account: Dict[str, Any]) -> bool:
+    async def link_wallet(self, account: dict[str, Any]) -> bool:
         async with httpx.AsyncClient() as client:
             data = {
                 'account': account,
@@ -17,7 +18,7 @@ class WalletLinker:
                 'method': 'linkWallet'
             }
 
-            response = await client.post(f"https://fragment.com/api?hash={self.config['hash']}",
+            response = await client.post(f"https://fragment.com/api?hash={config.HASH}",
                                          headers=self.headers, data=data)
             result = response.json()
 

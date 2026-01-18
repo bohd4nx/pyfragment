@@ -1,9 +1,9 @@
 import asyncio
 import logging
 
-from app.methods import FragmentTon, FragmentPremium, FragmentStars
+from app.methods import FragmentPremium, FragmentStars, FragmentTon
+from app.core import setup_logging
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
@@ -53,6 +53,7 @@ async def buy_stars_example():
 
 
 async def main():
+    setup_logging()
     logger.info("Starting Fragment API by @bohd4nx - examples")
 
     await topup_ton_example()
