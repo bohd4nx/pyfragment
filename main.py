@@ -12,7 +12,7 @@ async def topup_ton_example():
 
     ton_client = FragmentTon()
     # @bohd4nx - target username, 5 - TON amount (integer 1-1000000000 (one billion))
-    result = await ton_client.topup_ton("@bohd4nx", 1000000000)
+    result = await ton_client.topup_ton("@bohd4nx", 100)
 
     if result["success"]:
         data = result["data"]

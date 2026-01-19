@@ -28,6 +28,8 @@ def setup_logging() -> None:
 
     logging.getLogger("aiogram.dispatcher").setLevel(logging.INFO)
     logging.getLogger("aiogram.event").setLevel(logging.ERROR)
+    logging.getLogger("httpx").setLevel(logging.INFO)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
 logger = logging.getLogger(__name__)

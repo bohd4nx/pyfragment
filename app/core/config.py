@@ -18,7 +18,7 @@ class Config:
 
         load_dotenv(env_path)
 
-        required_keys = ["COOKIES", "SEED", "HASH", "API_KEY"]
+        required_keys = ["SEED", "API_KEY"]
         missing_keys: list[str] = []
 
         for key in required_keys:

@@ -7,7 +7,15 @@ from tonutils.client import TonapiClient
 from tonutils.wallet import WalletV5R1
 
 from app.core import config
-from app.utils import TransactionProcessor, WalletLinker, ApiClient, clean_decode, parse_json_response
+from app.utils import (
+    TransactionProcessor,
+    WalletLinker,
+    ApiClient,
+    clean_decode,
+    parse_json_response,
+    load_cookies,
+    get_fragment_hash,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -15,20 +23,21 @@ logger = logging.getLogger(__name__)
 class FragmentTon:
     def __init__(self):
         self.headers = {
-            'accept': 'application/json, text/javascript, */*; q=0.01',
-            'accept-encoding': 'gzip, deflate, br, zstd',
-            'accept-language': 'en-US,en;q=0.9,uk;q=0.8,ru;q=0.7',
-            'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-            'cookie': config.COOKIES,
-            'origin': 'https://fragment.com',
-            'referer': 'https://fragment.com/ads/topup',
-            'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1',
-            'x-requested-with': 'XMLHttpRequest'
+            "accept": "application/json, text/javascript, */*; q=0.01",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "en-US,en;q=0.9,uk;q=0.8,ru;q=0.7",
+            "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "origin": "https://fragment.com",
+            "referer": "https://fragment.com/ads/topup",
+            "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1",
+            "x-requested-with": "XMLHttpRequest",
         }
 
+        self.cookies = load_cookies()
+
         self.transaction_processor = TransactionProcessor(clean_decode)
-        self.wallet_linker = WalletLinker(self.headers, self.transaction_processor)
-        self.api_client = ApiClient(self.headers, self.wallet_linker)
+        self.wallet_linker = WalletLinker(self.headers, self.cookies, self.transaction_processor)
+        self.api_client = ApiClient(self.headers, self.cookies, self.wallet_linker)
 
     @staticmethod
     async def _get_account_info():
@@ -47,16 +56,24 @@ class FragmentTon:
         if amount < 1 or not isinstance(amount, int):
             return {"success": False, "error": "Amount must be an integer >= 1 TON"}
 
+        fragment_hash = await get_fragment_hash(
+            self.cookies,
+            self.headers,
+            "https://fragment.com/ads/topup",
+        )
+        if not fragment_hash:
+            raise RuntimeError("Failed to fetch Fragment hash")
+
         account = await self._get_account_info()
 
         async with httpx.AsyncClient() as client:
             update_data = {"mode": "new", "method": "updateAdsTopupState"}
-            await client.post(f"https://fragment.com/api?hash={config.HASH}",
-                              headers=self.headers, data=update_data)
+            await client.post(f"https://fragment.com/api?hash={fragment_hash}",
+                              headers=self.headers, cookies=self.cookies, data=update_data)
 
             search_data = {"query": username, "method": "searchAdsTopupRecipient"}
-            search_resp = await client.post(f"https://fragment.com/api?hash={config.HASH}",
-                                            headers=self.headers, data=search_data)
+            search_resp = await client.post(f"https://fragment.com/api?hash={fragment_hash}",
+                                            headers=self.headers, cookies=self.cookies, data=search_data)
 
             search_result, error = parse_json_response(search_resp, logger, "search")
             if search_result is None:
@@ -67,8 +84,8 @@ class FragmentTon:
                 return {"success": False, "error": "User not found"}
 
             init_data = {"recipient": recipient, "amount": amount, "method": "initAdsTopupRequest"}
-            init_resp = await client.post(f"https://fragment.com/api?hash={config.HASH}",
-                                          headers=self.headers, data=init_data)
+            init_resp = await client.post(f"https://fragment.com/api?hash={fragment_hash}",
+                                          headers=self.headers, cookies=self.cookies, data=init_data)
 
             init_result, error = parse_json_response(init_resp, logger, "init")
             if init_result is None:
@@ -90,7 +107,11 @@ class FragmentTon:
                 'method': 'getAdsTopupLink'
             }
 
-            request_success, transaction_result = await self.api_client.execute_transaction_request(tx_data, account)
+            request_success, transaction_result = await self.api_client.execute_transaction_request(
+                tx_data,
+                account,
+                fragment_hash,
+            )
 
             if not request_success:
                 return transaction_result
