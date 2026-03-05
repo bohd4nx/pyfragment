@@ -15,7 +15,7 @@ def setup_logging() -> None:
     file_handler.setFormatter(formatter)
     logging.basicConfig(level=logging.DEBUG, handlers=[console_handler, file_handler], force=True)
 
-    logging.getLogger("httpx").setLevel(logging.INFO)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 

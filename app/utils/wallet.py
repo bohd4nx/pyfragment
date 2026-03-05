@@ -1,4 +1,3 @@
-import asyncio
 import base64
 import json
 import logging
@@ -29,42 +28,36 @@ async def process_transaction(transaction_data: dict) -> str:
             "The API response is missing expected 'transaction.messages' data."
         )
 
+    # TODO: Investigate 406 'inbound external message rejected before smart-contract execution'.
+    # This happens when the previous transaction's seqno hasn't been confirmed on-chain yet,
+    # causing the wallet contract to reject the new message.
     async with initialize_ton_client() as client:
         wallet_cls = WALLET_CLASSES[config.WALLET_VERSION]
         wallet, _, _, _ = wallet_cls.from_mnemonic(client=client, mnemonic=config.SEED)
 
         # Check balance before broadcasting
-        # try:
-        #     await wallet.refresh()
-        #     balance_ton = wallet.balance / 1_000_000_000
-        #     if balance_ton < 0.056:
-        #         raise WalletError(
-        #             f"TON wallet balance is too low: {balance_ton:.2f} TON. "
-        #             "Minimum required is 0.056 TON."
-        #         )
-        # except WalletError:
-        #     raise
-        # except Exception as exc:
-        #     raise WalletError(f"Wallet balance check failed: {exc}") from exc
+        try:
+            await wallet.refresh()
+            balance_ton = wallet.balance / 1_000_000_000
+            if balance_ton < 0.056:
+                raise WalletError(
+                    f"TON wallet balance is too low: {balance_ton:.2f} TON. "
+                    "Minimum required is 0.056 TON."
+                )
+        except WalletError:
+            raise
+        except Exception as exc:
+            raise WalletError(f"Wallet balance check failed: {exc}") from exc
 
         try:
             message = transaction_data["transaction"]["messages"][0]
             payload = clean_decode(message["payload"])
-
-            seqno_before = wallet.seqno
 
             result = await wallet.transfer(
                 destination=message["address"],
                 amount=int(message["amount"]),  # nanotons, not TON
                 body=payload,
             )
-
-            # Wait for on-chain confirmation so the next call sees updated seqno
-            for _ in range(30):
-                await asyncio.sleep(3)
-                await wallet.refresh()
-                if wallet.seqno != seqno_before:
-                    break
 
             return result
         except (WalletError, TransactionError):

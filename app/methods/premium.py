@@ -87,16 +87,25 @@ async def buy_premium(username: str, months: int) -> dict:
         return {"success": False, "error": "Invalid duration. Choose 3, 6, or 12 months."}
 
     try:
+        logger.info("Loading session cookies")
         cookies = load_cookies()
+
+        logger.info("Fetching Fragment session hash")
         fragment_hash = await get_fragment_hash(cookies, HEADERS, PREMIUM_PAGE)
+
+        # logger.info("Retrieving TON wallet info")
         account = await get_account_info()
 
         async with httpx.AsyncClient() as client:
+            logger.info("Searching recipient: %s", username)
             recipient = await search_premium_recipient(
                 client, fragment_hash, cookies, username, months
             )
+
+            logger.info("Initializing Premium gift request: %s months to %s", months, username)
             req_id = await init_gift_premium(client, fragment_hash, cookies, recipient, months)
 
+            # logger.info("Requesting transaction payload (req_id=%s)", req_id)
             tx_data = {
                 "account": json.dumps(account),
                 "device": DEVICE,
@@ -109,6 +118,7 @@ async def buy_premium(username: str, months: int) -> dict:
                 client, HEADERS, cookies, account, tx_data, fragment_hash
             )
 
+        logger.info("Broadcasting transaction to TON blockchain")
         tx_hash = await process_transaction(transaction)
         return {
             "success": True,
