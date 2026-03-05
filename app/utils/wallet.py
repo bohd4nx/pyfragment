@@ -4,8 +4,8 @@ import logging
 from typing import Any
 
 import httpx
-from tonutils.client import ToncenterV3Client
-from tonutils.wallet import WalletV5R1
+from tonutils.clients import ToncenterClient
+from tonutils.contracts.wallet import WalletV5R1
 
 from app.core import config
 from app.core.constants import DEVICE
@@ -17,12 +17,12 @@ logger = logging.getLogger(__name__)
 
 async def get_account_info() -> dict[str, Any]:
     try:
-        client = ToncenterV3Client(api_key=config.API_KEY, is_testnet=False)
+        client = ToncenterClient(api_key=config.API_KEY)
         wallet, pub_key, _, _ = WalletV5R1.from_mnemonic(client=client, mnemonic=config.SEED)
         boc = wallet.state_init.serialize().to_boc()
         return {
             "address":         wallet.address.to_str(False, False),
-            "publicKey":       pub_key.hex(),
+            "publicKey":       pub_key.as_hex,
             "chain":           "-239",
             "walletStateInit": base64.b64encode(boc).decode(),
         }

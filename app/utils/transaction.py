@@ -1,7 +1,7 @@
 import logging
 
-from tonutils.client import ToncenterV3Client
-from tonutils.wallet import WalletV5R1
+from tonutils.clients import ToncenterClient
+from tonutils.contracts.wallet import WalletV5R1
 
 from app.core import config
 from app.core.exceptions import TransactionError, WalletError
@@ -19,15 +19,16 @@ async def process_transaction(transaction_data: dict) -> str:
             "The API response is missing expected 'transaction.messages' data."
         )
 
-    client = ToncenterV3Client(api_key=config.API_KEY, is_testnet=False)
+    client = ToncenterClient(api_key=config.API_KEY)
     wallet, _, _, _ = WalletV5R1.from_mnemonic(client=client, mnemonic=config.SEED)
 
     # Check balance before broadcasting
     try:
-        balance = await wallet.balance()
-        if float(balance) < 0.056:
+        await wallet.refresh()
+        balance_ton = wallet.balance / 1_000_000_000
+        if balance_ton < 0.056:
             raise WalletError(
-                f"TON wallet balance is too low: {balance} TON. "
+                f"TON wallet balance is too low: {balance_ton:.2f} TON. "
                 "Minimum required is 0.056 TON."
             )
     except WalletError:

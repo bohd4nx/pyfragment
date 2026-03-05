@@ -22,7 +22,6 @@ DEVICE: str = json.dumps({
 # Each method merges these with its own "referer" and "x-aj-referer".
 BASE_HEADERS: dict[str, str] = {
     "accept":           "application/json, text/javascript, */*; q=0.01",
-    "accept-encoding":  "gzip, deflate, br, zstd",
     "accept-language":  "en-US,en;q=0.9,uk;q=0.8,ru;q=0.7",
     "content-type":     "application/x-www-form-urlencoded; charset=UTF-8",
     "origin":           "https://fragment.com",
