@@ -1,6 +1,5 @@
 import logging
 import os
-import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -15,28 +14,24 @@ class Config:
     API_KEY: str
 
     def __init__(self) -> None:
+        # Load .env if present; env vars already in the process take precedence
         env_path = Path(__file__).resolve().parents[2] / ".env"
-
-        if not env_path.exists():
-            raise ConfigError(
-                ".env file not found. "
-                "Copy .env.example to .env and fill in SEED and API_KEY."
-            )
-
-        load_dotenv(env_path)
+        if env_path.exists():
+            load_dotenv(env_path)
 
         missing = [k for k in ("SEED", "API_KEY") if not os.getenv(k, "").strip()]
         if missing:
             raise ConfigError(
                 f"Missing required environment variables: {', '.join(missing)}. "
-                "Open .env and fill in all required fields."
+                "Copy .env.example to .env and fill in SEED and API_KEY."
             )
 
         self.SEED = os.getenv("SEED", "").strip()
         self.API_KEY = os.getenv("API_KEY", "").strip()
 
+
+config: Config | None = None
 try:
     config = Config()
 except ConfigError as e:
-    logger.error("Configuration error: %s", e)
-    sys.exit(1)
+    logger.warning("Configuration not loaded: %s", e)
