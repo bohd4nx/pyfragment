@@ -5,34 +5,38 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from app.core.exceptions import ConfigError
+
 logger = logging.getLogger(__name__)
 
 
 class Config:
-    def __init__(self):
+    SEED: str
+    API_KEY: str
+
+    def __init__(self) -> None:
         env_path = Path(__file__).resolve().parents[2] / ".env"
 
         if not env_path.exists():
-            logger.error(".env file not found!")
-            sys.exit(1)
+            raise ConfigError(
+                ".env file not found. "
+                "Copy .env.example to .env and fill in SEED and API_KEY."
+            )
 
         load_dotenv(env_path)
 
-        required_keys = ["SEED", "API_KEY"]
-        missing_keys: list[str] = []
+        missing = [k for k in ("SEED", "API_KEY") if not os.getenv(k, "").strip()]
+        if missing:
+            raise ConfigError(
+                f"Missing required environment variables: {', '.join(missing)}. "
+                "Open .env and fill in all required fields."
+            )
 
-        for key in required_keys:
-            value = os.getenv(key, "").strip()
-            if not value:
-                missing_keys.append(key)
-            setattr(self, key, value)
+        self.SEED = os.getenv("SEED", "").strip()
+        self.API_KEY = os.getenv("API_KEY", "").strip()
 
-        if missing_keys:
-            logger.error(f"Missing required environment variables: {', '.join(missing_keys)}")
-            logger.error("Create .env file based on .env.example and fill all fields")
-            sys.exit(1)
-
-        logger.info("Configuration loaded successfully")
-
-
-config = Config()
+try:
+    config = Config()
+except ConfigError as e:
+    logger.error("Configuration error: %s", e)
+    sys.exit(1)

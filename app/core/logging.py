@@ -1,7 +1,5 @@
 import logging
 
-from app.__meta__ import APP_NAME
-
 
 def setup_logging() -> None:
     formatter = logging.Formatter(
@@ -14,7 +12,7 @@ def setup_logging() -> None:
     console_handler.setFormatter(formatter)
 
     file_handler = logging.FileHandler(
-        f"{APP_NAME}.log",
+        "FragmentAPI.log",
         mode="w",
         encoding="utf-8"
     )
@@ -26,8 +24,6 @@ def setup_logging() -> None:
         force=True
     )
 
-    logging.getLogger("aiogram.dispatcher").setLevel(logging.INFO)
-    logging.getLogger("aiogram.event").setLevel(logging.ERROR)
     logging.getLogger("httpx").setLevel(logging.INFO)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
 

@@ -1,58 +1,49 @@
 import logging
 
-from tonutils.client import TonapiClient, ToncenterV3Client
+from tonutils.client import ToncenterV3Client
 from tonutils.wallet import WalletV5R1
-from tonutils.wallet.messages import TransferMessage
 
 from app.core import config
+from app.core.exceptions import TransactionError, WalletError
+from app.utils.decoder import clean_decode
 
 logger = logging.getLogger(__name__)
 
 
-class TransactionProcessor:
-    def __init__(self, clean_decode_func):
-        self._clean_decode = clean_decode_func
+async def process_transaction(transaction_data: dict) -> str:
+    if "transaction" not in transaction_data or "messages" not in transaction_data["transaction"]:
+        raise TransactionError(
+            "Fragment returned an invalid transaction payload. "
+            "The API response is missing expected 'transaction.messages' data."
+        )
 
-    @staticmethod
-    async def _check_wallet_balance() -> tuple[bool, str | None]:
-        client = ToncenterV3Client(is_testnet=False, rps=1, max_retries=1)
-        wallet, _, _, _ = WalletV5R1.from_mnemonic(client=client, mnemonic=config.SEED)
+    client = ToncenterV3Client(api_key=config.API_KEY, is_testnet=False)
+    wallet, _, _, _ = WalletV5R1.from_mnemonic(client=client, mnemonic=config.SEED)
 
-        try:
-            balance = await wallet.balance()
-        except Exception as exc:
-            return False, f"Wallet balance check failed: {exc}"
+    # Check balance before broadcasting
+    try:
+        balance = await wallet.balance()
+        if float(balance) < 0.056:
+            raise WalletError(
+                f"TON wallet balance is too low: {balance} TON. "
+                "Minimum required is 0.056 TON."
+            )
+    except WalletError:
+        raise
+    except Exception as exc:
+        raise WalletError(f"Wallet balance check failed: {exc}") from exc
 
-        try:
-            if float(balance) <= 0:
-                return False, "Wallet balance is zero"
-        except Exception:
-            pass
+    try:
+        message = transaction_data["transaction"]["messages"][0]
+        payload = clean_decode(message["payload"])
 
-        return True, None
+        return await wallet.transfer(
+            destination=message["address"],
+            amount=int(message["amount"]) / 1_000_000_000,
+            body=payload,
+        )
+    except (WalletError, TransactionError):
+        raise
+    except Exception as exc:
+        raise TransactionError(f"Transaction broadcast failed: {exc}") from exc
 
-    async def process_transaction(self, transaction_data: dict) -> tuple[bool, str | None, str | None]:
-        if "transaction" not in transaction_data or "messages" not in transaction_data["transaction"]:
-            return False, "Invalid transaction", None
-
-        ready, reason = await self._check_wallet_balance()
-        if not ready:
-            return False, reason or "Wallet is not ready", None
-
-        client = TonapiClient(api_key=config.API_KEY, is_testnet=False)
-        wallet, _, _, _ = WalletV5R1.from_mnemonic(client=client, mnemonic=config.SEED)
-
-        try:
-            message = transaction_data["transaction"]["messages"][0]
-            payload = self._clean_decode(message["payload"])
-
-            messages = [TransferMessage(
-                destination=message["address"],
-                amount=int(message["amount"]) / 1000000000,
-                body=payload
-            )]
-
-            tx_hash = await wallet.batch_transfer_messages(messages=messages)
-            return True, None, tx_hash
-        except Exception as e:
-            return False, str(e), None

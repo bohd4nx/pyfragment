@@ -1,8 +1,8 @@
 import asyncio
 import logging
 
-from app.methods import FragmentPremium, FragmentStars, FragmentTon
 from app.core import setup_logging
+from app.methods import buy_premium, buy_stars, topup_ton
 
 logger = logging.getLogger(__name__)
 
@@ -10,9 +10,8 @@ logger = logging.getLogger(__name__)
 async def topup_ton_example():
     logger.info("Starting TON topup example")
 
-    ton_client = FragmentTon()
-    # @bohd4nx - target username, 5 - TON amount (integer 1-1000000000 (one billion))
-    result = await ton_client.topup_ton("@bohd4nx", 100)
+    # @bohd4nx - target username, 100 - TON amount (integer 1-1000000000 (one billion))
+    result = await topup_ton("@bohd4nx", 100)
 
     if result["success"]:
         data = result["data"]
@@ -25,9 +24,8 @@ async def topup_ton_example():
 async def buy_premium_example():
     logger.info("Starting Premium purchase example")
 
-    premium_client = FragmentPremium()
-    # @bohd4nx - target username, 6 - months duration (3, 6, or 12 only)
-    result = await premium_client.buy_premium("@bohd4nx", 12)
+    # @bohd4nx - target username, 12 - months duration (3, 6, or 12 only)
+    result = await buy_premium("@bohd4nx", 12)
 
     if result["success"]:
         data = result["data"]
@@ -40,9 +38,8 @@ async def buy_premium_example():
 async def buy_stars_example():
     logger.info("Starting Stars purchase example")
 
-    stars_client = FragmentStars()
-    # @bohd4nx - target username, 50 - stars amount (integer 50-1000000 (one million))
-    result = await stars_client.buy_stars("@bohd4nx", 1000000)
+    # @bohd4nx - target username, 1000000 - stars amount (integer 50-1000000 (one million))
+    result = await buy_stars("@bohd4nx", 1000000)
 
     if result["success"]:
         data = result["data"]

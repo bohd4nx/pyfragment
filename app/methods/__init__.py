@@ -1,5 +1,5 @@
-from app.methods.premium import FragmentPremium
-from app.methods.stars import FragmentStars
-from app.methods.ton import FragmentTon
+from app.methods.premium import buy_premium
+from app.methods.stars import buy_stars
+from app.methods.ton import topup_ton
 
-__all__ = ['FragmentTon', 'FragmentPremium', 'FragmentStars']
+__all__ = ['buy_premium', 'buy_stars', 'topup_ton']

@@ -1,133 +1,116 @@
-import base64
+import json
 import logging
 import time
 
 import httpx
-from tonutils.client import TonapiClient
-from tonutils.wallet import WalletV5R1
 
-from app.core import config
+from app.core import load_cookies
+from app.core.constants import BASE_HEADERS, DEVICE, PREMIUM_PAGE
+from app.core.exceptions import FragmentError, UserNotFoundError
 from app.utils import (
-    TransactionProcessor,
-    WalletLinker,
-    ApiClient,
-    clean_decode,
-    parse_json_response,
-    load_cookies,
+    execute_transaction_request,
+    get_account_info,
     get_fragment_hash,
+    parse_json_response,
+    process_transaction,
 )
 
 logger = logging.getLogger(__name__)
 
+# Page-specific headers
+HEADERS: dict[str, str] = {
+    **BASE_HEADERS,
+    "referer":      PREMIUM_PAGE,
+    "x-aj-referer": PREMIUM_PAGE,
+}
 
-class FragmentPremium:
-    def __init__(self):
-        self.headers = {
-            "accept": "application/json, text/javascript, */*; q=0.01",
-            "accept-encoding": "gzip, deflate, br, zstd",
-            "accept-language": "en-US,en;q=0.9,uk;q=0.8,ru;q=0.7",
-            "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "origin": "https://fragment.com",
-            "referer": "https://fragment.com/premium/gift",
-            "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1",
-            "x-requested-with": "XMLHttpRequest",
-        }
 
-        self.cookies = load_cookies()
-
-        self.transaction_processor = TransactionProcessor(clean_decode)
-        self.wallet_linker = WalletLinker(self.headers, self.cookies, self.transaction_processor)
-        self.api_client = ApiClient(self.headers, self.cookies, self.wallet_linker)
-
-    @staticmethod
-    async def _get_account_info():
-        client = TonapiClient(api_key=config.API_KEY, is_testnet=False)
-        wallet, pub_key, _, _ = WalletV5R1.from_mnemonic(client=client, mnemonic=config.SEED)
-        boc = wallet.state_init.serialize().to_boc()
-
-        return {
-            "address": wallet.address.to_str(False, False),
-            "publicKey": pub_key.hex(),
-            "chain": "-239",
-            "walletStateInit": base64.b64encode(boc).decode()
-        }
-
-    async def buy_premium(self, username, months):
-        if months not in [3, 6, 12]:
-            return {"success": False, "error": "Invalid duration. Use 3, 6, or 12 months"}
-
-        fragment_hash = await get_fragment_hash(
-            self.cookies,
-            self.headers,
-            "https://fragment.com/premium/gift",
+async def search_premium_recipient(
+    client: httpx.AsyncClient,
+    fragment_hash: str,
+    cookies: dict,
+    username: str,
+    months: int,
+) -> str:
+    resp = await client.post(
+        f"https://fragment.com/api?hash={fragment_hash}",
+        headers=HEADERS, cookies=cookies,
+        data={"query": username, "months": months, "method": "searchPremiumGiftRecipient"},
+    )
+    result = parse_json_response(resp, "searchPremiumGiftRecipient")
+    recipient = result.get("found", {}).get("recipient")
+    if not recipient:
+        raise UserNotFoundError(
+            f"Telegram user '{username}' was not found on Fragment. "
+            "Make sure the username is correct and the account exists."
         )
-        if not fragment_hash:
-            raise RuntimeError("Failed to fetch Fragment hash")
+    return recipient
 
-        account = await self._get_account_info()
+
+async def init_gift_premium(
+    client: httpx.AsyncClient,
+    fragment_hash: str,
+    cookies: dict,
+    recipient: str,
+    months: int,
+) -> str:
+    await client.post(
+        f"https://fragment.com/api?hash={fragment_hash}",
+        headers=HEADERS, cookies=cookies,
+        data={"mode": "new", "lv": "false", "dh": str(int(time.time())), "method": "updatePremiumState"},
+    )
+    resp = await client.post(
+        f"https://fragment.com/api?hash={fragment_hash}",
+        headers=HEADERS, cookies=cookies,
+        data={"recipient": recipient, "months": months, "method": "initGiftPremiumRequest"},
+    )
+    result = parse_json_response(resp, "initGiftPremiumRequest")
+    req_id = result.get("req_id")
+    if not req_id:
+        raise FragmentError(
+            "Fragment did not return a request ID for this Premium purchase. "
+            "The session may have expired — refresh your cookies."
+        )
+    return req_id
+
+
+async def buy_premium(username: str, months: int) -> dict:
+    if months not in (3, 6, 12):
+        return {"success": False, "error": "Invalid duration. Choose 3, 6, or 12 months."}
+
+    try:
+        cookies       = load_cookies()
+        fragment_hash = await get_fragment_hash(cookies, HEADERS, PREMIUM_PAGE)
+        account       = await get_account_info()
 
         async with httpx.AsyncClient() as client:
-            search_data = {"query": username, "months": months, "method": "searchPremiumGiftRecipient"}
-            search_resp = await client.post(f"https://fragment.com/api?hash={fragment_hash}",
-                                            headers=self.headers, cookies=self.cookies, data=search_data)
-
-            search_result, error = parse_json_response(search_resp, logger, "search")
-            if search_result is None:
-                return {"success": False, "error": f"Invalid response from Fragment API: {error}"}
-
-            recipient = search_result.get("found", {}).get("recipient")
-            if not recipient:
-                return {"success": False, "error": "User not found"}
-
-            update_data = {"mode": "new", "lv": "false", "dh": str(int(time.time())), "method": "updatePremiumState"}
-            await client.post(f"https://fragment.com/api?hash={fragment_hash}",
-                              headers=self.headers, cookies=self.cookies, data=update_data)
-
-            init_data = {"recipient": recipient, "months": months, "method": "initGiftPremiumRequest"}
-            init_resp = await client.post(f"https://fragment.com/api?hash={fragment_hash}",
-                                          headers=self.headers, cookies=self.cookies, data=init_data)
-
-            init_result, error = parse_json_response(init_resp, logger, "init")
-            if init_result is None:
-                return {"success": False, "error": f"Invalid response from Fragment API: {error}"}
-
-            req_id = init_result.get("req_id")
-            if not req_id:
-                return {"success": False, "error": "Failed to initialize purchase"}
+            recipient = await search_premium_recipient(client, fragment_hash, cookies, username, months)
+            req_id    = await init_gift_premium(client, fragment_hash, cookies, recipient, months)
 
             tx_data = {
-                'account': account,
-                'device': {"appVersion": "5.4.3", "platform": "iphone",
-                           "features": ["SendTransaction", {"maxMessages": 255, "name": "SendTransaction"},
-                                        {"types": ["text", "binary", "cell"], "name": "SignData"}],
-                           "appName": "Tonkeeper", "maxProtocolVersion": 2},
-                'transaction': 1,
-                'id': req_id,
-                'show_sender': 1,
-                'ref': "OprzztcdJ",
-                'method': 'getGiftPremiumLink'
+                "account":     json.dumps(account),
+                "device":      DEVICE,
+                "transaction": 1,
+                "id":          req_id,
+                "show_sender": 1,
+                "method":      "getGiftPremiumLink",
             }
+            transaction = await execute_transaction_request(client, HEADERS, cookies, account, tx_data, fragment_hash)
 
-            request_success, transaction_result = await self.api_client.execute_transaction_request(
-                tx_data,
-                account,
-                fragment_hash,
-            )
+        tx_hash = await process_transaction(transaction)
+        return {
+            "success": True,
+            "data": {
+                "transaction_id": tx_hash,
+                "username":       username,
+                "months":         months,
+                "timestamp":      int(time.time()),
+            },
+        }
 
-            if not request_success:
-                return transaction_result
-
-        success, error, tx_hash = await self.transaction_processor.process_transaction(transaction_result)
-
-        if success:
-            return {
-                "success": True,
-                "data": {
-                    "transaction_id": tx_hash,
-                    "username": username,
-                    "months": months,
-                    "timestamp": int(time.time())
-                }
-            }
-
-        return {"success": False, "error": error}
+    except FragmentError as exc:
+        logger.error("Premium purchase failed — %s", exc)
+        return {"success": False, "error": str(exc)}
+    except Exception as exc:
+        logger.exception("Unexpected error during Premium purchase")
+        return {"success": False, "error": f"Unexpected error: {exc}"}
