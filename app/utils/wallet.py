@@ -7,9 +7,7 @@ import httpx
 from tonutils.clients import TonapiClient
 from tonutils.types import NetworkGlobalID
 
-from app.core import config
-from app.core.constants import DEVICE, WALLET_CLASSES
-from app.core.exceptions import TransactionError, WalletError
+from app.core import DEVICE, WALLET_CLASSES, TransactionError, WalletError, config
 from app.utils.decoder import clean_decode
 
 logger = logging.getLogger(__name__)

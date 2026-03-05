@@ -4,9 +4,14 @@ import time
 
 import httpx
 
-from app.core import load_cookies
-from app.core.constants import BASE_HEADERS, DEVICE, STARS_PAGE
-from app.core.exceptions import FragmentError, UserNotFoundError
+from app.core import (
+    BASE_HEADERS,
+    DEVICE,
+    STARS_PAGE,
+    FragmentError,
+    UserNotFoundError,
+    load_cookies,
+)
 from app.utils import (
     execute_transaction_request,
     get_account_info,

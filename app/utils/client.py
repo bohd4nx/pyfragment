@@ -3,7 +3,7 @@ from typing import Any
 
 import httpx
 
-from app.core.exceptions import RequestError, WalletError
+from app.core import RequestError, WalletError
 from app.utils.wallet import link_wallet
 
 logger = logging.getLogger(__name__)
