@@ -1,5 +1,6 @@
 """Tests for clean_decode() — BOC-encoded Fragment payloads decode to
 human-readable UTF-8 with the Telegram label and Ref# intact."""
+
 import re
 
 import pytest

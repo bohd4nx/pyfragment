@@ -1,5 +1,6 @@
 """Tests for get_fragment_hash() — fetches a valid lowercase hex hash
 from the fragment.com/stars/buy page source."""
+
 import re
 
 import pytest

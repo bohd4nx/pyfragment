@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 # Page-specific headers
 HEADERS: dict[str, str] = {
     **BASE_HEADERS,
-    "referer":      ADS_PAGE,
+    "referer": ADS_PAGE,
     "x-aj-referer": ADS_PAGE,
 }
 
@@ -33,12 +33,14 @@ async def search_ads_recipient(
 ) -> str:
     await client.post(
         f"https://fragment.com/api?hash={fragment_hash}",
-        headers=HEADERS, cookies=cookies,
+        headers=HEADERS,
+        cookies=cookies,
         data={"mode": "new", "method": "updateAdsTopupState"},
     )
     resp = await client.post(
         f"https://fragment.com/api?hash={fragment_hash}",
-        headers=HEADERS, cookies=cookies,
+        headers=HEADERS,
+        cookies=cookies,
         data={"query": username, "method": "searchAdsTopupRecipient"},
     )
     result = parse_json_response(resp, "searchAdsTopupRecipient")
@@ -60,7 +62,8 @@ async def init_ads_topup(
 ) -> str:
     resp = await client.post(
         f"https://fragment.com/api?hash={fragment_hash}",
-        headers=HEADERS, cookies=cookies,
+        headers=HEADERS,
+        cookies=cookies,
         data={"recipient": recipient, "amount": amount, "method": "initAdsTopupRequest"},
     )
     result = parse_json_response(resp, "initAdsTopupRequest")
@@ -78,32 +81,34 @@ async def topup_ton(username: str, amount: int) -> dict:
         return {"success": False, "error": "Amount must be an integer >= 1 TON."}
 
     try:
-        cookies       = load_cookies()
+        cookies = load_cookies()
         fragment_hash = await get_fragment_hash(cookies, HEADERS, ADS_PAGE)
-        account       = await get_account_info()
+        account = await get_account_info()
 
         async with httpx.AsyncClient() as client:
             recipient = await search_ads_recipient(client, fragment_hash, cookies, username)
-            req_id    = await init_ads_topup(client, fragment_hash, cookies, recipient, amount)
+            req_id = await init_ads_topup(client, fragment_hash, cookies, recipient, amount)
 
             tx_data = {
-                "account":     json.dumps(account),
-                "device":      DEVICE,
+                "account": json.dumps(account),
+                "device": DEVICE,
                 "transaction": 1,
-                "id":          req_id,
+                "id": req_id,
                 "show_sender": 1,
-                "method":      "getAdsTopupLink",
+                "method": "getAdsTopupLink",
             }
-            transaction = await execute_transaction_request(client, HEADERS, cookies, account, tx_data, fragment_hash)
+            transaction = await execute_transaction_request(
+                client, HEADERS, cookies, account, tx_data, fragment_hash
+            )
 
         tx_hash = await process_transaction(transaction)
         return {
             "success": True,
             "data": {
                 "transaction_id": tx_hash,
-                "username":       username,
-                "amount":         amount,
-                "timestamp":      int(time.time()),
+                "username": username,
+                "amount": amount,
+                "timestamp": int(time.time()),
             },
         }
 

@@ -19,12 +19,12 @@ def parse_json_response(response: httpx.Response, context: str) -> dict[str, Any
 
 
 async def execute_transaction_request(
-        client: httpx.AsyncClient,
-        headers: dict,
-        cookies: dict,
-        account: dict[str, Any],
-        tx_data: dict[str, Any],
-        fragment_hash: str,
+    client: httpx.AsyncClient,
+    headers: dict,
+    cookies: dict,
+    account: dict[str, Any],
+    tx_data: dict[str, Any],
+    fragment_hash: str,
 ) -> dict[str, Any]:
     url = f"https://fragment.com/api?hash={fragment_hash}"
 
@@ -41,4 +41,3 @@ async def execute_transaction_request(
         transaction = parse_json_response(resp, tx_data.get("method", "transaction"))
 
     return transaction
-

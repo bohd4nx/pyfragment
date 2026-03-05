@@ -10,23 +10,27 @@ logger = logging.getLogger(__name__)
 
 
 async def get_fragment_hash(
-        cookies: dict[str, Any],
-        headers: dict[str, str],
-        page_url: str,
+    cookies: dict[str, Any],
+    headers: dict[str, str],
+    page_url: str,
 ) -> str:
     # Must look like a real browser navigation — not an XHR — otherwise Fragment
     # returns JSON (no hash in it) instead of full HTML.
     page_headers = {
-        k: v for k, v in headers.items()
-        if k not in ("accept", "accept-encoding", "content-type", "x-requested-with", "x-aj-referer")
+        k: v
+        for k, v in headers.items()
+        if k
+        not in ("accept", "accept-encoding", "content-type", "x-requested-with", "x-aj-referer")
     }
-    page_headers.update({
-        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "referer": "https://fragment.com/",
-        "sec-fetch-dest": "document",
-        "sec-fetch-mode": "navigate",
-        "upgrade-insecure-requests": "1",
-    })
+    page_headers.update(
+        {
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "referer": "https://fragment.com/",
+            "sec-fetch-dest": "document",
+            "sec-fetch-mode": "navigate",
+            "upgrade-insecure-requests": "1",
+        }
+    )
 
     async with httpx.AsyncClient(cookies=cookies) as client:
         response = await client.get(page_url, headers=page_headers)

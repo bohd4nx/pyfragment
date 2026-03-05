@@ -34,5 +34,5 @@ def clean_decode(payload: str) -> str:
     sl.load_uint(32)  # op code — always 0 for text comment
     result = sl.load_snake_string().strip()
 
-    logger.debug("Decoded result: %s", result)
+    logger.debug("Decoded payload: %s", result.replace("\n", " "))
     return result

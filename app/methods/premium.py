@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 # Page-specific headers
 HEADERS: dict[str, str] = {
     **BASE_HEADERS,
-    "referer":      PREMIUM_PAGE,
+    "referer": PREMIUM_PAGE,
     "x-aj-referer": PREMIUM_PAGE,
 }
 
@@ -34,7 +34,8 @@ async def search_premium_recipient(
 ) -> str:
     resp = await client.post(
         f"https://fragment.com/api?hash={fragment_hash}",
-        headers=HEADERS, cookies=cookies,
+        headers=HEADERS,
+        cookies=cookies,
         data={"query": username, "months": months, "method": "searchPremiumGiftRecipient"},
     )
     result = parse_json_response(resp, "searchPremiumGiftRecipient")
@@ -56,12 +57,19 @@ async def init_gift_premium(
 ) -> str:
     await client.post(
         f"https://fragment.com/api?hash={fragment_hash}",
-        headers=HEADERS, cookies=cookies,
-        data={"mode": "new", "lv": "false", "dh": str(int(time.time())), "method": "updatePremiumState"},
+        headers=HEADERS,
+        cookies=cookies,
+        data={
+            "mode": "new",
+            "lv": "false",
+            "dh": str(int(time.time())),
+            "method": "updatePremiumState",
+        },
     )
     resp = await client.post(
         f"https://fragment.com/api?hash={fragment_hash}",
-        headers=HEADERS, cookies=cookies,
+        headers=HEADERS,
+        cookies=cookies,
         data={"recipient": recipient, "months": months, "method": "initGiftPremiumRequest"},
     )
     result = parse_json_response(resp, "initGiftPremiumRequest")
@@ -79,32 +87,36 @@ async def buy_premium(username: str, months: int) -> dict:
         return {"success": False, "error": "Invalid duration. Choose 3, 6, or 12 months."}
 
     try:
-        cookies       = load_cookies()
+        cookies = load_cookies()
         fragment_hash = await get_fragment_hash(cookies, HEADERS, PREMIUM_PAGE)
-        account       = await get_account_info()
+        account = await get_account_info()
 
         async with httpx.AsyncClient() as client:
-            recipient = await search_premium_recipient(client, fragment_hash, cookies, username, months)
-            req_id    = await init_gift_premium(client, fragment_hash, cookies, recipient, months)
+            recipient = await search_premium_recipient(
+                client, fragment_hash, cookies, username, months
+            )
+            req_id = await init_gift_premium(client, fragment_hash, cookies, recipient, months)
 
             tx_data = {
-                "account":     json.dumps(account),
-                "device":      DEVICE,
+                "account": json.dumps(account),
+                "device": DEVICE,
                 "transaction": 1,
-                "id":          req_id,
+                "id": req_id,
                 "show_sender": 1,
-                "method":      "getGiftPremiumLink",
+                "method": "getGiftPremiumLink",
             }
-            transaction = await execute_transaction_request(client, HEADERS, cookies, account, tx_data, fragment_hash)
+            transaction = await execute_transaction_request(
+                client, HEADERS, cookies, account, tx_data, fragment_hash
+            )
 
         tx_hash = await process_transaction(transaction)
         return {
             "success": True,
             "data": {
                 "transaction_id": tx_hash,
-                "username":       username,
-                "months":         months,
-                "timestamp":      int(time.time()),
+                "username": username,
+                "months": months,
+                "timestamp": int(time.time()),
             },
         }
 

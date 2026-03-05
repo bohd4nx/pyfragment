@@ -29,7 +29,9 @@ async def buy_premium_example():
 
     if result["success"]:
         data = result["data"]
-        logger.info(f"Premium purchase successful: {data['months']} months sent to {data['username']}")
+        logger.info(
+            f"Premium purchase successful: {data['months']} months sent to {data['username']}"
+        )
         logger.info(f"Transaction ID: {data['transaction_id']}")
     else:
         logger.error(f"Premium purchase failed: {result['error']}")

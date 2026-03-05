@@ -1,33 +1,92 @@
+import asyncio
 import base64
 import json
 import logging
 from typing import Any
 
 import httpx
-from tonutils.clients import ToncenterClient
-from tonutils.contracts.wallet import WalletV5R1
+from tonutils.clients import TonapiClient
+from tonutils.types import NetworkGlobalID
 
 from app.core import config
-from app.core.constants import DEVICE
+from app.core.constants import DEVICE, WALLET_CLASSES
 from app.core.exceptions import TransactionError, WalletError
-from app.utils.transaction import process_transaction
+from app.utils.decoder import clean_decode
 
 logger = logging.getLogger(__name__)
 
 
+def initialize_ton_client() -> TonapiClient:
+    return TonapiClient(network=NetworkGlobalID.MAINNET, api_key=config.API_KEY)
+
+
+async def process_transaction(transaction_data: dict) -> str:
+    logger.debug("transaction_data: %s", transaction_data)
+
+    if "transaction" not in transaction_data or "messages" not in transaction_data["transaction"]:
+        raise TransactionError(
+            "Fragment returned an invalid transaction payload. "
+            "The API response is missing expected 'transaction.messages' data."
+        )
+
+    async with initialize_ton_client() as client:
+        wallet_cls = WALLET_CLASSES[config.WALLET_VERSION]
+        wallet, _, _, _ = wallet_cls.from_mnemonic(client=client, mnemonic=config.SEED)
+
+        # Check balance before broadcasting
+        # try:
+        #     await wallet.refresh()
+        #     balance_ton = wallet.balance / 1_000_000_000
+        #     if balance_ton < 0.056:
+        #         raise WalletError(
+        #             f"TON wallet balance is too low: {balance_ton:.2f} TON. "
+        #             "Minimum required is 0.056 TON."
+        #         )
+        # except WalletError:
+        #     raise
+        # except Exception as exc:
+        #     raise WalletError(f"Wallet balance check failed: {exc}") from exc
+
+        try:
+            message = transaction_data["transaction"]["messages"][0]
+            payload = clean_decode(message["payload"])
+
+            seqno_before = wallet.seqno
+
+            result = await wallet.transfer(
+                destination=message["address"],
+                amount=int(message["amount"]),  # nanotons, not TON
+                body=payload,
+            )
+
+            # Wait for on-chain confirmation so the next call sees updated seqno
+            for _ in range(30):
+                await asyncio.sleep(3)
+                await wallet.refresh()
+                if wallet.seqno != seqno_before:
+                    break
+
+            return result
+        except (WalletError, TransactionError):
+            raise
+        except Exception as exc:
+            raise TransactionError(f"Transaction broadcast failed: {exc}") from exc
+
+
 async def get_account_info() -> dict[str, Any]:
-    try:
-        client = ToncenterClient(api_key=config.API_KEY)
-        wallet, pub_key, _, _ = WalletV5R1.from_mnemonic(client=client, mnemonic=config.SEED)
-        boc = wallet.state_init.serialize().to_boc()
-        return {
-            "address":         wallet.address.to_str(False, False),
-            "publicKey":       pub_key.as_hex,
-            "chain":           "-239",
-            "walletStateInit": base64.b64encode(boc).decode(),
-        }
-    except Exception as exc:
-        raise WalletError(f"Failed to retrieve wallet account info: {exc}") from exc
+    async with initialize_ton_client() as client:
+        try:
+            wallet_cls = WALLET_CLASSES[config.WALLET_VERSION]
+            wallet, pub_key, _, _ = wallet_cls.from_mnemonic(client=client, mnemonic=config.SEED)
+            boc = wallet.state_init.serialize().to_boc()
+            return {
+                "address": wallet.address.to_str(False, False),
+                "publicKey": pub_key.as_hex,
+                "chain": "-239",
+                "walletStateInit": base64.b64encode(boc).decode(),
+            }
+        except Exception as exc:
+            raise WalletError(f"Failed to retrieve wallet account info: {exc}") from exc
 
 
 async def link_wallet(
@@ -43,7 +102,7 @@ async def link_wallet(
         cookies=cookies,
         data={
             "account": json.dumps(account),
-            "device":  DEVICE,
+            "device": DEVICE,
             "method": "linkWallet",
         },
     )
