@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 async def process_transaction(transaction_data: dict) -> str:
+    logger.debug("transaction_data: %s", transaction_data)
+
     if "transaction" not in transaction_data or "messages" not in transaction_data["transaction"]:
         raise TransactionError(
             "Fragment returned an invalid transaction payload. "
