@@ -7,8 +7,13 @@
     <b>Automate TON topups, Telegram Premium purchases, and Stars transactions via Fragment.com</b>
   </p>
 
-[Report Bug](https://github.com/bohd4nx/fragmentapi/issues) · [Request Feature](https://github.com/bohd4nx/fragmentapi/issues) · [
-**Donate TON**](https://app.tonkeeper.com/transfer/UQCppfw5DxWgdVHf3zkmZS8k1mt9oAUYxQLwq2fz3nhO8No5)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
+[![tonutils](https://img.shields.io/badge/tonutils-2.0.0-0098EA?style=flat&logo=ton&logoColor=white)](https://github.com/nessshon/tonutils)
+[![Stars](https://img.shields.io/github/stars/bohd4nx/FragmentAPI?style=flat&color=yellow)](https://github.com/bohd4nx/FragmentAPI/stargazers)
+[![Issues](https://img.shields.io/github/issues/bohd4nx/FragmentAPI?style=flat&color=red)](https://github.com/bohd4nx/FragmentAPI/issues)
+[![CI](https://img.shields.io/github/actions/workflow/status/bohd4nx/FragmentAPI/tests.yml?style=flat&label=tests&logo=github)](https://github.com/bohd4nx/FragmentAPI/actions)
+
+[Report Bug](https://github.com/bohd4nx/fragmentapi/issues) · [Request Feature](https://github.com/bohd4nx/fragmentapi/issues) · [**Donate TON**](https://app.tonkeeper.com/transfer/UQCppfw5DxWgdVHf3zkmZS8k1mt9oAUYxQLwq2fz3nhO8No5)
 
 </div>
 
@@ -16,9 +21,10 @@
 
 ## ✨ Features
 
-- 💰 **TON Advertisement Topups** - Send TON for advertising campaigns and purchasing gifts (1-1,000,000,000 TON)
-- 👑 **Telegram Premium Gifts** - Purchase Premium subscriptions (3, 6, or 12 months)
-- ⭐ **Telegram Stars Purchases** - Buy Stars for users (50-1,000,000 Stars)
+- 💰 **TON Advertisement Topups** — Send TON directly to Fragment ad accounts (1–1,000,000,000 TON)
+- 👑 **Telegram Premium Gifts** — Purchase Premium subscriptions for any user (3, 6, or 12 months)
+- ⭐ **Telegram Stars Purchases** — Buy Stars and send them to any Telegram user (50–1,000,000 Stars)
+- 🔐 **Multi-wallet support** — Configurable wallet contract version (V4R2 / V5R1)
 
 ## 🚀 Quick Start
 
@@ -32,88 +38,82 @@ pip install -r requirements.txt
 
 ### 2. Configuration
 
-Copy example configuration and edit:
-
 ```bash
 cp .env.example .env
+cp cookies.example.json cookies.json
 ```
 
-Edit `.env` file:
+Edit `.env`:
 
 ```env
-SEED=word1 word2 word3 ... word24
+# 24-word TON wallet seed phrase
+SEED = word1 word2 word3 ... word24
 
-API_KEY=your_ton_api_key_here
+# API key from @tonapibot on Telegram
+API_KEY = your_tonapi_key_here
+
+# Wallet contract version: V4R2 or V5R1 (default: V5R1)
+WALLET_VERSION = V5R1
 ```
 
 ### 3. Getting Required Data
 
 #### 🍪 Fragment.com Cookies
 
-**Prerequisites**: Login to your Telegram account and connect the TON wallet you want to use for payments.
+**Prerequisites**: Log in to Telegram on Fragment and connect the TON wallet you'll use for payments.
 
-1. **Install Cookie Editor Extension**:
-
-    - Download
-      from [Chrome Web Store](https://chromewebstore.google.com/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm)
-    - Add extension to your browser
-
-2. **Extract Cookies**:
-    - Open [Fragment.com](https://fragment.com) and ensure you're logged in
-    - Refresh the page completely
-    - Click on the Cookie Editor extension icon
-    - Click **"Export"** button
-    - Select **"Header String"** format
-    - Copy the result and split it into JSON fields in `cookies.json`
-
-**Expected format** (`cookies.json` in project root):
+1. Install [Cookie Editor](https://chromewebstore.google.com/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm) extension
+2. Open [fragment.com](https://fragment.com) and make sure you're logged in
+3. Click the Cookie Editor icon → **Export** → **Header String**
+4. Split the result into the four fields in `cookies.json`:
 
 ```json
 {
-  "stel_ssid": "<SSID>",
-  "stel_dt": "<STEL_DT>",
-  "stel_token": "<TOKEN>",
-  "stel_ton_token": "<TON_TOKEN>"
+  "stel_ssid": "...",
+  "stel_dt": "...",
+  "stel_token": "...",
+  "stel_ton_token": "..."
 }
 ```
 
 #### 🔐 TON Wallet Seed Phrase
 
-**If you don't have a TON wallet yet**:
+If you don't have a TON wallet, create one in [Tonkeeper](https://tonkeeper.com) (iOS / Android).  
+Go to **Settings → Backup**, copy the 24 words and paste them into `SEED` in `.env`.
 
-1. **Download Tonkeeper**:
-
-    - iOS: [App Store](https://apps.apple.com/app/tonkeeper/id1587742107)
-    - Android: [Google Play](https://play.google.com/store/apps/details?id=com.ton_keeper)
-
-2. **Create New Wallet**:
-
-    - Open Tonkeeper app
-    - Tap **"Create New Wallet"**
-    - **IMPORTANT**: Write down your 24-word seed phrase on paper
-    - Store it securely - never share with anyone!
-    - Complete wallet setup
-
-3. **Get Your Seed Phrase**:
-    - If you already have a wallet, go to Settings → Backup
-    - Enter your passcode
-    - Copy the 24 words → paste to `SEED` in your `.env` file
-
-**Format**: `word1 word2 word3 ... word24`
-
-#### 🔗 Fragment Hash
-
-Hash is fetched automatically from Fragment pages at runtime. You no longer need to add `HASH` to `.env`.
+> ⚠️ Never share your seed phrase with anyone. Store it offline.
 
 #### 🔑 TON API Key
 
-1. **Get API Key**:
-    - Visit [TON Console](https://tonconsole.com)
-    - Create account and login
-    - Generate new API key
-    - Copy the key → paste to `API_KEY` in your `.env` file
+1. Go to [tonconsole.com](https://tonconsole.com)
+2. Create an account and log in
+3. Generate a new API key
+4. Paste it into `API_KEY` in `.env`
 
-**Alternative**: You can also use [TON API](https://tonapi.io) for getting API key.
+#### 🔐 Wallet Version
+
+| Version | Use when                                                       |
+| ------- | -------------------------------------------------------------- |
+| `V5R1`  | Default — Tonkeeper / MyTonWallet (wallets created after 2024) |
+| `V4R2`  | Older Tonkeeper wallets                                        |
+
+Not sure? Run this to check which address matches your wallet:
+
+```bash
+python3 -c "
+import asyncio
+from tonutils.clients import TonapiClient
+from tonutils.contracts.wallet import WalletV4R2, WalletV5R1
+from tonutils.types import NetworkGlobalID
+from app.core import config
+
+client = TonapiClient(network=NetworkGlobalID.MAINNET, api_key=config.API_KEY)
+w4, _, _, _ = WalletV4R2.from_mnemonic(client=client, mnemonic=config.SEED)
+w5, _, _, _ = WalletV5R1.from_mnemonic(client=client, mnemonic=config.SEED)
+print('V4R2:', w4.address.to_str(True, True))
+print('V5R1:', w5.address.to_str(True, True))
+"
+```
 
 ### 4. Usage
 
@@ -126,35 +126,57 @@ python main.py
 #### Programmatic Usage
 
 ```python
-from app.methods import FragmentTon, FragmentPremium, FragmentStars
+import asyncio
+from app.methods import topup_ton, buy_premium, buy_stars
 
-# TON topup for ads
-ton_client = FragmentTon()
-result = await ton_client.topup_ton("@username", 5)
+async def main():
+    # Send 10 TON to @username
+    result = await topup_ton("@username", 10)
+    print(result)
 
-# Premium purchase
-premium_client = FragmentPremium()
-result = await premium_client.buy_premium("@username", 6)
+    # Gift 6 months of Telegram Premium
+    result = await buy_premium("@username", 6)
+    print(result)
 
-# Stars purchase
-stars_client = FragmentStars()
-result = await stars_client.buy_stars("@username", 50)
+    # Buy 500 Stars for @username
+    result = await buy_stars("@username", 500)
+    print(result)
+
+asyncio.run(main())
+```
+
+**Return format** (on success):
+
+```python
+{
+    "success": True,
+    "data": {
+        "transaction_id": "<TL-B ExternalMessage ...>",
+        "username": "@username",
+        "amount": 10,          # or "months" for Premium
+        "timestamp": 1741234567
+    }
+}
+```
+
+**Return format** (on failure):
+
+```python
+{
+    "success": False,
+    "error": "Telegram user '@unknown' was not found on Fragment."
+}
 ```
 
 ### Supported Operations
 
-| Operation          | Method                          | Parameters             | Limits              |
-|--------------------|---------------------------------|------------------------|---------------------|
-| **TON Topup**      | `topup_ton(username, amount)`   | Username, TON amount   | 1-1,000,000,000 TON |
+| Operation          | Function                        | Parameters             | Limits              |
+| ------------------ | ------------------------------- | ---------------------- | ------------------- |
+| **TON Topup**      | `topup_ton(username, amount)`   | Username, TON amount   | 1–1,000,000,000 TON |
 | **Premium Gift**   | `buy_premium(username, months)` | Username, duration     | 3, 6, or 12 months  |
-| **Stars Purchase** | `buy_stars(username, amount)`   | Username, Stars amount | 50-1,000,000 Stars  |
+| **Stars Purchase** | `buy_stars(username, amount)`   | Username, Stars amount | 50–1,000,000 Stars  |
 
-### Username Formats
-
-All methods accept various username formats:
-
-- `@username` (with @)
-- `username` (without @)
+Usernames can be passed with or without `@`.
 
 <div align="center">
 

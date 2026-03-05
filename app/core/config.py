@@ -1,38 +1,50 @@
 import logging
 import os
-import sys
 from pathlib import Path
+from typing import Literal
 
 from dotenv import load_dotenv
 
+from app.core.constants import SUPPORTED_WALLET_VERSIONS
+from app.core.exceptions import ConfigError
+
 logger = logging.getLogger(__name__)
+
+WalletVersion = Literal["V4R2", "V5R1"]
 
 
 class Config:
-    def __init__(self):
+    SEED: str
+    API_KEY: str
+    WALLET_VERSION: WalletVersion
+
+    def __init__(self) -> None:
+        # Load .env if present; env vars already in the process take precedence
         env_path = Path(__file__).resolve().parents[2] / ".env"
+        if env_path.exists():
+            load_dotenv(env_path)
 
-        if not env_path.exists():
-            logger.error(".env file not found!")
-            sys.exit(1)
+        missing = [k for k in ("SEED", "API_KEY") if not os.getenv(k, "").strip()]
+        if missing:
+            raise ConfigError(
+                f"Missing required environment variables: {', '.join(missing)}. "
+                "Copy .env.example to .env and fill in SEED and API_KEY."
+            )
 
-        load_dotenv(env_path)
+        self.SEED = os.getenv("SEED", "").strip()
+        self.API_KEY = os.getenv("API_KEY", "").strip()
 
-        required_keys = ["SEED", "API_KEY"]
-        missing_keys: list[str] = []
-
-        for key in required_keys:
-            value = os.getenv(key, "").strip()
-            if not value:
-                missing_keys.append(key)
-            setattr(self, key, value)
-
-        if missing_keys:
-            logger.error(f"Missing required environment variables: {', '.join(missing_keys)}")
-            logger.error("Create .env file based on .env.example and fill all fields")
-            sys.exit(1)
-
-        logger.info("Configuration loaded successfully")
+        version = os.getenv("WALLET_VERSION", "V5R1").strip().upper()
+        if version not in SUPPORTED_WALLET_VERSIONS:
+            raise ConfigError(
+                f"Unsupported WALLET_VERSION '{version}'. "
+                f"Must be one of: {', '.join(sorted(SUPPORTED_WALLET_VERSIONS))}."
+            )
+        self.WALLET_VERSION: WalletVersion = version  # type: ignore[assignment]
 
 
-config = Config()
+config: Config | None = None
+try:
+    config = Config()
+except ConfigError as e:
+    logger.warning("Configuration not loaded: %s", e)

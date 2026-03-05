@@ -3,47 +3,41 @@ from typing import Any
 
 import httpx
 
+from app.core.exceptions import RequestError, WalletError
+from app.utils.wallet import link_wallet
 
-def parse_json_response(
-        response: httpx.Response,
-        logger: logging.Logger,
-        context: str,
-) -> tuple[dict[str, Any] | None, str | None]:
+logger = logging.getLogger(__name__)
+
+
+def parse_json_response(response: httpx.Response, context: str) -> dict[str, Any]:
     try:
-        return response.json(), None
-    except Exception as e:
-        logger.error(f"Failed to parse {context} response: {e}")
-        logger.error(f"Response content: {response.content[:200]}")
-        return None, str(e)
+        return response.json()
+    except Exception as exc:
+        raise RequestError(
+            f"Fragment API returned an unparseable response for '{context}': {exc}"
+        ) from exc
 
 
-class ApiClient:
-    def __init__(self, headers: dict, cookies: dict, wallet_linker):
-        self.headers = headers
-        self.cookies = cookies
-        self.wallet_linker = wallet_linker
+async def execute_transaction_request(
+    client: httpx.AsyncClient,
+    headers: dict,
+    cookies: dict,
+    account: dict[str, Any],
+    tx_data: dict[str, Any],
+    fragment_hash: str,
+) -> dict[str, Any]:
+    url = f"https://fragment.com/api?hash={fragment_hash}"
 
-    async def execute_transaction_request(
-            self,
-            tx_data: dict[str, Any],
-            account: dict[str, Any],
-            fragment_hash: str,
-    ) -> tuple[bool, dict[str, Any]]:
-        async with httpx.AsyncClient() as client:
-            tx_resp = await client.post(f"https://fragment.com/api?hash={fragment_hash}",
-                                        headers=self.headers, cookies=self.cookies, data=tx_data)
-            transaction, error = parse_json_response(tx_resp, logging.getLogger(__name__), "transaction")
-            if transaction is None:
-                return False, {"success": False, "error": f"Invalid response from Fragment API: {error}"}
+    resp = await client.post(url, headers=headers, cookies=cookies, data=tx_data)
+    transaction = parse_json_response(resp, tx_data.get("method", "transaction"))
 
-            if transaction.get("need_verify"):
-                if not await self.wallet_linker.link_wallet(account, fragment_hash):
-                    return False, {"success": False, "error": "Failed to link wallet"}
+    if transaction.get("need_verify"):
+        if not await link_wallet(client, headers, cookies, account, fragment_hash):
+            raise WalletError(
+                "Failed to link your TON wallet to Fragment. "
+                "Make sure the wallet matching your cookies is used."
+            )
+        resp = await client.post(url, headers=headers, cookies=cookies, data=tx_data)
+        transaction = parse_json_response(resp, tx_data.get("method", "transaction"))
 
-                tx_resp = await client.post(f"https://fragment.com/api?hash={fragment_hash}",
-                                            headers=self.headers, cookies=self.cookies, data=tx_data)
-                transaction, error = parse_json_response(tx_resp, logging.getLogger(__name__), "transaction")
-                if transaction is None:
-                    return False, {"success": False, "error": f"Invalid response from Fragment API: {error}"}
-
-            return True, transaction
+    return transaction
