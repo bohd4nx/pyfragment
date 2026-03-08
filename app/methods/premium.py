@@ -118,6 +118,9 @@ async def buy_premium(username: str, months: int) -> dict:
 
         logger.info("Broadcasting transaction to TON blockchain")
         tx_hash = await process_transaction(transaction)
+        logger.info(
+            "Premium purchase successful: %s months -> %s | tx: %s", months, username, tx_hash
+        )
         return {
             "success": True,
             "data": {

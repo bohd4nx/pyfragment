@@ -107,6 +107,7 @@ async def buy_stars(username: str, amount: int) -> dict:
 
         logger.info("Broadcasting transaction to TON blockchain")
         tx_hash = await process_transaction(transaction)
+        logger.info("Stars purchase successful: %s stars -> %s | tx: %s", amount, username, tx_hash)
         return {
             "success": True,
             "data": {

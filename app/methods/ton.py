@@ -105,6 +105,7 @@ async def topup_ton(username: str, amount: int) -> dict:
 
         logger.info("Broadcasting transaction to TON blockchain")
         tx_hash = await process_transaction(transaction)
+        logger.info("TON topup successful: %s TON -> %s | tx: %s", amount, username, tx_hash)
         return {
             "success": True,
             "data": {

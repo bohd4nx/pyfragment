@@ -56,8 +56,8 @@ async def process_transaction(transaction_data: dict) -> str:
                 amount=int(message["amount"]),  # nanotons, not TON
                 body=payload,
             )
-
-            return result
+            tx_hash = result.normalized_hash
+            return tx_hash
         except (WalletError, TransactionError):
             raise
         except Exception as exc:
