@@ -19,8 +19,6 @@ logger = logging.getLogger(__name__)
 
 
 def clean_decode(payload: str) -> str:
-    logger.debug("Original payload: %s", payload)
-
     # Pad and decode base64 → BOC bytes
     s = payload.strip()
     if not s:
@@ -34,5 +32,5 @@ def clean_decode(payload: str) -> str:
     sl.load_uint(32)  # op code — always 0 for text comment
     result = sl.load_snake_string().strip()
 
-    logger.debug("Decoded payload: %s", result.replace("\n", " "))
+    logger.debug("Payload: %s -> %s", payload, result.replace("\n", " "))
     return result

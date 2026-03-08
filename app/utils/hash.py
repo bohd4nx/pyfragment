@@ -4,7 +4,7 @@ from typing import Any
 
 import httpx
 
-from app.core.exceptions import HashFetchError
+from app.core import HashFetchError
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,12 @@
 from app.core.config import config
-from app.core.constants import ADS_PAGE, BASE_HEADERS, DEVICE, PREMIUM_PAGE, STARS_PAGE
+from app.core.constants import (
+    ADS_PAGE,
+    BASE_HEADERS,
+    DEVICE,
+    PREMIUM_PAGE,
+    STARS_PAGE,
+    WALLET_CLASSES,
+)
 from app.core.cookies import load_cookies
 from app.core.exceptions import (
     ConfigError,
@@ -19,6 +26,7 @@ __all__ = [
     "DEVICE",
     "PREMIUM_PAGE",
     "STARS_PAGE",
+    "WALLET_CLASSES",
     "ConfigError",
     "CookiesError",
     "FragmentError",

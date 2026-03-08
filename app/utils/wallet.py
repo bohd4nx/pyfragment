@@ -7,9 +7,7 @@ import httpx
 from tonutils.clients import TonapiClient
 from tonutils.types import NetworkGlobalID
 
-from app.core import config
-from app.core.constants import DEVICE, WALLET_CLASSES
-from app.core.exceptions import TransactionError, WalletError
+from app.core import DEVICE, WALLET_CLASSES, TransactionError, WalletError, config
 from app.utils.decoder import clean_decode
 
 logger = logging.getLogger(__name__)
@@ -58,8 +56,8 @@ async def process_transaction(transaction_data: dict) -> str:
                 amount=int(message["amount"]),  # nanotons, not TON
                 body=payload,
             )
-
-            return result
+            tx_hash = result.normalized_hash
+            return tx_hash
         except (WalletError, TransactionError):
             raise
         except Exception as exc:
@@ -85,14 +83,12 @@ async def get_account_info() -> dict[str, Any]:
 async def link_wallet(
     client: httpx.AsyncClient,
     headers: dict,
-    cookies: dict,
     account: dict[str, Any],
     fragment_hash: str,
 ) -> bool:
     resp = await client.post(
         f"https://fragment.com/api?hash={fragment_hash}",
         headers=headers,
-        cookies=cookies,
         data={
             "account": json.dumps(account),
             "device": DEVICE,

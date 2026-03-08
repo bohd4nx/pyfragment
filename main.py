@@ -14,9 +14,7 @@ async def topup_ton_example():
     result = await topup_ton("@bohd4nx", 100)
 
     if result["success"]:
-        data = result["data"]
-        logger.info(f"TON topup successful: {data['amount']} TON sent to {data['username']}")
-        logger.info(f"Transaction ID: {data['transaction_id']}")
+        pass  # Transaction successful, details are logged in the method
     else:
         logger.error(f"TON topup failed: {result['error']}")
 
@@ -28,11 +26,7 @@ async def buy_premium_example():
     result = await buy_premium("@bohd4nx", 12)
 
     if result["success"]:
-        data = result["data"]
-        logger.info(
-            f"Premium purchase successful: {data['months']} months sent to {data['username']}"
-        )
-        logger.info(f"Transaction ID: {data['transaction_id']}")
+        pass  # Transaction successful, details are logged in the method
     else:
         logger.error(f"Premium purchase failed: {result['error']}")
 
@@ -44,9 +38,7 @@ async def buy_stars_example():
     result = await buy_stars("@bohd4nx", 1000000)
 
     if result["success"]:
-        data = result["data"]
-        logger.info(f"Stars purchase successful: {data['amount']} stars sent to {data['username']}")
-        logger.info(f"Transaction ID: {data['transaction_id']}")
+        pass  # Transaction successful, details are logged in the method
     else:
         logger.error(f"Stars purchase failed: {result['error']}")
 

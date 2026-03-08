@@ -21,7 +21,18 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt pytest pytest-asyncio
 
+      - name: Write cookies.json
+        if: ${{ env.COOKIES_JSON != '' }}
+        run: echo "$COOKIES_JSON" > cookies.json
+        env:
+          COOKIES_JSON: ${{ secrets.COOKIES_JSON }}
+
       - name: Run tests
+        if: github.ref != 'refs/heads/master'
+        run: pytest --ignore=tests/003_test_integration.py
+
+      - name: Run tests (master — full suite)
+        if: github.ref == 'refs/heads/master'
         run: pytest
         env:
           SEED: ${{ secrets.SEED }}
