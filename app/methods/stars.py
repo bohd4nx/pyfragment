@@ -33,13 +33,11 @@ HEADERS: dict[str, str] = {
 async def search_stars_recipient(
     client: httpx.AsyncClient,
     fragment_hash: str,
-    cookies: dict,
     username: str,
 ) -> str:
     resp = await client.post(
         f"https://fragment.com/api?hash={fragment_hash}",
         headers=HEADERS,
-        cookies=cookies,
         data={"query": username, "quantity": "", "method": "searchStarsRecipient"},
     )
     result = parse_json_response(resp, "searchStarsRecipient")
@@ -55,14 +53,12 @@ async def search_stars_recipient(
 async def init_buy_stars(
     client: httpx.AsyncClient,
     fragment_hash: str,
-    cookies: dict,
     recipient: str,
     amount: int,
 ) -> str:
     resp = await client.post(
         f"https://fragment.com/api?hash={fragment_hash}",
         headers=HEADERS,
-        cookies=cookies,
         data={"recipient": recipient, "quantity": amount, "method": "initBuyStarsRequest"},
     )
     result = parse_json_response(resp, "initBuyStarsRequest")
@@ -89,12 +85,12 @@ async def buy_stars(username: str, amount: int) -> dict:
         # logger.info("Retrieving TON wallet info")
         account = await get_account_info()
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(cookies=cookies) as client:
             logger.info("Searching recipient: %s", username)
-            recipient = await search_stars_recipient(client, fragment_hash, cookies, username)
+            recipient = await search_stars_recipient(client, fragment_hash, username)
 
             logger.info("Initializing Stars purchase request: %s stars to %s", amount, username)
-            req_id = await init_buy_stars(client, fragment_hash, cookies, recipient, amount)
+            req_id = await init_buy_stars(client, fragment_hash, recipient, amount)
 
             # logger.info("Requesting transaction payload (req_id=%s)", req_id)
             tx_data = {
@@ -106,7 +102,7 @@ async def buy_stars(username: str, amount: int) -> dict:
                 "method": "getBuyStarsLink",
             }
             transaction = await execute_transaction_request(
-                client, HEADERS, cookies, account, tx_data, fragment_hash
+                client, HEADERS, account, tx_data, fragment_hash
             )
 
         logger.info("Broadcasting transaction to TON blockchain")

@@ -83,14 +83,12 @@ async def get_account_info() -> dict[str, Any]:
 async def link_wallet(
     client: httpx.AsyncClient,
     headers: dict,
-    cookies: dict,
     account: dict[str, Any],
     fragment_hash: str,
 ) -> bool:
     resp = await client.post(
         f"https://fragment.com/api?hash={fragment_hash}",
         headers=headers,
-        cookies=cookies,
         data={
             "account": json.dumps(account),
             "device": DEVICE,

@@ -33,14 +33,12 @@ HEADERS: dict[str, str] = {
 async def search_premium_recipient(
     client: httpx.AsyncClient,
     fragment_hash: str,
-    cookies: dict,
     username: str,
     months: int,
 ) -> str:
     resp = await client.post(
         f"https://fragment.com/api?hash={fragment_hash}",
         headers=HEADERS,
-        cookies=cookies,
         data={"query": username, "months": months, "method": "searchPremiumGiftRecipient"},
     )
     result = parse_json_response(resp, "searchPremiumGiftRecipient")
@@ -56,14 +54,12 @@ async def search_premium_recipient(
 async def init_gift_premium(
     client: httpx.AsyncClient,
     fragment_hash: str,
-    cookies: dict,
     recipient: str,
     months: int,
 ) -> str:
     await client.post(
         f"https://fragment.com/api?hash={fragment_hash}",
         headers=HEADERS,
-        cookies=cookies,
         data={
             "mode": "new",
             "lv": "false",
@@ -74,7 +70,6 @@ async def init_gift_premium(
     resp = await client.post(
         f"https://fragment.com/api?hash={fragment_hash}",
         headers=HEADERS,
-        cookies=cookies,
         data={"recipient": recipient, "months": months, "method": "initGiftPremiumRequest"},
     )
     result = parse_json_response(resp, "initGiftPremiumRequest")
@@ -101,14 +96,12 @@ async def buy_premium(username: str, months: int) -> dict:
         # logger.info("Retrieving TON wallet info")
         account = await get_account_info()
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(cookies=cookies) as client:
             logger.info("Searching recipient: %s", username)
-            recipient = await search_premium_recipient(
-                client, fragment_hash, cookies, username, months
-            )
+            recipient = await search_premium_recipient(client, fragment_hash, username, months)
 
             logger.info("Initializing Premium gift request: %s months to %s", months, username)
-            req_id = await init_gift_premium(client, fragment_hash, cookies, recipient, months)
+            req_id = await init_gift_premium(client, fragment_hash, recipient, months)
 
             # logger.info("Requesting transaction payload (req_id=%s)", req_id)
             tx_data = {
@@ -120,7 +113,7 @@ async def buy_premium(username: str, months: int) -> dict:
                 "method": "getGiftPremiumLink",
             }
             transaction = await execute_transaction_request(
-                client, HEADERS, cookies, account, tx_data, fragment_hash
+                client, HEADERS, account, tx_data, fragment_hash
             )
 
         logger.info("Broadcasting transaction to TON blockchain")
