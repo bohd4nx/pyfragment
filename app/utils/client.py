@@ -13,9 +13,7 @@ def parse_json_response(response: httpx.Response, context: str) -> dict[str, Any
     try:
         return response.json()
     except Exception as exc:
-        raise RequestError(
-            f"Fragment API returned an unparseable response for '{context}': {exc}"
-        ) from exc
+        raise RequestError(f"Fragment API returned an unparseable response for '{context}': {exc}") from exc
 
 
 async def execute_transaction_request(
@@ -33,8 +31,7 @@ async def execute_transaction_request(
     if transaction.get("need_verify"):
         if not await link_wallet(client, headers, account, fragment_hash):
             raise WalletError(
-                "Failed to link your TON wallet to Fragment. "
-                "Make sure the wallet matching your cookies is used."
+                "Failed to link your TON wallet to Fragment. " "Make sure the wallet matching your cookies is used."
             )
         resp = await client.post(url, headers=headers, data=tx_data)
         transaction = parse_json_response(resp, tx_data.get("method", "transaction"))

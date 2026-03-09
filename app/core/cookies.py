@@ -14,9 +14,7 @@ def load_cookies() -> dict[str, Any]:
     cookies_path = Path(__file__).resolve().parents[2] / "cookies.json"
 
     if not cookies_path.exists():
-        raise CookiesError(
-            "cookies.json not found. Create it in the project root and paste your Fragment cookies."
-        )
+        raise CookiesError("cookies.json not found. Create it in the project root and paste your Fragment cookies.")
 
     try:
         with cookies_path.open("r", encoding="utf-8") as f:

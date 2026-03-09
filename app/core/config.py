@@ -37,8 +37,7 @@ class Config:
         version = os.getenv("WALLET_VERSION", "V5R1").strip().upper()
         if version not in SUPPORTED_WALLET_VERSIONS:
             raise ConfigError(
-                f"Unsupported WALLET_VERSION '{version}'. "
-                f"Must be one of: {', '.join(sorted(SUPPORTED_WALLET_VERSIONS))}."
+                f"Unsupported WALLET_VERSION '{version}'. " f"Must be one of: {', '.join(sorted(SUPPORTED_WALLET_VERSIONS))}."
             )
         self.WALLET_VERSION: WalletVersion = version  # type: ignore[assignment]
 

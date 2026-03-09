@@ -4,7 +4,14 @@ import time
 
 import httpx
 
-from app.core import ADS_PAGE, BASE_HEADERS, DEVICE, FragmentError, UserNotFoundError, load_cookies
+from app.core import (
+    ADS_PAGE,
+    BASE_HEADERS,
+    DEVICE,
+    FragmentError,
+    UserNotFoundError,
+    load_cookies,
+)
 from app.utils import (
     execute_transaction_request,
     get_account_info,
@@ -57,14 +64,17 @@ async def init_ads_topup(
     resp = await client.post(
         f"https://fragment.com/api?hash={fragment_hash}",
         headers=HEADERS,
-        data={"recipient": recipient, "amount": amount, "method": "initAdsTopupRequest"},
+        data={
+            "recipient": recipient,
+            "amount": amount,
+            "method": "initAdsTopupRequest",
+        },
     )
     result = parse_json_response(resp, "initAdsTopupRequest")
     req_id = result.get("req_id")
     if not req_id:
         raise FragmentError(
-            "Fragment did not return a request ID for this TON topup. "
-            "The session may have expired — refresh your cookies."
+            "Fragment did not return a request ID for this TON topup. " "The session may have expired — refresh your cookies."
         )
     return req_id
 
@@ -99,9 +109,7 @@ async def topup_ton(username: str, amount: int) -> dict:
                 "show_sender": 1,
                 "method": "getAdsTopupLink",
             }
-            transaction = await execute_transaction_request(
-                client, HEADERS, account, tx_data, fragment_hash
-            )
+            transaction = await execute_transaction_request(client, HEADERS, account, tx_data, fragment_hash)
 
         logger.info("Broadcasting transaction to TON blockchain")
         tx_hash = await process_transaction(transaction)

@@ -2,9 +2,7 @@ import logging
 
 
 def setup_logging() -> None:
-    formatter = logging.Formatter(
-        fmt="[%(asctime)s] - %(levelname)s: %(message)s", datefmt="%d.%m.%y %H:%M:%S"
-    )
+    formatter = logging.Formatter(fmt="[%(asctime)s] - %(levelname)s: %(message)s", datefmt="%d.%m.%y %H:%M:%S")
 
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)

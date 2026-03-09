@@ -39,7 +39,11 @@ async def search_premium_recipient(
     resp = await client.post(
         f"https://fragment.com/api?hash={fragment_hash}",
         headers=HEADERS,
-        data={"query": username, "months": months, "method": "searchPremiumGiftRecipient"},
+        data={
+            "query": username,
+            "months": months,
+            "method": "searchPremiumGiftRecipient",
+        },
     )
     result = parse_json_response(resp, "searchPremiumGiftRecipient")
     recipient = result.get("found", {}).get("recipient")
@@ -70,7 +74,11 @@ async def init_gift_premium(
     resp = await client.post(
         f"https://fragment.com/api?hash={fragment_hash}",
         headers=HEADERS,
-        data={"recipient": recipient, "months": months, "method": "initGiftPremiumRequest"},
+        data={
+            "recipient": recipient,
+            "months": months,
+            "method": "initGiftPremiumRequest",
+        },
     )
     result = parse_json_response(resp, "initGiftPremiumRequest")
     req_id = result.get("req_id")
@@ -84,7 +92,10 @@ async def init_gift_premium(
 
 async def buy_premium(username: str, months: int) -> dict:
     if months not in (3, 6, 12):
-        return {"success": False, "error": "Invalid duration. Choose 3, 6, or 12 months."}
+        return {
+            "success": False,
+            "error": "Invalid duration. Choose 3, 6, or 12 months.",
+        }
 
     try:
         logger.info("Loading session cookies")
@@ -112,14 +123,15 @@ async def buy_premium(username: str, months: int) -> dict:
                 "show_sender": 1,
                 "method": "getGiftPremiumLink",
             }
-            transaction = await execute_transaction_request(
-                client, HEADERS, account, tx_data, fragment_hash
-            )
+            transaction = await execute_transaction_request(client, HEADERS, account, tx_data, fragment_hash)
 
         logger.info("Broadcasting transaction to TON blockchain")
         tx_hash = await process_transaction(transaction)
         logger.info(
-            "Premium purchase successful: %s months -> %s | tx: %s", months, username, tx_hash
+            "Premium purchase successful: %s months -> %s | tx: %s",
+            months,
+            username,
+            tx_hash,
         )
         return {
             "success": True,
