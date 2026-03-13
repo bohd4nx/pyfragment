@@ -1,16 +1,13 @@
 import logging
 import os
 from pathlib import Path
-from typing import Literal
 
 from dotenv import load_dotenv
 
-from app.core.constants import SUPPORTED_WALLET_VERSIONS
+from app.core.constants import SUPPORTED_WALLET_VERSIONS, WalletVersion
 from app.core.exceptions import ConfigError
 
 logger = logging.getLogger(__name__)
-
-WalletVersion = Literal["V4R2", "V5R1"]
 
 
 class Config:
@@ -37,8 +34,7 @@ class Config:
         version = os.getenv("WALLET_VERSION", "V5R1").strip().upper()
         if version not in SUPPORTED_WALLET_VERSIONS:
             raise ConfigError(
-                f"Unsupported WALLET_VERSION '{version}'. "
-                f"Must be one of: {', '.join(sorted(SUPPORTED_WALLET_VERSIONS))}."
+                f"Unsupported WALLET_VERSION '{version}'. " f"Must be one of: {', '.join(sorted(SUPPORTED_WALLET_VERSIONS))}."
             )
         self.WALLET_VERSION: WalletVersion = version  # type: ignore[assignment]
 

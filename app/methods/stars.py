@@ -59,7 +59,11 @@ async def init_buy_stars(
     resp = await client.post(
         f"https://fragment.com/api?hash={fragment_hash}",
         headers=HEADERS,
-        data={"recipient": recipient, "quantity": amount, "method": "initBuyStarsRequest"},
+        data={
+            "recipient": recipient,
+            "quantity": amount,
+            "method": "initBuyStarsRequest",
+        },
     )
     result = parse_json_response(resp, "initBuyStarsRequest")
     req_id = result.get("req_id")
@@ -71,7 +75,7 @@ async def init_buy_stars(
     return req_id
 
 
-async def buy_stars(username: str, amount: int) -> dict:
+async def buy_stars(username: str, amount: int, show_sender: bool = True) -> dict:
     if not isinstance(amount, int) or amount < 50:
         return {"success": False, "error": "Amount must be an integer >= 50 stars."}
 
@@ -98,16 +102,19 @@ async def buy_stars(username: str, amount: int) -> dict:
                 "device": DEVICE,
                 "transaction": 1,
                 "id": req_id,
-                "show_sender": 1,
+                "show_sender": int(show_sender),
                 "method": "getBuyStarsLink",
             }
-            transaction = await execute_transaction_request(
-                client, HEADERS, account, tx_data, fragment_hash
-            )
+            transaction = await execute_transaction_request(client, HEADERS, account, tx_data, fragment_hash)
 
         logger.info("Broadcasting transaction to TON blockchain")
         tx_hash = await process_transaction(transaction)
-        logger.info("Stars purchase successful: %s stars -> %s | tx: %s", amount, username, tx_hash)
+        logger.info(
+            "Stars purchase successful: %s stars -> %s | tx: %s",
+            amount,
+            username,
+            tx_hash,
+        )
         return {
             "success": True,
             "data": {

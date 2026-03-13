@@ -38,10 +38,7 @@ async def process_transaction(transaction_data: dict) -> str:
             await wallet.refresh()
             balance_ton = wallet.balance / 1_000_000_000
             if balance_ton < 0.056:
-                raise WalletError(
-                    f"TON wallet balance is too low: {balance_ton:.2f} TON. "
-                    "Minimum required is 0.056 TON."
-                )
+                raise WalletError(f"TON wallet balance is too low: {balance_ton:.2f} TON. " "Minimum required is 0.056 TON.")
         except WalletError:
             raise
         except Exception as exc:

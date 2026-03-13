@@ -20,7 +20,13 @@ async def get_fragment_hash(
         k: v
         for k, v in headers.items()
         if k
-        not in ("accept", "accept-encoding", "content-type", "x-requested-with", "x-aj-referer")
+        not in (
+            "accept",
+            "accept-encoding",
+            "content-type",
+            "x-requested-with",
+            "x-aj-referer",
+        )
     }
     page_headers.update(
         {

@@ -134,8 +134,8 @@ async def main():
     result = await topup_ton("@username", 10)
     print(result)
 
-    # Gift 6 months of Telegram Premium
-    result = await buy_premium("@username", 6)
+    # Gift 6 months of Telegram Premium (anonymous — recipient won't see sender)
+    result = await buy_premium("@username", 6, show_sender=False)
     print(result)
 
     # Buy 500 Stars for @username
@@ -170,11 +170,11 @@ asyncio.run(main())
 
 ### Supported Operations
 
-| Operation          | Function                        | Parameters             | Limits              |
-| ------------------ | ------------------------------- | ---------------------- | ------------------- |
-| **TON Topup**      | `topup_ton(username, amount)`   | Username, TON amount   | 1–1,000,000,000 TON |
-| **Premium Gift**   | `buy_premium(username, months)` | Username, duration     | 3, 6, or 12 months  |
-| **Stars Purchase** | `buy_stars(username, amount)`   | Username, Stars amount | 50–1,000,000 Stars  |
+| Operation          | Function                                              | Parameters                          | Limits              |
+| ------------------ | ----------------------------------------------------- | ----------------------------------- | ------------------- |
+| **TON Topup**      | `topup_ton(username, amount, show_sender=True)`        | Username, TON amount, show sender   | 1–1,000,000,000 TON |
+| **Premium Gift**   | `buy_premium(username, months, show_sender=True)`      | Username, duration, show sender     | 3, 6, or 12 months  |
+| **Stars Purchase** | `buy_stars(username, amount, show_sender=True)`        | Username, Stars amount, show sender | 50–1,000,000 Stars  |
 
 Usernames can be passed with or without `@`.
 

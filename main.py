@@ -11,7 +11,8 @@ async def topup_ton_example():
     logger.info("Starting TON topup example")
 
     # @bohd4nx - target username, 100 - TON amount (integer 1-1000000000 (one billion))
-    result = await topup_ton("@bohd4nx", 100)
+    # show_sender=True — recipient sees who sent the topup
+    result = await topup_ton("@bohd4nx", 100, show_sender=True)
 
     if result["success"]:
         pass  # Transaction successful, details are logged in the method
@@ -23,7 +24,8 @@ async def buy_premium_example():
     logger.info("Starting Premium purchase example")
 
     # @bohd4nx - target username, 12 - months duration (3, 6, or 12 only)
-    result = await buy_premium("@bohd4nx", 12)
+    # show_sender=True — recipient sees who gifted the Premium
+    result = await buy_premium("@bohd4nx", 12, show_sender=True)
 
     if result["success"]:
         pass  # Transaction successful, details are logged in the method
@@ -35,7 +37,8 @@ async def buy_stars_example():
     logger.info("Starting Stars purchase example")
 
     # @bohd4nx - target username, 1000000 - stars amount (integer 50-1000000 (one million))
-    result = await buy_stars("@bohd4nx", 1000000)
+    # show_sender=True — recipient sees who sent the Stars
+    result = await buy_stars("@bohd4nx", 1000000, show_sender=True)
 
     if result["success"]:
         pass  # Transaction successful, details are logged in the method
