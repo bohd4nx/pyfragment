@@ -6,6 +6,7 @@ from app.core.constants import (
     PREMIUM_PAGE,
     STARS_PAGE,
     WALLET_CLASSES,
+    WalletVersion,
 )
 from app.core.cookies import load_cookies
 from app.core.exceptions import (
@@ -27,6 +28,7 @@ __all__ = [
     "PREMIUM_PAGE",
     "STARS_PAGE",
     "WALLET_CLASSES",
+    "WalletVersion",
     "ConfigError",
     "CookiesError",
     "FragmentError",

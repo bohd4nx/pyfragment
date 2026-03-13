@@ -90,7 +90,7 @@ async def init_gift_premium(
     return req_id
 
 
-async def buy_premium(username: str, months: int) -> dict:
+async def buy_premium(username: str, months: int, show_sender: bool = True) -> dict:
     if months not in (3, 6, 12):
         return {
             "success": False,
@@ -120,7 +120,7 @@ async def buy_premium(username: str, months: int) -> dict:
                 "device": DEVICE,
                 "transaction": 1,
                 "id": req_id,
-                "show_sender": 1,
+                "show_sender": int(show_sender),
                 "method": "getGiftPremiumLink",
             }
             transaction = await execute_transaction_request(client, HEADERS, account, tx_data, fragment_hash)

@@ -1,16 +1,13 @@
 import logging
 import os
 from pathlib import Path
-from typing import Literal
 
 from dotenv import load_dotenv
 
-from app.core.constants import SUPPORTED_WALLET_VERSIONS
+from app.core.constants import SUPPORTED_WALLET_VERSIONS, WalletVersion
 from app.core.exceptions import ConfigError
 
 logger = logging.getLogger(__name__)
-
-WalletVersion = Literal["V4R2", "V5R1"]
 
 
 class Config:

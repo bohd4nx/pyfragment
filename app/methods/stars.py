@@ -75,7 +75,7 @@ async def init_buy_stars(
     return req_id
 
 
-async def buy_stars(username: str, amount: int) -> dict:
+async def buy_stars(username: str, amount: int, show_sender: bool = True) -> dict:
     if not isinstance(amount, int) or amount < 50:
         return {"success": False, "error": "Amount must be an integer >= 50 stars."}
 
@@ -102,7 +102,7 @@ async def buy_stars(username: str, amount: int) -> dict:
                 "device": DEVICE,
                 "transaction": 1,
                 "id": req_id,
-                "show_sender": 1,
+                "show_sender": int(show_sender),
                 "method": "getBuyStarsLink",
             }
             transaction = await execute_transaction_request(client, HEADERS, account, tx_data, fragment_hash)

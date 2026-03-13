@@ -1,9 +1,11 @@
 import json
+from typing import Literal, get_args
 
 from tonutils.contracts.wallet import WalletV4R2, WalletV5R1
 
-# Supported TON wallet contract versions
-SUPPORTED_WALLET_VERSIONS: set[str] = {"V4R2", "V5R1"}
+# Single source of truth for supported wallet versions
+WalletVersion = Literal["V4R2", "V5R1"]
+SUPPORTED_WALLET_VERSIONS: frozenset[str] = frozenset(get_args(WalletVersion))
 
 # Wallet class map — used to resolve the correct contract from WALLET_VERSION
 WALLET_CLASSES: dict[str, type] = {"V4R2": WalletV4R2, "V5R1": WalletV5R1}
