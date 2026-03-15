@@ -1,5 +1,5 @@
 """
-Example: gift Telegram Premium to a user.
+Example: purchase Telegram Premium for a user.
 
 Supported durations: 3, 6, or 12 months.
 Set show_sender=False to send anonymously.
@@ -34,7 +34,7 @@ async def main() -> None:
         print(f"Invalid parameters: {e}")
         return
 
-    print("Premium gifted")
+    print("Premium purchased")
     print("   %-14s %s" % ("Username:", result.username))
     print("   %-14s %s months" % ("Duration:", result.months))
     print("   %-14s %s" % ("Transaction:", result.transaction_id))

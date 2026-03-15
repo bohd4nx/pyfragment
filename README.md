@@ -1,10 +1,10 @@
 <div align="center">
   <img src="fragment.svg" alt="Fragment Logo" width="120" height="120" style="border-radius: 24px;">
 
-  <h1 style="margin-top: 24px;">💎 Fragment API</h1>
+  <h1 style="margin-top: 24px;">Fragment API</h1>
 
   <p style="font-size: 18px; margin-bottom: 24px;">
-    <b>Python library for the Fragment.com API — gift Telegram Stars, Premium, and top up TON Ads balance.</b>
+    <b>Python library for the Fragment.com API — purchase Telegram Stars, Premium, and top up TON Ads balance.</b>
   </p>
 
 [![PyPI version](https://img.shields.io/pypi/v/pyfragment?style=flat&color=blue)](https://pypi.org/project/pyfragment/)
@@ -18,13 +18,15 @@
 
 </div>
 
+> **Disclaimer:** This project is not affiliated with, endorsed by, or in any way officially connected with [Fragment](https://fragment.com) or [Telegram](https://telegram.org).
+
 ---
 
 ## ✨ Features
 
 - 💰 **TON Advertisement Topups** — Top up Telegram Ads balance (1–1,000,000,000 TON)
-- 👑 **Telegram Premium Gifts** — Gift Premium to any user (3, 6, or 12 months)
-- ⭐ **Telegram Stars Purchases** — Gift Stars to any Telegram user (50–1,000,000 Stars)
+- 👑 **Telegram Premium** — Purchase Premium for any user (3, 6, or 12 months)
+- ⭐ **Telegram Stars Purchases** — Purchase Stars for any Telegram user (50–1,000,000 Stars)
 - 🔐 **Multi-wallet support** — V4R2 and V5R1 wallet contract versions
 - ⚡ **Async-first** — Built on `httpx` and `asyncio`
 
@@ -58,11 +60,11 @@ client = FragmentClient(
 )
 
 async def main():
-    # Gift 6 months of Telegram Premium
+    # Purchase 6 months of Telegram Premium
     result = await client.gift_premium("@username", months=6)
     print(result.transaction_id)
 
-    # Gift 500 Stars
+    # Purchase 500 Stars
     result = await client.gift_stars("@username", amount=500)
     print(result.transaction_id)
 
@@ -94,8 +96,8 @@ See the [`examples/`](examples/) folder for ready-to-run scripts.
 
 | Method                                             | Returns          | Description                        | Limits                    |
 | -------------------------------------------------- | ---------------- | ---------------------------------- | ------------------------- |
-| `gift_premium(username, months, show_sender=True)` | `PremiumResult`  | Gift Telegram Premium subscription | `months`: 3, 6, or 12     |
-| `gift_stars(username, amount, show_sender=True)`   | `StarsResult`    | Gift Telegram Stars                | `amount`: 50–1,000,000    |
+| `gift_premium(username, months, show_sender=True)` | `PremiumResult`  | Purchase Telegram Premium          | `months`: 3, 6, or 12     |
+| `gift_stars(username, amount, show_sender=True)`   | `StarsResult`    | Purchase Telegram Stars            | `amount`: 50–1,000,000    |
 | `topup_ton(username, amount, show_sender=True)`    | `AdsTopupResult` | Top up Telegram Ads balance        | `amount`: 1–1,000,000,000 |
 | `get_wallet()`                                     | `WalletInfo`     | Get wallet address, state, balance | —                         |
 

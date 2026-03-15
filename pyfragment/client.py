@@ -21,6 +21,10 @@ class FragmentClient:
     """
     Client for the Fragment.com API.
 
+    .. note::
+        This library is not affiliated with, endorsed by, or in any way officially
+        connected with Fragment or Telegram.
+
     Args:
         seed: 24-word mnemonic phrase for the TON wallet.
         api_key: Tonapi API key — get one at https://tonconsole.com.
@@ -85,12 +89,12 @@ class FragmentClient:
         self.wallet_version: WalletVersion = version  # type: ignore[assignment]
 
     async def gift_premium(self, username: str, months: int, show_sender: bool = True) -> PremiumResult:
-        """Gift Telegram Premium to a user.
+        """Purchase Telegram Premium for a user.
 
         Args:
             username: Recipient's Telegram username (with or without ``@``).
             months: Duration — ``3``, ``6``, or ``12``.
-            show_sender: Show your name as the gift sender. Defaults to ``True``.
+            show_sender: Show your name as the sender. Defaults to ``True``.
 
         Returns:
             :class:`PremiumResult` with ``transaction_id``, ``username``, ``months``, ``timestamp``.
@@ -98,7 +102,7 @@ class FragmentClient:
         return await gift_premium(self, username, months, show_sender)
 
     async def gift_stars(self, username: str, amount: int, show_sender: bool = True) -> StarsResult:
-        """Gift Telegram Stars to a user.
+        """Purchase Telegram Stars for a user.
 
         Args:
             username: Recipient's Telegram username (with or without ``@``).

@@ -1,5 +1,5 @@
 """
-Example: gift Telegram Stars to a user.
+Example: purchase Telegram Stars for a user.
 
 Amount must be an integer between 50 and 1 000 000.
 Set show_sender=False to send anonymously.
@@ -34,7 +34,7 @@ async def main() -> None:
         print(f"Invalid parameters: {e}")
         return
 
-    print("Stars gifted")
+    print("Stars purchased")
     print("   %-14s %s" % ("Username:", result.username))
     print("   %-14s %s" % ("Stars:", result.stars))
     print("   %-14s %s" % ("Transaction:", result.transaction_id))
