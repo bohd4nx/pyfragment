@@ -1,0 +1,31 @@
+name: Lint
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  lint:
+    name: Lint & format
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - uses: actions/setup-python@v6.2.0
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7.5.0
+
+      - name: Install dev dependencies
+        run: uv pip install --system ".[dev]"
+
+      - name: Run ruff
+        run: ruff check .
+
+      - name: Run black
+        run: black --check . --target-version py312

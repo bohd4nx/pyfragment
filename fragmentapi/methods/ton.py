@@ -16,9 +16,9 @@ from fragmentapi.types import (
 )
 from fragmentapi.utils import (
     execute_transaction_request,
+    fragment_post,
     get_account_info,
     get_fragment_hash,
-    parse_json_response,
     process_transaction,
 )
 
@@ -38,17 +38,16 @@ async def _search_recipient(
     fragment_hash: str,
     username: str,
 ) -> str:
-    await session.post(
-        f"https://fragment.com/api?hash={fragment_hash}",
-        headers=HEADERS,
-        data={"mode": "new", "method": "updateAdsTopupState"},
+    await fragment_post(session, fragment_hash, HEADERS, {"mode": "new", "method": "updateAdsTopupState"})
+    result = await fragment_post(
+        session,
+        fragment_hash,
+        HEADERS,
+        {
+            "query": username,
+            "method": "searchAdsTopupRecipient",
+        },
     )
-    resp = await session.post(
-        f"https://fragment.com/api?hash={fragment_hash}",
-        headers=HEADERS,
-        data={"query": username, "method": "searchAdsTopupRecipient"},
-    )
-    result = parse_json_response(resp, "searchAdsTopupRecipient")
     recipient = result.get("found", {}).get("recipient")
     if not recipient:
         raise UserNotFoundError(UserNotFoundError.NOT_FOUND.format(username=username))
@@ -61,16 +60,16 @@ async def _init_request(
     recipient: str,
     amount: int,
 ) -> str:
-    resp = await session.post(
-        f"https://fragment.com/api?hash={fragment_hash}",
-        headers=HEADERS,
-        data={
+    result = await fragment_post(
+        session,
+        fragment_hash,
+        HEADERS,
+        {
             "recipient": recipient,
             "amount": amount,
             "method": "initAdsTopupRequest",
         },
     )
-    result = parse_json_response(resp, "initAdsTopupRequest")
     req_id = result.get("req_id")
     if not req_id:
         raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="TON topup"))

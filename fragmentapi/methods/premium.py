@@ -17,9 +17,9 @@ from fragmentapi.types import (
 )
 from fragmentapi.utils import (
     execute_transaction_request,
+    fragment_post,
     get_account_info,
     get_fragment_hash,
-    parse_json_response,
     process_transaction,
 )
 
@@ -40,16 +40,16 @@ async def _search_recipient(
     username: str,
     months: int,
 ) -> str:
-    resp = await session.post(
-        f"https://fragment.com/api?hash={fragment_hash}",
-        headers=HEADERS,
-        data={
+    result = await fragment_post(
+        session,
+        fragment_hash,
+        HEADERS,
+        {
             "query": username,
             "months": months,
             "method": "searchPremiumGiftRecipient",
         },
     )
-    result = parse_json_response(resp, "searchPremiumGiftRecipient")
     recipient = result.get("found", {}).get("recipient")
     if not recipient:
         raise UserNotFoundError(UserNotFoundError.NOT_FOUND.format(username=username))
@@ -62,26 +62,27 @@ async def _init_request(
     recipient: str,
     months: int,
 ) -> str:
-    await session.post(
-        f"https://fragment.com/api?hash={fragment_hash}",
-        headers=HEADERS,
-        data={
+    await fragment_post(
+        session,
+        fragment_hash,
+        HEADERS,
+        {
             "mode": "new",
             "lv": "false",
             "dh": str(int(time.time())),
             "method": "updatePremiumState",
         },
     )
-    resp = await session.post(
-        f"https://fragment.com/api?hash={fragment_hash}",
-        headers=HEADERS,
-        data={
+    result = await fragment_post(
+        session,
+        fragment_hash,
+        HEADERS,
+        {
             "recipient": recipient,
             "months": months,
             "method": "initGiftPremiumRequest",
         },
     )
-    result = parse_json_response(resp, "initGiftPremiumRequest")
     req_id = result.get("req_id")
     if not req_id:
         raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="Premium purchase"))

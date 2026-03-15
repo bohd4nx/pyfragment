@@ -1,0 +1,51 @@
+name: Feature request
+description: Suggest an improvement or new feature for FragmentAPI.
+labels:
+  - enhancement
+body:
+  - type: dropdown
+    attributes:
+      label: FragmentAPI version
+      description: Which version are you running?
+      options:
+        - latest
+        - older
+        - n/a
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Problem
+      description: Is your request related to a specific problem? Describe it.
+      placeholder: e.g. There is no way to check my current TON balance before sending.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Proposed solution
+      description: Describe what you would like to see added or changed.
+      placeholder: e.g. Add a get_balance() method to FragmentClient.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Alternatives considered
+      description: Any workarounds or alternative approaches you have thought of.
+      placeholder: e.g. I manually call the Fragment API, but it's not ergonomic.
+
+  - type: textarea
+    attributes:
+      label: Code example
+      description: A short example demonstrating the desired API, if applicable.
+      placeholder: |
+        balance = await client.get_balance()
+        print(balance.ton)
+      render: python
+
+  - type: textarea
+    attributes:
+      label: Additional information
+      description: Any other context, screenshots, or references.

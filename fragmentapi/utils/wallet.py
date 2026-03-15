@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 from tonutils.clients import TonapiClient
 from tonutils.types import NetworkGlobalID
 
-from fragmentapi.types import WALLET_CLASSES, TransactionError, WalletError
+from fragmentapi.types import MIN_TON_BALANCE, WALLET_CLASSES, TransactionError, WalletError
 from fragmentapi.utils.decoder import clean_decode
 
 if TYPE_CHECKING:
@@ -16,6 +16,22 @@ def _init_ton_client(client: "FragmentClient") -> TonapiClient:
 
 
 async def process_transaction(client: "FragmentClient", transaction_data: dict) -> str:
+    """Sign and broadcast a Fragment transaction to the TON network.
+
+    Validates the payload structure, checks the wallet balance, decodes the
+    on-chain comment, and calls ``wallet.transfer``.
+
+    Args:
+        client: Authenticated :class:`FragmentClient` instance.
+        transaction_data: Raw transaction dict from ``execute_transaction_request``.
+
+    Returns:
+        Normalised transaction hash string.
+
+    Raises:
+        TransactionError: If the payload is malformed or the broadcast fails.
+        WalletError: If the wallet balance is too low or cannot be fetched.
+    """
     if "transaction" not in transaction_data or "messages" not in transaction_data["transaction"]:
         raise TransactionError(TransactionError.INVALID_PAYLOAD)
 
@@ -30,7 +46,7 @@ async def process_transaction(client: "FragmentClient", transaction_data: dict) 
         try:
             await wallet.refresh()
             balance_ton = wallet.balance / 1_000_000_000
-            if balance_ton < 0.056:
+            if balance_ton < MIN_TON_BALANCE:
                 raise WalletError(WalletError.LOW_BALANCE.format(balance=balance_ton))
         except WalletError:
             raise
@@ -54,6 +70,21 @@ async def process_transaction(client: "FragmentClient", transaction_data: dict) 
 
 
 async def get_account_info(client: "FragmentClient") -> dict[str, Any]:
+    """Fetch wallet address, public key, and state-init for the Fragment API.
+
+    Fragment requires account info to build each transaction payload. The
+    returned dict is JSON-serialised and passed as the ``account`` field in
+    ``getBuy*Link`` / ``get*Link`` requests.
+
+    Args:
+        client: Authenticated :class:`FragmentClient` instance.
+
+    Returns:
+        Dict with ``address``, ``publicKey``, ``chain``, ``walletStateInit``.
+
+    Raises:
+        WalletError: If account info cannot be retrieved.
+    """
     async with _init_ton_client(client) as ton:
         try:
             wallet_cls = WALLET_CLASSES[client.wallet_version]

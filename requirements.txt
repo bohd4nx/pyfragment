@@ -1,2 +1,1 @@
-httpx==0.28.1
-tonutils[pytoniq]==2.0.0
+-e .

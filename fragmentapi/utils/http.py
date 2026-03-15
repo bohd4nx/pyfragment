@@ -76,6 +76,35 @@ def parse_json_response(response: httpx.Response, context: str) -> dict[str, Any
         raise RequestError(RequestError.UNPARSEABLE.format(context=context, exc=exc)) from exc
 
 
+async def fragment_post(
+    session: httpx.AsyncClient,
+    fragment_hash: str,
+    headers: dict[str, str],
+    data: dict[str, Any],
+) -> dict[str, Any]:
+    """POST a single request to the Fragment API.
+
+    Builds the ``/api?hash=`` URL, sends the request, and returns the
+    parsed JSON body. Use this for every API method call — search,
+    init, state updates, etc.
+
+    Args:
+        session: Active httpx session with Fragment cookies.
+        fragment_hash: Short-lived hash from the Fragment page HTML.
+        headers: Page-specific HTTP headers.
+        data: Form data payload; must include a ``"method"`` key.
+
+    Returns:
+        Parsed API response as a dict.
+    """
+    resp = await session.post(
+        f"https://fragment.com/api?hash={fragment_hash}",
+        headers=headers,
+        data=data,
+    )
+    return parse_json_response(resp, data.get("method", "request"))
+
+
 async def execute_transaction_request(
     session: httpx.AsyncClient,
     headers: dict,
@@ -97,9 +126,7 @@ async def execute_transaction_request(
         VerificationError: If Fragment requires KYC verification.
         RequestError: If the response cannot be parsed.
     """
-    url = f"https://fragment.com/api?hash={fragment_hash}"
-    resp = await session.post(url, headers=headers, data=tx_data)
-    transaction = parse_json_response(resp, tx_data.get("method", "transaction"))
+    transaction = await fragment_post(session, fragment_hash, headers, tx_data)
 
     if transaction.get("need_verify"):
         raise VerificationError(VerificationError.KYC_REQUIRED)

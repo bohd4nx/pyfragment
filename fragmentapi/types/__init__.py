@@ -1,6 +1,7 @@
 from fragmentapi.types.constants import (
     BASE_HEADERS,
     DEVICE,
+    MIN_TON_BALANCE,
     PREMIUM_PAGE,
     REQUIRED_COOKIE_KEYS,
     STARS_PAGE,
@@ -30,6 +31,7 @@ __all__ = [
     # constants
     "BASE_HEADERS",
     "DEVICE",
+    "MIN_TON_BALANCE",
     "PREMIUM_PAGE",
     "REQUIRED_COOKIE_KEYS",
     "STARS_PAGE",

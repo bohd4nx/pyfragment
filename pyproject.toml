@@ -30,6 +30,14 @@ dependencies = [
     "tonutils[pytoniq]==2.0.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0",
+    "pytest-asyncio>=1.0",
+    "ruff",
+    "black",
+]
+
 [project.urls]
 Homepage = "https://github.com/bohd4nx/FragmentAPI"
 Repository = "https://github.com/bohd4nx/FragmentAPI"
@@ -49,11 +57,13 @@ line-length = 128
 target-version = ["py312"]
 
 [tool.ruff]
-target-version = "py312"
 line-length = 128
+target-version = "py312"
 
 [tool.ruff.lint]
 # E — pycodestyle errors, F — pyflakes, W — warnings, I — isort
 select = ["E", "F", "W", "I"]
-# E501 — line too long (covered by line-length above)
 ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402"]
