@@ -5,14 +5,11 @@ from tonutils.clients import TonapiClient
 from tonutils.types import NetworkGlobalID
 
 from pyfragment.types import MIN_TON_BALANCE, WALLET_CLASSES, TransactionError, WalletError
+from pyfragment.types.results import WalletInfo
 from pyfragment.utils.decoder import clean_decode
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
-
-
-def _init_ton_client(client: "FragmentClient") -> TonapiClient:
-    return TonapiClient(network=NetworkGlobalID.MAINNET, api_key=client.api_key)
 
 
 async def process_transaction(client: "FragmentClient", transaction_data: dict) -> str:
@@ -35,26 +32,29 @@ async def process_transaction(client: "FragmentClient", transaction_data: dict) 
     if "transaction" not in transaction_data or "messages" not in transaction_data["transaction"]:
         raise TransactionError(TransactionError.INVALID_PAYLOAD)
 
+    message = transaction_data["transaction"]["messages"][0]
+    amount_ton = int(message["amount"]) / 1_000_000_000
+
     # TODO: Investigate 406 'inbound external message rejected before smart-contract execution'.
     # This happens when the previous transaction's seqno hasn't been confirmed on-chain yet,
     # causing the wallet contract to reject the new message.
-    async with _init_ton_client(client) as ton:
+    async with TonapiClient(network=NetworkGlobalID.MAINNET, api_key=client.api_key) as ton:
         wallet_cls = WALLET_CLASSES[client.wallet_version]
         wallet, _, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)
 
-        # Check balance before broadcasting
+        # Check balance covers transaction amount + gas reserve
         try:
             await wallet.refresh()
             balance_ton = wallet.balance / 1_000_000_000
-            if balance_ton < MIN_TON_BALANCE:
-                raise WalletError(WalletError.LOW_BALANCE.format(balance=balance_ton))
+            required = amount_ton + MIN_TON_BALANCE
+            if balance_ton < required:
+                raise WalletError(WalletError.LOW_BALANCE.format(balance=balance_ton, required=required))
         except WalletError:
             raise
         except Exception as exc:
             raise WalletError(WalletError.BALANCE_CHECK_FAILED.format(exc=exc)) from exc
 
         try:
-            message = transaction_data["transaction"]["messages"][0]
             payload = clean_decode(message["payload"])
 
             result = await wallet.transfer(
@@ -85,7 +85,7 @@ async def get_account_info(client: "FragmentClient") -> dict[str, Any]:
     Raises:
         WalletError: If account info cannot be retrieved.
     """
-    async with _init_ton_client(client) as ton:
+    async with TonapiClient(network=NetworkGlobalID.MAINNET, api_key=client.api_key) as ton:
         try:
             wallet_cls = WALLET_CLASSES[client.wallet_version]
             wallet, pub_key, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)
@@ -98,3 +98,29 @@ async def get_account_info(client: "FragmentClient") -> dict[str, Any]:
             }
         except Exception as exc:
             raise WalletError(WalletError.ACCOUNT_INFO_FAILED.format(exc=exc)) from exc
+
+
+async def get_wallet_info(client: "FragmentClient") -> "WalletInfo":
+    """Return the address, state and balance of the TON wallet.
+
+    Args:
+        client: Authenticated :class:`FragmentClient` instance.
+
+    Returns:
+        :class:`WalletInfo` with ``address``, ``state``, and ``balance`` in TON.
+
+    Raises:
+        WalletError: If the wallet state cannot be fetched.
+    """
+    async with TonapiClient(network=NetworkGlobalID.MAINNET, api_key=client.api_key) as ton:
+        try:
+            wallet_cls = WALLET_CLASSES[client.wallet_version]
+            wallet, _, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)
+            await wallet.refresh()
+            return WalletInfo(
+                address=wallet.address.to_str(is_user_friendly=True, is_bounceable=False),
+                state=wallet.state.value,
+                balance=round(wallet.balance / 1_000_000_000, 4),
+            )
+        except Exception as exc:
+            raise WalletError(WalletError.WALLET_INFO_FAILED.format(exc=exc)) from exc

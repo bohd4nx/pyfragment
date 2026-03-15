@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT License found in the
 # LICENSE file in the root directory of this source tree.
 
+from importlib.metadata import version
+
 from pyfragment.client import FragmentClient
 from pyfragment.types import (
     AdsTopupResult,
@@ -21,13 +23,18 @@ from pyfragment.types import (
     UserNotFoundError,
     VerificationError,
     WalletError,
+    WalletInfo,
 )
 
+__version__: str = version("pyfragment")
+
 __all__ = [
+    "__version__",
     "FragmentClient",
     "AdsTopupResult",
     "PremiumResult",
     "StarsResult",
+    "WalletInfo",
     "ClientError",
     "ConfigurationError",
     "CookieError",

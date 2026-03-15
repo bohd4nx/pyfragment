@@ -25,7 +25,7 @@ from pyfragment.types.exceptions import (
     VerificationError,
     WalletError,
 )
-from pyfragment.types.results import AdsTopupResult, PremiumResult, StarsResult
+from pyfragment.types.results import AdsTopupResult, PremiumResult, StarsResult, WalletInfo
 
 __all__ = [
     # constants
@@ -58,4 +58,5 @@ __all__ = [
     "AdsTopupResult",
     "PremiumResult",
     "StarsResult",
+    "WalletInfo",
 ]

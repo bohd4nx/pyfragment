@@ -11,6 +11,7 @@ class ConfigurationError(ClientError):
 
     MISSING_VARS = "Missing required parameter(s): {keys}."
     UNSUPPORTED_VERSION = "Unsupported wallet_version '{version}'. Must be one of: {supported}."
+    INVALID_MNEMONIC = "Invalid mnemonic: got {count} words, expected 12, 18, or 24."
     INVALID_MONTHS = "Invalid duration. Choose 3, 6, or 12 months."
     INVALID_STARS_AMOUNT = "Amount must be an integer between 50 and 1 000 000 stars."
     INVALID_TON_AMOUNT = "Amount must be an integer between 1 and 1 000 000 000 TON."
@@ -78,9 +79,10 @@ class OperationError(FragmentError):
 class WalletError(OperationError):
     """Raised for TON wallet issues (connection, balance, account info)."""
 
-    LOW_BALANCE = "TON wallet balance is too low: {balance:.2f} TON. Minimum required is 0.056 TON."
+    LOW_BALANCE = "TON wallet balance is too low: {balance:.4f} TON available, {required:.4f} TON required."
     BALANCE_CHECK_FAILED = "Wallet balance check failed: {exc}"
     ACCOUNT_INFO_FAILED = "Failed to retrieve wallet account info: {exc}"
+    WALLET_INFO_FAILED = "Failed to retrieve wallet info: {exc}"
 
 
 class UnexpectedError(OperationError):

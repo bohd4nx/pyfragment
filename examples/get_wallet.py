@@ -27,9 +27,13 @@ async def main() -> None:
         wallet_version="V5R1",  # or "V4R2"
     )
 
+    wallet = await client.get_wallet()
+
     print("FragmentClient initialized")
     print("   %-16s %s" % ("Wallet version:", client.wallet_version))
-    print("   %-16s %s..." % ("API key:", client.api_key[:8]))
+    print("   %-16s %s" % ("Address:", wallet.address))
+    print("   %-16s %s" % ("State:", wallet.state))
+    print("   %-16s %s TON" % ("Balance:", wallet.balance))
 
 
 if __name__ == "__main__":

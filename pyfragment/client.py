@@ -11,8 +11,10 @@ from pyfragment.types import (
     CookieError,
     PremiumResult,
     StarsResult,
+    WalletInfo,
     WalletVersion,
 )
+from pyfragment.utils.wallet import get_wallet_info
 
 
 class FragmentClient:
@@ -36,6 +38,7 @@ class FragmentClient:
             api_key="AAABBB...",
             cookies={"stel_ssid": "...", "stel_dt": "...", ...},
         )
+        print(await client.get_wallet())
         result = await client.gift_premium("@username", months=6)
         print(result.transaction_id)
     """
@@ -50,6 +53,10 @@ class FragmentClient:
         missing = [name for name, val in (("seed", seed), ("api_key", api_key)) if not val or not str(val).strip()]
         if missing:
             raise ConfigurationError(ConfigurationError.MISSING_VARS.format(keys=", ".join(missing)))
+
+        word_count = len(seed.split())
+        if word_count not in (12, 18, 24):
+            raise ConfigurationError(ConfigurationError.INVALID_MNEMONIC.format(count=word_count))
 
         if isinstance(cookies, str):
             try:
@@ -112,3 +119,12 @@ class FragmentClient:
             :class:`AdsTopupResult` with ``transaction_id``, ``username``, ``amount``, ``timestamp``.
         """
         return await topup_ton(self, username, amount, show_sender)
+
+    async def get_wallet(self) -> WalletInfo:
+        """Return the address, state and balance of the TON wallet.
+
+        Returns:
+            :class:`WalletInfo` with ``address`` (``"UQ..."``), ``state``
+            (``"active"``, ``"uninit"``, or ``"frozen"``), and ``balance`` in TON.
+        """
+        return await get_wallet_info(self)

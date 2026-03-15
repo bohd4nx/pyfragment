@@ -1,7 +1,16 @@
 import time
 from dataclasses import dataclass, field
 
-__all__ = ["AdsTopupResult", "PremiumResult", "StarsResult"]
+__all__ = ["AdsTopupResult", "PremiumResult", "StarsResult", "WalletInfo"]
+
+
+@dataclass
+class WalletInfo:
+    """Wallet state returned by :meth:`FragmentClient.get_wallet`."""
+
+    address: str
+    state: str
+    balance: float
 
 
 @dataclass

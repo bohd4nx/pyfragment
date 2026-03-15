@@ -79,3 +79,16 @@ def test_whitespace_cookie_value_raises() -> None:
     bad = {**VALID_COOKIES, "stel_ton_token": "   "}
     with pytest.raises(CookieError):
         FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=bad)
+
+
+def test_invalid_mnemonic_length_raises() -> None:
+    bad_seed = " ".join(["word"] * 23)
+    with pytest.raises(ConfigurationError):
+        FragmentClient(seed=bad_seed, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
+
+
+def test_valid_mnemonic_lengths() -> None:
+    for length in (12, 18, 24):
+        seed = " ".join(["abandon"] * (length - 1) + ["about"])
+        client = FragmentClient(seed=seed, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
+        assert len(client.seed.split()) == length

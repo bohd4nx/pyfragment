@@ -97,6 +97,7 @@ See the [`examples/`](examples/) folder for ready-to-run scripts.
 | `gift_premium(username, months, show_sender=True)` | `PremiumResult`  | Gift Telegram Premium subscription | `months`: 3, 6, or 12     |
 | `gift_stars(username, amount, show_sender=True)`   | `StarsResult`    | Gift Telegram Stars                | `amount`: 50–1,000,000    |
 | `topup_ton(username, amount, show_sender=True)`    | `AdsTopupResult` | Top up Telegram Ads balance        | `amount`: 1–1,000,000,000 |
+| `get_wallet()`                                     | `WalletInfo`     | Get wallet address, state, balance | —                         |
 
 ---
 

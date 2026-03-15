@@ -23,7 +23,6 @@ logs/
 # System files
 .DS_Store
 Thumbs.db
-cookies.json
 
 # Testing & tooling artifacts
 .hypothesis/
