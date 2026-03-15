@@ -58,6 +58,9 @@ class FragmentClient:
         if word_count not in (12, 18, 24):
             raise ConfigurationError(ConfigurationError.INVALID_MNEMONIC.format(count=word_count))
 
+        if len(api_key.strip()) < 68:
+            raise ConfigurationError(ConfigurationError.INVALID_API_KEY.format(length=len(api_key.strip())))
+
         if isinstance(cookies, str):
             try:
                 cookies = json.loads(cookies)

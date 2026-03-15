@@ -1,7 +1,9 @@
+import asyncio
 import base64
 from typing import TYPE_CHECKING, Any
 
 from tonutils.clients import TonapiClient
+from tonutils.exceptions import ProviderResponseError
 from tonutils.types import NetworkGlobalID
 
 from pyfragment.types import MIN_TON_BALANCE, WALLET_CLASSES, TransactionError, WalletError
@@ -57,12 +59,19 @@ async def process_transaction(client: "FragmentClient", transaction_data: dict) 
         try:
             payload = clean_decode(message["payload"])
 
-            result = await wallet.transfer(
-                destination=message["address"],
-                amount=int(message["amount"]),  # nanotons, not TON
-                body=payload,
-            )
-            return result.normalized_hash
+            for attempt in range(2):
+                try:
+                    result = await wallet.transfer(
+                        destination=message["address"],
+                        amount=int(message["amount"]),  # nanotons, not TON
+                        body=payload,
+                    )
+                    return result.normalized_hash
+                except ProviderResponseError as exc:
+                    if exc.code == 429 and attempt == 0:
+                        await asyncio.sleep(1)
+                        continue
+                    raise
         except (WalletError, TransactionError):
             raise
         except Exception as exc:

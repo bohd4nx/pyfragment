@@ -8,7 +8,7 @@ from pyfragment import FragmentClient
 from pyfragment.types import ConfigurationError, CookieError
 
 VALID_SEED = "abandon " * 23 + "about"
-VALID_API_KEY = "test_api_key"
+VALID_API_KEY = "A" * 68
 VALID_COOKIES = {
     "stel_ssid": "x",
     "stel_dt": "x",
@@ -92,3 +92,8 @@ def test_valid_mnemonic_lengths() -> None:
         seed = " ".join(["abandon"] * (length - 1) + ["about"])
         client = FragmentClient(seed=seed, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
         assert len(client.seed.split()) == length
+
+
+def test_short_api_key_raises() -> None:
+    with pytest.raises(ConfigurationError):
+        FragmentClient(seed=VALID_SEED, api_key="A" * 42, cookies=VALID_COOKIES)

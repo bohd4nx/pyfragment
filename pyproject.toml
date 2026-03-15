@@ -27,13 +27,13 @@ classifiers = [
 ]
 dependencies = [
     "httpx==0.28.1",
-    "tonutils[pytoniq]==2.0.0",
+    "tonutils[pytoniq]==2.0.4",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=9.0",
-    "pytest-asyncio>=1.0",
+    "pytest==9.0.2",
+    "pytest-asyncio==1.3.0",
     "ruff",
     "black",
 ]

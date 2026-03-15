@@ -12,6 +12,7 @@ class ConfigurationError(ClientError):
     MISSING_VARS = "Missing required parameter(s): {keys}."
     UNSUPPORTED_VERSION = "Unsupported wallet_version '{version}'. Must be one of: {supported}."
     INVALID_MNEMONIC = "Invalid mnemonic: got {count} words, expected 12, 18, or 24."
+    INVALID_API_KEY = "Invalid Tonapi key: got {length} characters, expected at least 68. Get one at https://tonconsole.com."
     INVALID_MONTHS = "Invalid duration. Choose 3, 6, or 12 months."
     INVALID_STARS_AMOUNT = "Amount must be an integer between 50 and 1 000 000 stars."
     INVALID_TON_AMOUNT = "Amount must be an integer between 1 and 1 000 000 000 TON."
