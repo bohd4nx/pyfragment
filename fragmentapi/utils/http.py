@@ -3,7 +3,7 @@ from typing import Any
 
 import httpx
 
-from fragmentapi.types import HashFetchError, RequestError, VerificationError
+from fragmentapi.types import FragmentPageError, ParseError, VerificationError
 
 
 async def get_fragment_hash(
@@ -26,7 +26,7 @@ async def get_fragment_hash(
         Lowercase hex hash string.
 
     Raises:
-        HashFetchError: If the page returns a non-200 status or the hash
+        FragmentPageError: If the page returns a non-200 status or the hash
             is not found in the response HTML.
     """
     page_headers = {
@@ -48,11 +48,11 @@ async def get_fragment_hash(
         response = await session.get(page_url, headers=page_headers)
 
     if response.status_code != 200:
-        raise HashFetchError(HashFetchError.BAD_STATUS.format(status=response.status_code, url=page_url))
+        raise FragmentPageError(FragmentPageError.BAD_STATUS.format(status=response.status_code, url=page_url))
 
     match = re.search(r"(?:https://fragment\.com)?/api\?hash=([a-f0-9]+)", response.text)
     if not match:
-        raise HashFetchError(HashFetchError.NOT_FOUND.format(url=page_url))
+        raise FragmentPageError(FragmentPageError.NOT_FOUND.format(url=page_url))
 
     return match.group(1)
 
@@ -68,12 +68,12 @@ def parse_json_response(response: httpx.Response, context: str) -> dict[str, Any
         Parsed response as a dict.
 
     Raises:
-        RequestError: If the response body cannot be decoded as JSON.
+        ParseError: If the response body cannot be decoded as JSON.
     """
     try:
         return response.json()
     except Exception as exc:
-        raise RequestError(RequestError.UNPARSEABLE.format(context=context, exc=exc)) from exc
+        raise ParseError(ParseError.UNPARSEABLE.format(context=context, exc=exc)) from exc
 
 
 async def fragment_post(
@@ -124,7 +124,7 @@ async def execute_transaction_request(
 
     Raises:
         VerificationError: If Fragment requires KYC verification.
-        RequestError: If the response cannot be parsed.
+        ParseError: If the response cannot be parsed.
     """
     transaction = await fragment_post(session, fragment_hash, headers, tx_data)
 

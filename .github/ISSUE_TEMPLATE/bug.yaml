@@ -53,7 +53,7 @@ body:
     attributes:
       label: Current behavior
       description: Describe what is actually happening.
-      placeholder: e.g. RequestError is raised with status 400.
+      placeholder: e.g. ParseError is raised with status 400.
     validations:
       required: true
 
@@ -91,7 +91,7 @@ body:
         Traceback (most recent call last):
           File "main.py", line 7, in main
             ...
-        fragmentapi.types.RequestError: ...
+        fragmentapi.types.ParseError: ...
       render: sh
 
   - type: textarea

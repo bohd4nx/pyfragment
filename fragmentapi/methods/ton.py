@@ -8,7 +8,7 @@ from fragmentapi.types import (
     DEVICE,
     TON_PAGE,
     AdsTopupResult,
-    ConfigError,
+    ConfigurationError,
     FragmentAPIError,
     FragmentError,
     UnexpectedError,
@@ -78,7 +78,7 @@ async def _init_request(
 
 async def topup_ton(client: "FragmentClient", username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
     if not isinstance(amount, int) or not (1 <= amount <= 1_000_000_000):
-        raise ConfigError(ConfigError.INVALID_TON_AMOUNT)
+        raise ConfigurationError(ConfigurationError.INVALID_TON_AMOUNT)
 
     try:
         fragment_hash = await get_fragment_hash(client.cookies, HEADERS, TON_PAGE)

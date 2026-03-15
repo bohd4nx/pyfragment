@@ -7,7 +7,7 @@ from fragmentapi.types import (
     BASE_HEADERS,
     DEVICE,
     STARS_PAGE,
-    ConfigError,
+    ConfigurationError,
     FragmentAPIError,
     FragmentError,
     StarsResult,
@@ -78,7 +78,7 @@ async def _init_request(
 
 async def gift_stars(client: "FragmentClient", username: str, amount: int, show_sender: bool = True) -> StarsResult:
     if not isinstance(amount, int) or not (50 <= amount <= 1_000_000):
-        raise ConfigError(ConfigError.INVALID_STARS_AMOUNT)
+        raise ConfigurationError(ConfigurationError.INVALID_STARS_AMOUNT)
 
     try:
         fragment_hash = await get_fragment_hash(client.cookies, HEADERS, STARS_PAGE)

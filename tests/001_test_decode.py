@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from fragmentapi.types import RequestError
+from fragmentapi.types import ParseError
 from fragmentapi.utils.decoder import clean_decode
 
 PAYLOADS = [
@@ -35,6 +35,6 @@ def test_empty_payload_returns_empty_string() -> None:
     assert clean_decode("") == ""
 
 
-def test_invalid_payload_raises_request_error() -> None:
-    with pytest.raises(RequestError):
+def test_invalid_payload_raises_parse_error() -> None:
+    with pytest.raises(ParseError):
         clean_decode("!!!not-valid-base64!!!")

@@ -5,7 +5,7 @@ import json
 import pytest
 
 from fragmentapi import FragmentClient
-from fragmentapi.types import ConfigError, CookiesError
+from fragmentapi.types import ConfigurationError, CookieError
 
 VALID_SEED = "abandon " * 23 + "about"
 VALID_API_KEY = "test_api_key"
@@ -35,22 +35,22 @@ def test_wallet_version_is_case_insensitive() -> None:
 
 
 def test_missing_seed_raises() -> None:
-    with pytest.raises(ConfigError):
+    with pytest.raises(ConfigurationError):
         FragmentClient(seed="", api_key=VALID_API_KEY, cookies=VALID_COOKIES)
 
 
 def test_whitespace_only_seed_raises() -> None:
-    with pytest.raises(ConfigError):
+    with pytest.raises(ConfigurationError):
         FragmentClient(seed="   ", api_key=VALID_API_KEY, cookies=VALID_COOKIES)
 
 
 def test_missing_api_key_raises() -> None:
-    with pytest.raises(ConfigError):
+    with pytest.raises(ConfigurationError):
         FragmentClient(seed=VALID_SEED, api_key="", cookies=VALID_COOKIES)
 
 
 def test_unsupported_wallet_version_raises() -> None:
-    with pytest.raises(ConfigError):
+    with pytest.raises(ConfigurationError):
         FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES, wallet_version="V3R2")
 
 
@@ -60,22 +60,22 @@ def test_cookies_as_json_string() -> None:
 
 
 def test_invalid_cookies_json_raises() -> None:
-    with pytest.raises(CookiesError):
+    with pytest.raises(CookieError):
         FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies="{not valid json}")
 
 
 def test_missing_cookie_key_raises() -> None:
-    with pytest.raises(CookiesError):
+    with pytest.raises(CookieError):
         FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies={"stel_ssid": "x"})
 
 
 def test_empty_cookie_value_raises() -> None:
     bad = {**VALID_COOKIES, "stel_token": ""}
-    with pytest.raises(CookiesError):
+    with pytest.raises(CookieError):
         FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=bad)
 
 
 def test_whitespace_cookie_value_raises() -> None:
     bad = {**VALID_COOKIES, "stel_ton_token": "   "}
-    with pytest.raises(CookiesError):
+    with pytest.raises(CookieError):
         FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=bad)

@@ -2,7 +2,7 @@ import base64
 
 from pytoniq_core import Cell
 
-from fragmentapi.types import RequestError
+from fragmentapi.types import ParseError
 
 
 def clean_decode(payload: str) -> str:
@@ -19,7 +19,7 @@ def clean_decode(payload: str) -> str:
         Decoded comment string, or ``""`` for an empty payload.
 
     Raises:
-        RequestError: If the payload cannot be decoded or parsed.
+        ParseError: If the payload cannot be decoded or parsed.
     """
     s = payload.strip()
     if not s:
@@ -32,4 +32,4 @@ def clean_decode(payload: str) -> str:
         sl.load_uint(32)  # op code — always 0 for text comment
         return sl.load_snake_string().strip()
     except Exception as exc:
-        raise RequestError(RequestError.UNPARSEABLE.format(context="payload decode", exc=exc)) from exc
+        raise ParseError(ParseError.UNPARSEABLE.format(context="payload decode", exc=exc)) from exc

@@ -6,7 +6,7 @@ class ClientError(FragmentError):
     """Raised for client configuration and setup issues (bad params, invalid cookies)."""
 
 
-class ConfigError(ClientError):
+class ConfigurationError(ClientError):
     """Raised when required client parameters are missing or invalid."""
 
     MISSING_VARS = "Missing required parameter(s): {keys}."
@@ -16,7 +16,7 @@ class ConfigError(ClientError):
     INVALID_TON_AMOUNT = "Amount must be an integer between 1 and 1 000 000 000 TON."
 
 
-class CookiesError(ClientError):
+class CookieError(ClientError):
     """Raised when cookies are unreadable or missing required fields."""
 
     READ_FAILED = "Failed to parse cookies: {exc}"
@@ -33,8 +33,8 @@ class FragmentAPIError(FragmentError):
     )
 
 
-class HashFetchError(FragmentAPIError):
-    """Raised when the Fragment API hash cannot be fetched from the page."""
+class FragmentPageError(FragmentAPIError):
+    """Raised when the Fragment page cannot be fetched or the API hash is not found."""
 
     BAD_STATUS = "Fragment returned HTTP {status} for {url}. " "Check that your cookies are valid and not expired."
     NOT_FOUND = (
@@ -59,8 +59,8 @@ class TransactionError(FragmentAPIError):
     BROADCAST_FAILED = "Transaction broadcast failed: {exc}"
 
 
-class RequestError(FragmentAPIError):
-    """Raised when a Fragment API response cannot be parsed."""
+class ParseError(FragmentAPIError):
+    """Raised when a Fragment API response or payload cannot be parsed."""
 
     UNPARSEABLE = "Fragment API returned an unparseable response for '{context}': {exc}"
 
@@ -92,13 +92,13 @@ class UnexpectedError(OperationError):
 __all__ = [
     "FragmentError",
     "ClientError",
-    "ConfigError",
-    "CookiesError",
+    "ConfigurationError",
+    "CookieError",
     "FragmentAPIError",
-    "HashFetchError",
+    "FragmentPageError",
     "UserNotFoundError",
     "TransactionError",
-    "RequestError",
+    "ParseError",
     "VerificationError",
     "OperationError",
     "WalletError",

@@ -7,8 +7,8 @@ from fragmentapi.types import (
     REQUIRED_COOKIE_KEYS,
     SUPPORTED_WALLET_VERSIONS,
     AdsTopupResult,
-    ConfigError,
-    CookiesError,
+    ConfigurationError,
+    CookieError,
     PremiumResult,
     StarsResult,
     WalletVersion,
@@ -26,8 +26,8 @@ class FragmentClient:
         wallet_version: Wallet contract version — ``"V4R2"`` or ``"V5R1"`` (default).
 
     Raises:
-        ConfigError: If ``seed``, ``api_key``, or ``wallet_version`` are missing or invalid.
-        CookiesError: If ``cookies`` cannot be parsed or are missing required keys.
+        ConfigurationError: If ``seed``, ``api_key``, or ``wallet_version`` are missing or invalid.
+        CookieError: If ``cookies`` cannot be parsed or are missing required keys.
 
     Example::
 
@@ -49,22 +49,24 @@ class FragmentClient:
     ) -> None:
         missing = [name for name, val in (("seed", seed), ("api_key", api_key)) if not val or not str(val).strip()]
         if missing:
-            raise ConfigError(ConfigError.MISSING_VARS.format(keys=", ".join(missing)))
+            raise ConfigurationError(ConfigurationError.MISSING_VARS.format(keys=", ".join(missing)))
 
         if isinstance(cookies, str):
             try:
                 cookies = json.loads(cookies)
             except Exception as exc:
-                raise CookiesError(CookiesError.READ_FAILED.format(exc=exc)) from exc
+                raise CookieError(CookieError.READ_FAILED.format(exc=exc)) from exc
 
         missing_keys = [k for k in REQUIRED_COOKIE_KEYS if not str(cookies.get(k, "")).strip()]
         if missing_keys:
-            raise CookiesError(CookiesError.MISSING_KEYS.format(keys=", ".join(missing_keys)))
+            raise CookieError(CookieError.MISSING_KEYS.format(keys=", ".join(missing_keys)))
 
         version = wallet_version.strip().upper()
         if version not in SUPPORTED_WALLET_VERSIONS:
-            raise ConfigError(
-                ConfigError.UNSUPPORTED_VERSION.format(version=version, supported=", ".join(sorted(SUPPORTED_WALLET_VERSIONS)))
+            raise ConfigurationError(
+                ConfigurationError.UNSUPPORTED_VERSION.format(
+                    version=version, supported=", ".join(sorted(SUPPORTED_WALLET_VERSIONS))
+                )
             )
 
         self.seed: str = seed.strip()

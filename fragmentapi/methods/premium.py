@@ -8,7 +8,7 @@ from fragmentapi.types import (
     BASE_HEADERS,
     DEVICE,
     PREMIUM_PAGE,
-    ConfigError,
+    ConfigurationError,
     FragmentAPIError,
     FragmentError,
     PremiumResult,
@@ -91,7 +91,7 @@ async def _init_request(
 
 async def gift_premium(client: "FragmentClient", username: str, months: int, show_sender: bool = True) -> PremiumResult:
     if months not in (3, 6, 12):
-        raise ConfigError(ConfigError.INVALID_MONTHS)
+        raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
 
     try:
         fragment_hash = await get_fragment_hash(client.cookies, HEADERS, PREMIUM_PAGE)
