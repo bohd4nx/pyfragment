@@ -1,13 +1,17 @@
-import pytest
+import json
+from pathlib import Path
 
-from app.core.cookies import load_cookies
-from app.core.exceptions import CookiesError
+import pytest
 
 
 @pytest.fixture
 def cookies():
-    """Load Fragment cookies; skip the test if they are unavailable."""
+    """Load Fragment cookies from cookies.json; skip the test if unavailable."""
+    cookies_path = Path(__file__).resolve().parents[1] / "cookies.json"
+    if not cookies_path.exists():
+        pytest.skip("cookies.json not found")
     try:
-        return load_cookies()
-    except CookiesError as exc:
+        with cookies_path.open("r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as exc:
         pytest.skip(f"Cookies unavailable — {exc}")

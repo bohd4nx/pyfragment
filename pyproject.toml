@@ -1,3 +1,43 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fragmentapi"
+version = "2026.1.0"
+description = "Python library for the Fragment.com API — gift Telegram Stars, Premium, and top up TON Ads balance."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.12"
+authors = [{ name = "bohd4nx", url = "https://github.com/bohd4nx" }]
+keywords = ["fragment", "telegram", "ton", "stars", "premium", "crypto", "blockchain"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Framework :: AsyncIO",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet",
+    "Topic :: Office/Business :: Financial",
+    "Typing :: Typed",
+]
+dependencies = [
+    "httpx==0.28.1",
+    "tonutils[pytoniq]==2.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/bohd4nx/FragmentAPI"
+Repository = "https://github.com/bohd4nx/FragmentAPI"
+Issues = "https://github.com/bohd4nx/FragmentAPI/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["fragmentapi"]
+
 [tool.pytest.ini_options]
 testpaths    = ["tests"]
 python_files = ["[0-9][0-9][0-9]_test_*.py"]
