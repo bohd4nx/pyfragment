@@ -3,7 +3,7 @@ from typing import Any
 
 import httpx
 
-from fragmentapi.types import FragmentPageError, ParseError, VerificationError
+from pyfragment.types import FragmentPageError, ParseError, VerificationError
 
 
 async def get_fragment_hash(

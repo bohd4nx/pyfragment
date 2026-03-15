@@ -4,11 +4,11 @@ from typing import TYPE_CHECKING, Any
 from tonutils.clients import TonapiClient
 from tonutils.types import NetworkGlobalID
 
-from fragmentapi.types import MIN_TON_BALANCE, WALLET_CLASSES, TransactionError, WalletError
-from fragmentapi.utils.decoder import clean_decode
+from pyfragment.types import MIN_TON_BALANCE, WALLET_CLASSES, TransactionError, WalletError
+from pyfragment.utils.decoder import clean_decode
 
 if TYPE_CHECKING:
-    from fragmentapi.client import FragmentClient
+    from pyfragment.client import FragmentClient
 
 
 def _init_ton_client(client: "FragmentClient") -> TonapiClient:

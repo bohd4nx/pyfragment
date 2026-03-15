@@ -4,8 +4,8 @@ import re
 
 import pytest
 
-from fragmentapi.types import ParseError
-from fragmentapi.utils.decoder import clean_decode
+from pyfragment.types import ParseError
+from pyfragment.utils.decoder import clean_decode
 
 PAYLOADS = [
     pytest.param(

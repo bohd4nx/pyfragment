@@ -1,20 +1,21 @@
 import json
+import time
 from typing import TYPE_CHECKING
 
 import httpx
 
-from fragmentapi.types import (
+from pyfragment.types import (
     BASE_HEADERS,
     DEVICE,
-    TON_PAGE,
-    AdsTopupResult,
+    PREMIUM_PAGE,
     ConfigurationError,
     FragmentAPIError,
     FragmentError,
+    PremiumResult,
     UnexpectedError,
     UserNotFoundError,
 )
-from fragmentapi.utils import (
+from pyfragment.utils import (
     execute_transaction_request,
     fragment_post,
     get_account_info,
@@ -23,13 +24,13 @@ from fragmentapi.utils import (
 )
 
 if TYPE_CHECKING:
-    from fragmentapi.client import FragmentClient
+    from pyfragment.client import FragmentClient
 
 # Page-specific headers
 HEADERS: dict[str, str] = {
     **BASE_HEADERS,
-    "referer": TON_PAGE,
-    "x-aj-referer": TON_PAGE,
+    "referer": PREMIUM_PAGE,
+    "x-aj-referer": PREMIUM_PAGE,
 }
 
 
@@ -37,15 +38,16 @@ async def _search_recipient(
     session: httpx.AsyncClient,
     fragment_hash: str,
     username: str,
+    months: int,
 ) -> str:
-    await fragment_post(session, fragment_hash, HEADERS, {"mode": "new", "method": "updateAdsTopupState"})
     result = await fragment_post(
         session,
         fragment_hash,
         HEADERS,
         {
             "query": username,
-            "method": "searchAdsTopupRecipient",
+            "months": months,
+            "method": "searchPremiumGiftRecipient",
         },
     )
     recipient = result.get("found", {}).get("recipient")
@@ -58,35 +60,46 @@ async def _init_request(
     session: httpx.AsyncClient,
     fragment_hash: str,
     recipient: str,
-    amount: int,
+    months: int,
 ) -> str:
+    await fragment_post(
+        session,
+        fragment_hash,
+        HEADERS,
+        {
+            "mode": "new",
+            "lv": "false",
+            "dh": str(int(time.time())),
+            "method": "updatePremiumState",
+        },
+    )
     result = await fragment_post(
         session,
         fragment_hash,
         HEADERS,
         {
             "recipient": recipient,
-            "amount": amount,
-            "method": "initAdsTopupRequest",
+            "months": months,
+            "method": "initGiftPremiumRequest",
         },
     )
     req_id = result.get("req_id")
     if not req_id:
-        raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="TON topup"))
+        raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="Premium purchase"))
     return req_id
 
 
-async def topup_ton(client: "FragmentClient", username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
-    if not isinstance(amount, int) or not (1 <= amount <= 1_000_000_000):
-        raise ConfigurationError(ConfigurationError.INVALID_TON_AMOUNT)
+async def gift_premium(client: "FragmentClient", username: str, months: int, show_sender: bool = True) -> PremiumResult:
+    if months not in (3, 6, 12):
+        raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
 
     try:
-        fragment_hash = await get_fragment_hash(client.cookies, HEADERS, TON_PAGE)
+        fragment_hash = await get_fragment_hash(client.cookies, HEADERS, PREMIUM_PAGE)
         account = await get_account_info(client)
 
         async with httpx.AsyncClient(cookies=client.cookies) as session:
-            recipient = await _search_recipient(session, fragment_hash, username)
-            req_id = await _init_request(session, fragment_hash, recipient, amount)
+            recipient = await _search_recipient(session, fragment_hash, username, months)
+            req_id = await _init_request(session, fragment_hash, recipient, months)
 
             tx_data = {
                 "account": json.dumps(account),
@@ -94,12 +107,12 @@ async def topup_ton(client: "FragmentClient", username: str, amount: int, show_s
                 "transaction": 1,
                 "id": req_id,
                 "show_sender": int(show_sender),
-                "method": "getAdsTopupLink",
+                "method": "getGiftPremiumLink",
             }
             transaction = await execute_transaction_request(session, HEADERS, tx_data, fragment_hash)
 
         tx_hash = await process_transaction(client, transaction)
-        return AdsTopupResult(transaction_id=tx_hash, username=username, amount=amount)
+        return PremiumResult(transaction_id=tx_hash, username=username, months=months)
 
     except FragmentError:
         raise

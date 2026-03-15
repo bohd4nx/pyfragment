@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "fragmentapi"
+name = "pyfragment"
 version = "2026.1.0"
 description = "Python library for the Fragment.com API — gift Telegram Stars, Premium, and top up TON Ads balance."
 readme = "README.md"
@@ -39,12 +39,12 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/bohd4nx/FragmentAPI"
-Repository = "https://github.com/bohd4nx/FragmentAPI"
-Issues = "https://github.com/bohd4nx/FragmentAPI/issues"
+Homepage = "https://github.com/bohd4nx/pyfragment"
+Repository = "https://github.com/bohd4nx/pyfragment"
+Issues = "https://github.com/bohd4nx/pyfragment/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["fragmentapi"]
+packages = ["pyfragment"]
 
 [tool.pytest.ini_options]
 testpaths    = ["tests"]

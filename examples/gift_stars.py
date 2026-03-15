@@ -7,7 +7,7 @@ Set show_sender=False to send anonymously.
 
 import asyncio
 
-from fragmentapi import ConfigurationError, FragmentClient, UserNotFoundError
+from pyfragment import ConfigurationError, FragmentClient, UserNotFoundError
 
 SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_TONAPI_KEY"

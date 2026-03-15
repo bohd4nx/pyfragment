@@ -7,7 +7,7 @@ Your wallet must hold at least the topup amount + ~0.056 TON for gas.
 
 import asyncio
 
-from fragmentapi import ConfigurationError, FragmentClient, UserNotFoundError, WalletError
+from pyfragment import ConfigurationError, FragmentClient, UserNotFoundError, WalletError
 
 SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_TONAPI_KEY"

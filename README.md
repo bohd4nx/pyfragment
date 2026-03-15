@@ -7,14 +7,14 @@
     <b>Python library for the Fragment.com API — gift Telegram Stars, Premium, and top up TON Ads balance.</b>
   </p>
 
-[![PyPI version](https://img.shields.io/pypi/v/fragmentapi?style=flat&color=blue)](https://pypi.org/project/fragmentapi/)
-[![PyPI downloads](https://img.shields.io/pypi/dm/fragmentapi?style=flat&color=brightgreen)](https://pypi.org/project/fragmentapi/)
+[![PyPI version](https://img.shields.io/pypi/v/pyfragment?style=flat&color=blue)](https://pypi.org/project/pyfragment/)
+[![PyPI downloads](https://img.shields.io/pypi/dm/pyfragment?style=flat&color=brightgreen)](https://pypi.org/project/pyfragment/)
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
-[![License](https://img.shields.io/github/license/bohd4nx/FragmentAPI?style=flat&color=lightgrey)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/bohd4nx/FragmentAPI?style=flat&color=yellow)](https://github.com/bohd4nx/FragmentAPI/stargazers)
-[![CI](https://img.shields.io/github/actions/workflow/status/bohd4nx/FragmentAPI/tests.yml?style=flat&label=tests&logo=github)](https://github.com/bohd4nx/FragmentAPI/actions)
+[![License](https://img.shields.io/github/license/bohd4nx/pyfragment?style=flat&color=lightgrey)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/bohd4nx/pyfragment?style=flat&color=yellow)](https://github.com/bohd4nx/pyfragment/stargazers)
+[![CI](https://img.shields.io/github/actions/workflow/status/bohd4nx/pyfragment/tests.yml?style=flat&label=tests&logo=github)](https://github.com/bohd4nx/pyfragment/actions)
 
-[Report Bug](https://github.com/bohd4nx/FragmentAPI/issues) · [Request Feature](https://github.com/bohd4nx/FragmentAPI/issues) · [**Donate TON**](https://app.tonkeeper.com/transfer/UQCppfw5DxWgdVHf3zkmZS8k1mt9oAUYxQLwq2fz3nhO8No5)
+[Report Bug](https://github.com/bohd4nx/pyfragment/issues) · [Request Feature](https://github.com/bohd4nx/pyfragment/issues) · [**Donate TON**](https://app.tonkeeper.com/transfer/UQCppfw5DxWgdVHf3zkmZS8k1mt9oAUYxQLwq2fz3nhO8No5)
 
 </div>
 
@@ -33,7 +33,7 @@
 ## 📦 Installation
 
 ```bash
-pip install fragmentapi
+pip install pyfragment
 ```
 
 Requires **Python 3.12+**.
@@ -44,7 +44,7 @@ Requires **Python 3.12+**.
 
 ```python
 import asyncio
-from fragmentapi import FragmentClient
+from pyfragment import FragmentClient
 
 client = FragmentClient(
     seed="word1 word2 ... word24",
@@ -146,10 +146,10 @@ Go to **Settings → Backup** → copy the 24 words.
 
 ## 🗂️ Error Handling
 
-All exceptions inherit from `FragmentError` — see [`fragmentapi/types/exceptions.py`](fragmentapi/types/exceptions.py) for the full list.
+All exceptions inherit from `FragmentError` — see [`pyfragment/types/exceptions.py`](pyfragment/types/exceptions.py) for the full list.
 
 ```python
-from fragmentapi import FragmentClient, UserNotFoundError, ConfigurationError, WalletError
+from pyfragment import FragmentClient, UserNotFoundError, ConfigurationError, WalletError
 
 try:
     result = await client.gift_stars("@unknown", amount=100)

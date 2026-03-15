@@ -1,11 +1,11 @@
 name: Feature request
-description: Suggest an improvement or new feature for FragmentAPI.
+description: Suggest an improvement or new feature for pyfragment.
 labels:
   - enhancement
 body:
   - type: dropdown
     attributes:
-      label: FragmentAPI version
+      label: pyfragment version
       description: Which version are you running?
       options:
         - latest

@@ -1,9 +1,9 @@
 import json
 
-from fragmentapi.methods.premium import gift_premium
-from fragmentapi.methods.stars import gift_stars
-from fragmentapi.methods.ton import topup_ton
-from fragmentapi.types import (
+from pyfragment.methods.premium import gift_premium
+from pyfragment.methods.stars import gift_stars
+from pyfragment.methods.ton import topup_ton
+from pyfragment.types import (
     REQUIRED_COOKIE_KEYS,
     SUPPORTED_WALLET_VERSIONS,
     AdsTopupResult,

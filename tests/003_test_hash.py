@@ -5,8 +5,8 @@ import re
 
 import pytest
 
-from fragmentapi.types import BASE_HEADERS, STARS_PAGE
-from fragmentapi.utils import get_fragment_hash
+from pyfragment.types import BASE_HEADERS, STARS_PAGE
+from pyfragment.utils import get_fragment_hash
 
 
 @pytest.mark.asyncio

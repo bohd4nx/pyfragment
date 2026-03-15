@@ -23,7 +23,7 @@ Describe the tests you ran to verify the change and list any relevant details.
 **Test configuration:**
 * OS:
 * Python version:
-* FragmentAPI version:
+* pyfragment version:
 
 ## Checklist
 

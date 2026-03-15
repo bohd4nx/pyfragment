@@ -3,8 +3,8 @@
 # This source code is licensed under the MIT License found in the
 # LICENSE file in the root directory of this source tree.
 
-from fragmentapi.client import FragmentClient
-from fragmentapi.types import (
+from pyfragment.client import FragmentClient
+from pyfragment.types import (
     AdsTopupResult,
     ClientError,
     ConfigurationError,

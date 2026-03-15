@@ -1,11 +1,11 @@
-from fragmentapi.utils.decoder import clean_decode
-from fragmentapi.utils.http import (
+from pyfragment.utils.decoder import clean_decode
+from pyfragment.utils.http import (
     execute_transaction_request,
     fragment_post,
     get_fragment_hash,
     parse_json_response,
 )
-from fragmentapi.utils.wallet import get_account_info, process_transaction
+from pyfragment.utils.wallet import get_account_info, process_transaction
 
 __all__ = [
     "clean_decode",

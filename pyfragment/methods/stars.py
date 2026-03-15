@@ -1,21 +1,20 @@
 import json
-import time
 from typing import TYPE_CHECKING
 
 import httpx
 
-from fragmentapi.types import (
+from pyfragment.types import (
     BASE_HEADERS,
     DEVICE,
-    PREMIUM_PAGE,
+    STARS_PAGE,
     ConfigurationError,
     FragmentAPIError,
     FragmentError,
-    PremiumResult,
+    StarsResult,
     UnexpectedError,
     UserNotFoundError,
 )
-from fragmentapi.utils import (
+from pyfragment.utils import (
     execute_transaction_request,
     fragment_post,
     get_account_info,
@@ -24,13 +23,13 @@ from fragmentapi.utils import (
 )
 
 if TYPE_CHECKING:
-    from fragmentapi.client import FragmentClient
+    from pyfragment.client import FragmentClient
 
 # Page-specific headers
 HEADERS: dict[str, str] = {
     **BASE_HEADERS,
-    "referer": PREMIUM_PAGE,
-    "x-aj-referer": PREMIUM_PAGE,
+    "referer": STARS_PAGE,
+    "x-aj-referer": STARS_PAGE,
 }
 
 
@@ -38,7 +37,6 @@ async def _search_recipient(
     session: httpx.AsyncClient,
     fragment_hash: str,
     username: str,
-    months: int,
 ) -> str:
     result = await fragment_post(
         session,
@@ -46,8 +44,8 @@ async def _search_recipient(
         HEADERS,
         {
             "query": username,
-            "months": months,
-            "method": "searchPremiumGiftRecipient",
+            "quantity": "",
+            "method": "searchStarsRecipient",
         },
     )
     recipient = result.get("found", {}).get("recipient")
@@ -60,46 +58,35 @@ async def _init_request(
     session: httpx.AsyncClient,
     fragment_hash: str,
     recipient: str,
-    months: int,
+    amount: int,
 ) -> str:
-    await fragment_post(
-        session,
-        fragment_hash,
-        HEADERS,
-        {
-            "mode": "new",
-            "lv": "false",
-            "dh": str(int(time.time())),
-            "method": "updatePremiumState",
-        },
-    )
     result = await fragment_post(
         session,
         fragment_hash,
         HEADERS,
         {
             "recipient": recipient,
-            "months": months,
-            "method": "initGiftPremiumRequest",
+            "quantity": amount,
+            "method": "initBuyStarsRequest",
         },
     )
     req_id = result.get("req_id")
     if not req_id:
-        raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="Premium purchase"))
+        raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="Stars purchase"))
     return req_id
 
 
-async def gift_premium(client: "FragmentClient", username: str, months: int, show_sender: bool = True) -> PremiumResult:
-    if months not in (3, 6, 12):
-        raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
+async def gift_stars(client: "FragmentClient", username: str, amount: int, show_sender: bool = True) -> StarsResult:
+    if not isinstance(amount, int) or not (50 <= amount <= 1_000_000):
+        raise ConfigurationError(ConfigurationError.INVALID_STARS_AMOUNT)
 
     try:
-        fragment_hash = await get_fragment_hash(client.cookies, HEADERS, PREMIUM_PAGE)
+        fragment_hash = await get_fragment_hash(client.cookies, HEADERS, STARS_PAGE)
         account = await get_account_info(client)
 
         async with httpx.AsyncClient(cookies=client.cookies) as session:
-            recipient = await _search_recipient(session, fragment_hash, username, months)
-            req_id = await _init_request(session, fragment_hash, recipient, months)
+            recipient = await _search_recipient(session, fragment_hash, username)
+            req_id = await _init_request(session, fragment_hash, recipient, amount)
 
             tx_data = {
                 "account": json.dumps(account),
@@ -107,12 +94,12 @@ async def gift_premium(client: "FragmentClient", username: str, months: int, sho
                 "transaction": 1,
                 "id": req_id,
                 "show_sender": int(show_sender),
-                "method": "getGiftPremiumLink",
+                "method": "getBuyStarsLink",
             }
             transaction = await execute_transaction_request(session, HEADERS, tx_data, fragment_hash)
 
         tx_hash = await process_transaction(client, transaction)
-        return PremiumResult(transaction_id=tx_hash, username=username, months=months)
+        return StarsResult(transaction_id=tx_hash, username=username, stars=amount)
 
     except FragmentError:
         raise

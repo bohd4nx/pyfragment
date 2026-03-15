@@ -1,5 +1,5 @@
 class FragmentError(Exception):
-    """Base exception for all fragmentapi library errors."""
+    """Base exception for all pyfragment library errors."""
 
 
 class ClientError(FragmentError):

@@ -3,18 +3,18 @@ from typing import TYPE_CHECKING
 
 import httpx
 
-from fragmentapi.types import (
+from pyfragment.types import (
     BASE_HEADERS,
     DEVICE,
-    STARS_PAGE,
+    TON_PAGE,
+    AdsTopupResult,
     ConfigurationError,
     FragmentAPIError,
     FragmentError,
-    StarsResult,
     UnexpectedError,
     UserNotFoundError,
 )
-from fragmentapi.utils import (
+from pyfragment.utils import (
     execute_transaction_request,
     fragment_post,
     get_account_info,
@@ -23,13 +23,13 @@ from fragmentapi.utils import (
 )
 
 if TYPE_CHECKING:
-    from fragmentapi.client import FragmentClient
+    from pyfragment.client import FragmentClient
 
 # Page-specific headers
 HEADERS: dict[str, str] = {
     **BASE_HEADERS,
-    "referer": STARS_PAGE,
-    "x-aj-referer": STARS_PAGE,
+    "referer": TON_PAGE,
+    "x-aj-referer": TON_PAGE,
 }
 
 
@@ -38,14 +38,14 @@ async def _search_recipient(
     fragment_hash: str,
     username: str,
 ) -> str:
+    await fragment_post(session, fragment_hash, HEADERS, {"mode": "new", "method": "updateAdsTopupState"})
     result = await fragment_post(
         session,
         fragment_hash,
         HEADERS,
         {
             "query": username,
-            "quantity": "",
-            "method": "searchStarsRecipient",
+            "method": "searchAdsTopupRecipient",
         },
     )
     recipient = result.get("found", {}).get("recipient")
@@ -66,22 +66,22 @@ async def _init_request(
         HEADERS,
         {
             "recipient": recipient,
-            "quantity": amount,
-            "method": "initBuyStarsRequest",
+            "amount": amount,
+            "method": "initAdsTopupRequest",
         },
     )
     req_id = result.get("req_id")
     if not req_id:
-        raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="Stars purchase"))
+        raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="TON topup"))
     return req_id
 
 
-async def gift_stars(client: "FragmentClient", username: str, amount: int, show_sender: bool = True) -> StarsResult:
-    if not isinstance(amount, int) or not (50 <= amount <= 1_000_000):
-        raise ConfigurationError(ConfigurationError.INVALID_STARS_AMOUNT)
+async def topup_ton(client: "FragmentClient", username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
+    if not isinstance(amount, int) or not (1 <= amount <= 1_000_000_000):
+        raise ConfigurationError(ConfigurationError.INVALID_TON_AMOUNT)
 
     try:
-        fragment_hash = await get_fragment_hash(client.cookies, HEADERS, STARS_PAGE)
+        fragment_hash = await get_fragment_hash(client.cookies, HEADERS, TON_PAGE)
         account = await get_account_info(client)
 
         async with httpx.AsyncClient(cookies=client.cookies) as session:
@@ -94,12 +94,12 @@ async def gift_stars(client: "FragmentClient", username: str, amount: int, show_
                 "transaction": 1,
                 "id": req_id,
                 "show_sender": int(show_sender),
-                "method": "getBuyStarsLink",
+                "method": "getAdsTopupLink",
             }
             transaction = await execute_transaction_request(session, HEADERS, tx_data, fragment_hash)
 
         tx_hash = await process_transaction(client, transaction)
-        return StarsResult(transaction_id=tx_hash, username=username, stars=amount)
+        return AdsTopupResult(transaction_id=tx_hash, username=username, amount=amount)
 
     except FragmentError:
         raise

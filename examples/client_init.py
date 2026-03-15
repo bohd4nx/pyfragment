@@ -7,7 +7,7 @@ wallet_version defaults to "V5R1" — change to "V4R2" for older wallets.
 
 import asyncio
 
-from fragmentapi import FragmentClient
+from pyfragment import FragmentClient
 
 SEED = "word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12 word13 word14 word15 word16 word17 word18 word19 word20 word21 word22 word23 word24"
 API_KEY = "YOUR_TONAPI_KEY"

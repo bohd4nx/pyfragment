@@ -1,4 +1,4 @@
-from fragmentapi.types.constants import (
+from pyfragment.types.constants import (
     BASE_HEADERS,
     DEVICE,
     MIN_TON_BALANCE,
@@ -10,7 +10,7 @@ from fragmentapi.types.constants import (
     WALLET_CLASSES,
     WalletVersion,
 )
-from fragmentapi.types.exceptions import (
+from pyfragment.types.exceptions import (
     ClientError,
     ConfigurationError,
     CookieError,
@@ -25,7 +25,7 @@ from fragmentapi.types.exceptions import (
     VerificationError,
     WalletError,
 )
-from fragmentapi.types.results import AdsTopupResult, PremiumResult, StarsResult
+from pyfragment.types.results import AdsTopupResult, PremiumResult, StarsResult
 
 __all__ = [
     # constants

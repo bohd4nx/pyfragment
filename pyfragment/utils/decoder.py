@@ -2,7 +2,7 @@ import base64
 
 from pytoniq_core import Cell
 
-from fragmentapi.types import ParseError
+from pyfragment.types import ParseError
 
 
 def clean_decode(payload: str) -> str:

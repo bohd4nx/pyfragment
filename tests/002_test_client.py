@@ -4,8 +4,8 @@ import json
 
 import pytest
 
-from fragmentapi import FragmentClient
-from fragmentapi.types import ConfigurationError, CookieError
+from pyfragment import FragmentClient
+from pyfragment.types import ConfigurationError, CookieError
 
 VALID_SEED = "abandon " * 23 + "about"
 VALID_API_KEY = "test_api_key"
