@@ -45,7 +45,7 @@ body:
     attributes:
       label: Expected behavior
       description: Describe what you expected to happen.
-      placeholder: e.g. Stars should be gifted and StarsResult returned.
+      placeholder: e.g. Stars should be purchased and StarsResult returned.
     validations:
       required: true
 
@@ -63,7 +63,7 @@ body:
       description: Minimal steps that reproduce the issue.
       placeholder: |
         1. Create FragmentClient with valid credentials
-        2. Call gift_stars("@username", amount=100)
+        2. Call purchase_stars("@username", amount=100)
         3. See error
     validations:
       required: true
@@ -78,7 +78,7 @@ body:
 
         async def main():
             client = FragmentClient(...)
-            result = await client.gift_stars("@username", amount=100)
+            result = await client.purchase_stars("@username", amount=100)
 
         asyncio.run(main())
       render: python
