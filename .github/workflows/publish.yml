@@ -1,12 +1,44 @@
-name: Publish to PyPI
+name: Publish
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [master]
 
 jobs:
+  version-check:
+    name: Version Check
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+      is-new: ${{ steps.tag.outputs.is-new }}
+
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Read version
+        id: version
+        run: |
+          value=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "value=$value" >> $GITHUB_OUTPUT
+
+      - name: Check tag
+        id: tag
+        run: |
+          if git ls-remote --tags origin "refs/tags/v${{ steps.version.outputs.value }}" | grep -q .; then
+            echo "is-new=false" >> $GITHUB_OUTPUT
+          else
+            echo "is-new=true" >> $GITHUB_OUTPUT
+          fi
+
   build:
     name: Build
+    needs: version-check
+    if: needs.version-check.outputs.is-new == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -16,23 +48,19 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7.5.0
+      - uses: astral-sh/setup-uv@v7.5.0
 
-      - name: Build distribution
-        run: uv build
+      - run: uv build
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/*
 
   publish:
-    name: Publish
-    needs: build
+    name: Publish to PyPI
+    needs: [version-check, build]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
     environment:
       name: pypi
       url: https://pypi.org/project/pyfragment/
@@ -40,11 +68,34 @@ jobs:
       id-token: write
 
     steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v8.0.1
+      - uses: actions/download-artifact@v8.0.1
         with:
           name: dist
           path: dist
 
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.13.0
+      - uses: pypa/gh-action-pypi-publish@v1.13.0
+
+  release:
+    name: GitHub Release
+    needs: [version-check, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v8.0.1
+        with:
+          name: dist
+          path: dist
+
+      - uses: softprops/action-gh-release@v2.6.1
+        with:
+          tag_name: v${{ needs.version-check.outputs.version }}
+          name: v${{ needs.version-check.outputs.version }}
+          files: dist/*
+          generate_release_notes: true
+          make_latest: true

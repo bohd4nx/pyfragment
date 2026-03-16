@@ -12,7 +12,7 @@
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
 [![License](https://img.shields.io/github/license/bohd4nx/pyfragment?style=flat&color=lightgrey)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/bohd4nx/pyfragment?style=flat&color=yellow)](https://github.com/bohd4nx/pyfragment/stargazers)
-[![CI](https://img.shields.io/github/actions/workflow/status/bohd4nx/pyfragment/tests.yml?style=flat&label=tests&logo=github)](https://github.com/bohd4nx/pyfragment/actions)
+[![CI](https://img.shields.io/github/actions/workflow/status/bohd4nx/pyfragment/ci.yml?style=flat&label=tests&logo=github)](https://github.com/bohd4nx/pyfragment/actions)
 
 [Report Bug](https://github.com/bohd4nx/pyfragment/issues) · [Request Feature](https://github.com/bohd4nx/pyfragment/issues) · [**Donate TON**](https://app.tonkeeper.com/transfer/UQCppfw5DxWgdVHf3zkmZS8k1mt9oAUYxQLwq2fz3nhO8No5)
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2025 bohd4nx
+# Copyright (c) 2026 bohd4nx
 #
 # This source code is licensed under the MIT License found in the
 # LICENSE file in the root directory of this source tree.

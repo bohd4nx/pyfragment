@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - uses: actions/setup-python@v6.2.0
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v7.5.0
+
+      - run: uv pip install --system ".[dev]"
+
+      - run: ruff check .
+
+      - run: black --check . --target-version py312
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - uses: actions/setup-python@v6.2.0
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v7.5.0
+
+      - run: uv pip install --system ".[dev]"
+
+      - name: Write cookies.json
+        if: ${{ env.COOKIES_JSON != '' }}
+        run: echo "$COOKIES_JSON" > cookies.json
+        env:
+          COOKIES_JSON: ${{ secrets.COOKIES_JSON }}
+
+      - run: pytest
