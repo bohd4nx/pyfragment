@@ -12,8 +12,8 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 ### Added
 - Initial stable release of `pyfragment`
 - `FragmentClient` — async client for the Fragment.com API
-- `gift_premium(username, months)` — purchase Telegram Premium for any user (3, 6, or 12 months)
-- `gift_stars(username, amount)` — send Telegram Stars to any user (50–1,000,000)
+- `purchase_premium(username, months)` — purchase Telegram Premium for any user (3, 6, or 12 months)
+- `purchase_stars(username, amount)` — send Telegram Stars to any user (50–1,000,000)
 - `topup_ton(username, amount)` — top up TON Ads balance (1–1,000,000,000 TON)
 - `get_wallet()` — fetch wallet address and balance
 - Support for TON wallet versions `V4R2` and `V5R1`

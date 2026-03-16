@@ -26,7 +26,7 @@ async def main() -> None:
     client = FragmentClient(seed=SEED, api_key=API_KEY, cookies=COOKIES)
 
     try:
-        result = await client.gift_stars(USERNAME, amount=AMOUNT, show_sender=True)
+        result = await client.purchase_stars(USERNAME, amount=AMOUNT, show_sender=True)
     except UserNotFoundError:
         print(f"User {USERNAME!r} not found on Fragment.")
         return

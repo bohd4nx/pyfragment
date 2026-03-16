@@ -89,7 +89,7 @@ async def _init_request(
     return req_id
 
 
-async def gift_premium(client: "FragmentClient", username: str, months: int, show_sender: bool = True) -> PremiumResult:
+async def purchase_premium(client: "FragmentClient", username: str, months: int, show_sender: bool = True) -> PremiumResult:
     if months not in (3, 6, 12):
         raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
 

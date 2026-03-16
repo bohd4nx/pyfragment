@@ -1,7 +1,7 @@
 import json
 
-from pyfragment.methods.premium import gift_premium
-from pyfragment.methods.stars import gift_stars
+from pyfragment.methods.premium import purchase_premium
+from pyfragment.methods.stars import purchase_stars
 from pyfragment.methods.ton import topup_ton
 from pyfragment.types import (
     REQUIRED_COOKIE_KEYS,
@@ -43,7 +43,7 @@ class FragmentClient:
             cookies={"stel_ssid": "...", "stel_dt": "...", ...},
         )
         print(await client.get_wallet())
-        result = await client.gift_premium("@username", months=6)
+        result = await client.purchase_premium("@username", months=6)
         print(result.transaction_id)
     """
 
@@ -88,7 +88,7 @@ class FragmentClient:
         self.cookies: dict = cookies
         self.wallet_version: WalletVersion = version  # type: ignore[assignment]
 
-    async def gift_premium(self, username: str, months: int, show_sender: bool = True) -> PremiumResult:
+    async def purchase_premium(self, username: str, months: int, show_sender: bool = True) -> PremiumResult:
         """Purchase Telegram Premium for a user.
 
         Args:
@@ -99,9 +99,9 @@ class FragmentClient:
         Returns:
             :class:`PremiumResult` with ``transaction_id``, ``username``, ``months``, ``timestamp``.
         """
-        return await gift_premium(self, username, months, show_sender)
+        return await purchase_premium(self, username, months, show_sender)
 
-    async def gift_stars(self, username: str, amount: int, show_sender: bool = True) -> StarsResult:
+    async def purchase_stars(self, username: str, amount: int, show_sender: bool = True) -> StarsResult:
         """Purchase Telegram Stars for a user.
 
         Args:
@@ -112,7 +112,7 @@ class FragmentClient:
         Returns:
             :class:`StarsResult` with ``transaction_id``, ``username``, ``stars``, ``timestamp``.
         """
-        return await gift_stars(self, username, amount, show_sender)
+        return await purchase_stars(self, username, amount, show_sender)
 
     async def topup_ton(self, username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
         """Top up Telegram Ads balance with TON.

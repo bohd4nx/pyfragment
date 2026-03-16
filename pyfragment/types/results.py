@@ -12,6 +12,9 @@ class WalletInfo:
     state: str
     balance: float
 
+    def __repr__(self) -> str:
+        return f"WalletInfo(address='{self.address}', state='{self.state}', balance={self.balance} TON)"
+
 
 @dataclass
 class PremiumResult:
@@ -21,6 +24,9 @@ class PremiumResult:
     username: str
     months: int
     timestamp: int = field(default_factory=lambda: int(time.time()))
+
+    def __repr__(self) -> str:
+        return f"PremiumResult(username='{self.username}', months={self.months}, tx='{self.transaction_id}')"
 
 
 @dataclass
@@ -32,6 +38,9 @@ class StarsResult:
     stars: int
     timestamp: int = field(default_factory=lambda: int(time.time()))
 
+    def __repr__(self) -> str:
+        return f"StarsResult(username='{self.username}', stars={self.stars}, tx='{self.transaction_id}')"
+
 
 @dataclass
 class AdsTopupResult:
@@ -41,3 +50,6 @@ class AdsTopupResult:
     username: str
     amount: int
     timestamp: int = field(default_factory=lambda: int(time.time()))
+
+    def __repr__(self) -> str:
+        return f"AdsTopupResult(username='{self.username}', amount={self.amount} TON, tx='{self.transaction_id}')"

@@ -61,11 +61,11 @@ client = FragmentClient(
 
 async def main():
     # Purchase 6 months of Telegram Premium
-    result = await client.gift_premium("@username", months=6)
+    result = await client.purchase_premium("@username", months=6)
     print(result.transaction_id)
 
     # Purchase 500 Stars
-    result = await client.gift_stars("@username", amount=500)
+    result = await client.purchase_stars("@username", amount=500)
     print(result.transaction_id)
 
     # Top up 10 TON to Ads balance
@@ -96,8 +96,8 @@ See the [`examples/`](examples/) folder for ready-to-run scripts.
 
 | Method                                             | Returns          | Description                        | Limits                    |
 | -------------------------------------------------- | ---------------- | ---------------------------------- | ------------------------- |
-| `gift_premium(username, months, show_sender=True)` | `PremiumResult`  | Purchase Telegram Premium          | `months`: 3, 6, or 12     |
-| `gift_stars(username, amount, show_sender=True)`   | `StarsResult`    | Purchase Telegram Stars            | `amount`: 50–1,000,000    |
+| `purchase_premium(username, months, show_sender=True)` | `PremiumResult`  | Purchase Telegram Premium          | `months`: 3, 6, or 12     |
+| `purchase_stars(username, amount, show_sender=True)`   | `StarsResult`    | Purchase Telegram Stars            | `amount`: 50–1,000,000    |
 | `topup_ton(username, amount, show_sender=True)`    | `AdsTopupResult` | Top up Telegram Ads balance        | `amount`: 1–1,000,000,000 |
 | `get_wallet()`                                     | `WalletInfo`     | Get wallet address, state, balance | —                         |
 
@@ -111,7 +111,7 @@ See the [`examples/`](examples/) folder for ready-to-run scripts.
 
 1. Install [Cookie Editor](https://chromewebstore.google.com/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm)
 2. Open [fragment.com](https://fragment.com) while logged in
-3. Click the extension → **Export** → **JSON**
+3. Click the extension → **Export** → **Header String**
 4. Extract these four fields:
 
 ```json
@@ -155,7 +155,7 @@ All exceptions inherit from `FragmentError` — see [`pyfragment/types/exception
 from pyfragment import FragmentClient, UserNotFoundError, ConfigurationError, WalletError
 
 try:
-    result = await client.gift_stars("@unknown", amount=100)
+    result = await client.purchase_stars("@unknown", amount=100)
 except UserNotFoundError:
     print("User not found on Fragment")
 except WalletError as e:
