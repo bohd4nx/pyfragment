@@ -97,3 +97,17 @@ def test_valid_mnemonic_lengths() -> None:
 def test_short_api_key_raises() -> None:
     with pytest.raises(ConfigurationError):
         FragmentClient(seed=VALID_SEED, api_key="A" * 42, cookies=VALID_COOKIES)
+
+
+def test_repr() -> None:
+    client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
+    r = repr(client)
+    assert "FragmentClient" in r
+    assert "V5R1" in r
+    assert "4 keys" in r
+
+
+@pytest.mark.asyncio
+async def test_async_context_manager() -> None:
+    async with FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES) as client:
+        assert isinstance(client, FragmentClient)

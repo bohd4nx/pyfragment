@@ -11,7 +11,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ### Added
 - Initial stable release of `pyfragment`
-- `FragmentClient` — async client for the Fragment.com API
+- `FragmentClient` — async client for the Fragment.com API with context manager support (`async with`)
 - `purchase_premium(username, months)` — purchase Telegram Premium for any user (3, 6, or 12 months)
 - `purchase_stars(username, amount)` — send Telegram Stars to any user (50–1,000,000)
 - `topup_ton(username, amount)` — top up TON Ads balance (1–1,000,000,000 TON)
@@ -19,5 +19,6 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - Support for TON wallet versions `V4R2` and `V5R1`
 - Structured exception hierarchy (`FragmentError`, `ConfigurationError`, `CookieError`, etc.)
 - `py.typed` marker — full PEP 561 typing support for type-checkers
+- `__repr__` on all result types for readable debug output
 
 [2026.0.1]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.0.1

@@ -48,29 +48,28 @@ Requires **Python 3.12+**.
 import asyncio
 from pyfragment import FragmentClient
 
-client = FragmentClient(
-    seed="word1 word2 ... word24",
-    api_key="YOUR_TONAPI_KEY",
-    cookies={
-        "stel_ssid": "...",
-        "stel_dt": "...",
-        "stel_token": "...",
-        "stel_ton_token": "...",
-    },
-)
-
 async def main():
-    # Purchase 6 months of Telegram Premium
-    result = await client.purchase_premium("@username", months=6)
-    print(result.transaction_id)
+    async with FragmentClient(
+        seed="word1 word2 ... word24",
+        api_key="YOUR_TONAPI_KEY",
+        cookies={
+            "stel_ssid": "...",
+            "stel_dt": "...",
+            "stel_token": "...",
+            "stel_ton_token": "...",
+        },
+    ) as client:
+        # Purchase 6 months of Telegram Premium
+        result = await client.purchase_premium("@username", months=6)
+        print(result.transaction_id)
 
-    # Purchase 500 Stars
-    result = await client.purchase_stars("@username", amount=500)
-    print(result.transaction_id)
+        # Purchase 500 Stars
+        result = await client.purchase_stars("@username", amount=500)
+        print(result.transaction_id)
 
-    # Top up 10 TON to Ads balance
-    result = await client.topup_ton("@username", amount=10)
-    print(result.transaction_id)
+        # Top up 10 TON to Ads balance
+        result = await client.topup_ton("@username", amount=10)
+        print(result.transaction_id)
 
 asyncio.run(main())
 ```

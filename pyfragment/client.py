@@ -37,14 +37,14 @@ class FragmentClient:
 
     Example::
 
-        client = FragmentClient(
+        async with FragmentClient(
             seed="word1 word2 ...",
             api_key="AAABBB...",
             cookies={"stel_ssid": "...", "stel_dt": "...", ...},
-        )
-        print(await client.get_wallet())
-        result = await client.purchase_premium("@username", months=6)
-        print(result.transaction_id)
+        ) as client:
+            print(await client.get_wallet())
+            result = await client.purchase_premium("@username", months=6)
+            print(result.transaction_id)
     """
 
     def __init__(
@@ -87,6 +87,15 @@ class FragmentClient:
         self.api_key: str = api_key.strip()
         self.cookies: dict = cookies
         self.wallet_version: WalletVersion = version  # type: ignore[assignment]
+
+    async def __aenter__(self) -> "FragmentClient":
+        return self
+
+    async def __aexit__(self, *_: object) -> None:
+        pass
+
+    def __repr__(self) -> str:
+        return f"FragmentClient(wallet_version='{self.wallet_version}', cookies={len(self.cookies)} keys)"
 
     async def purchase_premium(self, username: str, months: int, show_sender: bool = True) -> PremiumResult:
         """Purchase Telegram Premium for a user.
