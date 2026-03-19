@@ -23,4 +23,17 @@ logs/
 # System files
 .DS_Store
 Thumbs.db
-cookies.json
+
+# Testing & tooling artifacts
+.hypothesis/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+demo.run.py
+
+# Build & distribution
+dist/
+build/
+*.egg-info/

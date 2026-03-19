@@ -10,10 +10,16 @@ SUPPORTED_WALLET_VERSIONS: frozenset[str] = frozenset(get_args(WalletVersion))
 # Wallet class map — used to resolve the correct contract from WALLET_VERSION
 WALLET_CLASSES: dict[str, type] = {"V4R2": WalletV4R2, "V5R1": WalletV5R1}
 
+# Minimum wallet balance required to cover TON network gas fees.
+MIN_TON_BALANCE: float = 0.056
+
+# Required Fragment session cookie keys
+REQUIRED_COOKIE_KEYS: tuple[str, ...] = ("stel_ssid", "stel_dt", "stel_token", "stel_ton_token")
+
 # Fragment page URLs
 STARS_PAGE: str = "https://fragment.com/stars/buy"
 PREMIUM_PAGE: str = "https://fragment.com/premium/gift"
-ADS_PAGE: str = "https://fragment.com/ads/topup"
+TON_PAGE: str = "https://fragment.com/ads/topup"
 
 # Tonkeeper device fingerprint — serialized once, reused in every tx_data payload.
 DEVICE: str = json.dumps(

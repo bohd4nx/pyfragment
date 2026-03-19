@@ -1,0 +1,101 @@
+name: Bug report
+description: Report an issue or unexpected behavior in pyfragment.
+labels:
+  - bug
+body:
+  - type: checkboxes
+    attributes:
+      label: Checklist
+      options:
+        - label: I am sure the error is coming from pyfragment code
+          required: true
+        - label: I have searched the issue tracker for similar bug reports, including closed ones
+          required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ## Context
+        Please provide as much detail as possible to help us reproduce and fix the issue.
+
+  - type: input
+    attributes:
+      label: Operating system
+      placeholder: e.g. Ubuntu 22.04 / macOS 14 / Windows 11
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Python version
+      description: Run `python --version` inside your virtualenv
+      placeholder: e.g. 3.12.3
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: pyfragment version
+      description: Run `pip show pyfragment` inside your virtualenv
+      placeholder: e.g. 2026.1.0
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Expected behavior
+      description: Describe what you expected to happen.
+      placeholder: e.g. Stars should be purchased and StarsResult returned.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Current behavior
+      description: Describe what is actually happening.
+      placeholder: e.g. ParseError is raised with status 400.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps that reproduce the issue.
+      placeholder: |
+        1. Create FragmentClient with valid credentials
+        2. Call purchase_stars("@username", amount=100)
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Code example
+      description: Provide a [minimal reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) if applicable.
+      placeholder: |
+        import asyncio
+        from pyfragment import FragmentClient
+
+        async def main():
+            client = FragmentClient(...)
+            result = await client.purchase_stars("@username", amount=100)
+
+        asyncio.run(main())
+      render: python
+
+  - type: textarea
+    attributes:
+      label: Traceback / logs
+      description: Paste the full traceback or relevant logs.
+      placeholder: |
+        Traceback (most recent call last):
+          File "main.py", line 7, in main
+            ...
+        pyfragment.types.ParseError: ...
+      render: sh
+
+  - type: textarea
+    attributes:
+      label: Additional information
+      description: Anything else that might help us diagnose the problem.
+      placeholder: e.g. Only happens with V5R1 wallet version.

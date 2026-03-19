@@ -1,3 +1,52 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pyfragment"
+version = "2026.0.1"
+description = "Python library for the Fragment.com API — purchase Telegram Stars, Premium, and top up TON Ads balance."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.12"
+authors = [{ name = "bohd4nx", url = "https://github.com/bohd4nx" }]
+keywords = ["fragment", "telegram", "ton", "stars", "premium", "crypto", "blockchain"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Framework :: AsyncIO",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet",
+    "Topic :: Office/Business :: Financial",
+    "Typing :: Typed",
+]
+dependencies = [
+    "httpx==0.28.1",
+    "tonutils[pytoniq]==2.0.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.0.2",
+    "pytest-asyncio==1.3.0",
+    "ruff",
+    "black",
+]
+
+[project.urls]
+Homepage = "https://github.com/bohd4nx/pyfragment"
+Repository = "https://github.com/bohd4nx/pyfragment"
+Issues = "https://github.com/bohd4nx/pyfragment/issues"
+Changelog = "https://github.com/bohd4nx/pyfragment/blob/master/CHANGELOG.md"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pyfragment"]
+
 [tool.pytest.ini_options]
 testpaths    = ["tests"]
 python_files = ["[0-9][0-9][0-9]_test_*.py"]
@@ -9,11 +58,13 @@ line-length = 128
 target-version = ["py312"]
 
 [tool.ruff]
-target-version = "py312"
 line-length = 128
+target-version = "py312"
 
 [tool.ruff.lint]
 # E — pycodestyle errors, F — pyflakes, W — warnings, I — isort
 select = ["E", "F", "W", "I"]
-# E501 — line too long (covered by line-length above)
 ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402"]
