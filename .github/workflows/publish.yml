@@ -11,6 +11,8 @@ jobs:
     name: Version Check
     if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     outputs:
       version: ${{ steps.version.outputs.value }}
       is-new: ${{ steps.tag.outputs.is-new }}
@@ -40,6 +42,8 @@ jobs:
     needs: version-check
     if: needs.version-check.outputs.is-new == 'true'
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - uses: actions/checkout@v6.0.2
@@ -61,6 +65,8 @@ jobs:
     name: Publish to PyPI
     needs: [version-check, build]
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     environment:
       name: pypi
       url: https://pypi.org/project/pyfragment/
@@ -79,6 +85,8 @@ jobs:
     name: GitHub Release
     needs: [version-check, build]
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     permissions:
       contents: write
 

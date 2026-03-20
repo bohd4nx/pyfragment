@@ -4,9 +4,6 @@ from typing import TYPE_CHECKING
 import httpx
 
 from pyfragment.types import (
-    BASE_HEADERS,
-    DEVICE,
-    STARS_PAGE,
     ConfigurationError,
     FragmentAPIError,
     FragmentError,
@@ -14,6 +11,7 @@ from pyfragment.types import (
     UnexpectedError,
     UserNotFoundError,
 )
+from pyfragment.types.constants import BASE_HEADERS, DEVICE, STARS_PAGE
 from pyfragment.utils import (
     execute_transaction_request,
     fragment_post,
@@ -81,10 +79,10 @@ async def purchase_stars(client: "FragmentClient", username: str, amount: int, s
         raise ConfigurationError(ConfigurationError.INVALID_STARS_AMOUNT)
 
     try:
-        fragment_hash = await get_fragment_hash(client.cookies, HEADERS, STARS_PAGE)
+        fragment_hash = await get_fragment_hash(client.cookies, HEADERS, STARS_PAGE, client.timeout)
         account = await get_account_info(client)
 
-        async with httpx.AsyncClient(cookies=client.cookies) as session:
+        async with httpx.AsyncClient(cookies=client.cookies, timeout=client.timeout) as session:
             recipient = await _search_recipient(session, fragment_hash, username)
             req_id = await _init_request(session, fragment_hash, recipient, amount)
 

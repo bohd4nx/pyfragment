@@ -1,15 +1,3 @@
-from pyfragment.types.constants import (
-    BASE_HEADERS,
-    DEVICE,
-    MIN_TON_BALANCE,
-    PREMIUM_PAGE,
-    REQUIRED_COOKIE_KEYS,
-    STARS_PAGE,
-    SUPPORTED_WALLET_VERSIONS,
-    TON_PAGE,
-    WALLET_CLASSES,
-    WalletVersion,
-)
 from pyfragment.types.exceptions import (
     ClientError,
     ConfigurationError,
@@ -28,17 +16,6 @@ from pyfragment.types.exceptions import (
 from pyfragment.types.results import AdsTopupResult, PremiumResult, StarsResult, WalletInfo
 
 __all__ = [
-    # constants
-    "BASE_HEADERS",
-    "DEVICE",
-    "MIN_TON_BALANCE",
-    "PREMIUM_PAGE",
-    "REQUIRED_COOKIE_KEYS",
-    "STARS_PAGE",
-    "SUPPORTED_WALLET_VERSIONS",
-    "TON_PAGE",
-    "WALLET_CLASSES",
-    "WalletVersion",
     # client exceptions
     "ClientError",
     "ConfigurationError",

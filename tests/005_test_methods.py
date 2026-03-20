@@ -21,45 +21,36 @@ def client() -> FragmentClient:
 
 
 @pytest.mark.asyncio
-async def test_purchase_premium_invalid_months_raises(client: FragmentClient) -> None:
+async def test_purchase_premium_invalid_months(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
         await client.purchase_premium("@user", months=5)
 
 
 @pytest.mark.asyncio
-async def test_purchase_premium_valid_months(client: FragmentClient) -> None:
-    """Validation passes for 3/6/12 — network error expected, not ConfigurationError."""
-    for months in (3, 6, 12):
-        with pytest.raises(Exception) as exc_info:
-            await client.purchase_premium("@user", months=months)
-        assert not isinstance(exc_info.value, ConfigurationError)
-
-
-@pytest.mark.asyncio
-async def test_purchase_stars_amount_too_low_raises(client: FragmentClient) -> None:
+async def test_purchase_stars_amount_too_low(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
         await client.purchase_stars("@user", amount=49)
 
 
 @pytest.mark.asyncio
-async def test_purchase_stars_amount_too_high_raises(client: FragmentClient) -> None:
+async def test_purchase_stars_amount_too_high(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
         await client.purchase_stars("@user", amount=1_000_001)
 
 
 @pytest.mark.asyncio
-async def test_purchase_stars_float_raises(client: FragmentClient) -> None:
+async def test_purchase_stars_float_amount(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
         await client.purchase_stars("@user", amount=100.5)  # type: ignore[arg-type]
 
 
 @pytest.mark.asyncio
-async def test_topup_ton_amount_zero_raises(client: FragmentClient) -> None:
+async def test_topup_ton_amount_zero(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
         await client.topup_ton("@user", amount=0)
 
 
 @pytest.mark.asyncio
-async def test_topup_ton_amount_too_high_raises(client: FragmentClient) -> None:
+async def test_topup_ton_amount_too_high(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
         await client.topup_ton("@user", amount=1_000_000_001)

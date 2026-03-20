@@ -16,6 +16,9 @@ class ConfigurationError(ClientError):
     INVALID_MONTHS = "Invalid duration. Choose 3, 6, or 12 months."
     INVALID_STARS_AMOUNT = "Amount must be an integer between 50 and 1 000 000 stars."
     INVALID_TON_AMOUNT = "Amount must be an integer between 1 and 1 000 000 000 TON."
+    INVALID_USERNAME = (
+        "Invalid username '{username}'. Must be 5–32 characters: letters (A–Z, a–z), digits (0–9), or underscores (_)."
+    )
 
 
 class CookieError(ClientError):

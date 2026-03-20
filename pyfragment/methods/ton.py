@@ -4,9 +4,6 @@ from typing import TYPE_CHECKING
 import httpx
 
 from pyfragment.types import (
-    BASE_HEADERS,
-    DEVICE,
-    TON_PAGE,
     AdsTopupResult,
     ConfigurationError,
     FragmentAPIError,
@@ -14,6 +11,7 @@ from pyfragment.types import (
     UnexpectedError,
     UserNotFoundError,
 )
+from pyfragment.types.constants import BASE_HEADERS, DEVICE, TON_PAGE
 from pyfragment.utils import (
     execute_transaction_request,
     fragment_post,
@@ -81,10 +79,10 @@ async def topup_ton(client: "FragmentClient", username: str, amount: int, show_s
         raise ConfigurationError(ConfigurationError.INVALID_TON_AMOUNT)
 
     try:
-        fragment_hash = await get_fragment_hash(client.cookies, HEADERS, TON_PAGE)
+        fragment_hash = await get_fragment_hash(client.cookies, HEADERS, TON_PAGE, client.timeout)
         account = await get_account_info(client)
 
-        async with httpx.AsyncClient(cookies=client.cookies) as session:
+        async with httpx.AsyncClient(cookies=client.cookies, timeout=client.timeout) as session:
             recipient = await _search_recipient(session, fragment_hash, username)
             req_id = await _init_request(session, fragment_hash, recipient, amount)
 
