@@ -24,11 +24,7 @@ jobs:
 
       - run: uv pip install --system ".[dev]"
 
-      - run: ruff check .
-
-      - run: black --check . --target-version py312
-
-      - run: mypy pyfragment
+      - run: ruff check . && black --check . --target-version py312 && mypy pyfragment
 
   test:
     name: Tests
