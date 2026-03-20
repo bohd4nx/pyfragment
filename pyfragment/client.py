@@ -1,4 +1,5 @@
 import json
+from typing import cast
 
 from pyfragment.methods.premium import purchase_premium
 from pyfragment.methods.stars import purchase_stars
@@ -71,7 +72,7 @@ class FragmentClient:
             except Exception as exc:
                 raise CookieError(CookieError.READ_FAILED.format(exc=exc)) from exc
 
-        missing_keys = [k for k in REQUIRED_COOKIE_KEYS if not str(cookies.get(k, "")).strip()]
+        missing_keys = [k for k in REQUIRED_COOKIE_KEYS if not str(cast(dict, cookies).get(k, "")).strip()]
         if missing_keys:
             raise CookieError(CookieError.MISSING_KEYS.format(keys=", ".join(missing_keys)))
 
@@ -85,7 +86,7 @@ class FragmentClient:
 
         self.seed: str = seed.strip()
         self.api_key: str = api_key.strip()
-        self.cookies: dict = cookies
+        self.cookies: dict = cast(dict, cookies)
         self.wallet_version: WalletVersion = version  # type: ignore[assignment]
         self.timeout: float = timeout
 

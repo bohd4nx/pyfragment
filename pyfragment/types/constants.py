@@ -1,5 +1,5 @@
 import json
-from typing import Literal, get_args
+from typing import Any, Literal, get_args
 
 from tonutils.contracts.wallet import WalletV4R2, WalletV5R1
 
@@ -8,7 +8,7 @@ WalletVersion = Literal["V4R2", "V5R1"]
 SUPPORTED_WALLET_VERSIONS: frozenset[str] = frozenset(get_args(WalletVersion))
 
 # Wallet class map — used to resolve the correct contract from WALLET_VERSION
-WALLET_CLASSES: dict[str, type] = {"V4R2": WalletV4R2, "V5R1": WalletV5R1}
+WALLET_CLASSES: dict[str, Any] = {"V4R2": WalletV4R2, "V5R1": WalletV5R1}
 
 # Minimum wallet balance required to cover TON network gas fees.
 MIN_TON_BALANCE: float = 0.056
