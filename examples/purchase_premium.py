@@ -23,22 +23,17 @@ MONTHS = 3  # 3, 6, or 12
 
 
 async def main() -> None:
-    client = FragmentClient(seed=SEED, api_key=API_KEY, cookies=COOKIES)
+    async with FragmentClient(seed=SEED, api_key=API_KEY, cookies=COOKIES) as client:
+        try:
+            result = await client.purchase_premium(USERNAME, months=MONTHS, show_sender=True)
+        except UserNotFoundError:
+            print(f"User {USERNAME} was not found on fragment.com — check the username and try again.")
+            return
+        except ConfigurationError as e:
+            print(f"Invalid argument: {e}")
+            return
 
-    try:
-        result = await client.purchase_premium(USERNAME, months=MONTHS, show_sender=True)
-    except UserNotFoundError:
-        print(f"User {USERNAME!r} not found on Fragment.")
-        return
-    except ConfigurationError as e:
-        print(f"Invalid parameters: {e}")
-        return
-
-    print("Premium purchased")
-    print("   %-14s %s" % ("Username:", result.username))
-    print("   %-14s %s months" % ("Duration:", result.months))
-    print("   %-14s %s" % ("Transaction:", result.transaction_id))
-    print("   %-14s %s" % ("Timestamp:", result.timestamp))
+    print(f"{result.months} months of Premium successfully sent to {result.username} | tx: {result.transaction_id}")
 
 
 if __name__ == "__main__":

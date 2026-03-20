@@ -5,9 +5,6 @@ from typing import TYPE_CHECKING
 import httpx
 
 from pyfragment.types import (
-    BASE_HEADERS,
-    DEVICE,
-    PREMIUM_PAGE,
     ConfigurationError,
     FragmentAPIError,
     FragmentError,
@@ -15,6 +12,7 @@ from pyfragment.types import (
     UnexpectedError,
     UserNotFoundError,
 )
+from pyfragment.types.constants import BASE_HEADERS, DEVICE, PREMIUM_PAGE
 from pyfragment.utils import (
     execute_transaction_request,
     fragment_post,
@@ -94,10 +92,10 @@ async def purchase_premium(client: "FragmentClient", username: str, months: int,
         raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
 
     try:
-        fragment_hash = await get_fragment_hash(client.cookies, HEADERS, PREMIUM_PAGE)
+        fragment_hash = await get_fragment_hash(client.cookies, HEADERS, PREMIUM_PAGE, client.timeout)
         account = await get_account_info(client)
 
-        async with httpx.AsyncClient(cookies=client.cookies) as session:
+        async with httpx.AsyncClient(cookies=client.cookies, timeout=client.timeout) as session:
             recipient = await _search_recipient(session, fragment_hash, username, months)
             req_id = await _init_request(session, fragment_hash, recipient, months)
 

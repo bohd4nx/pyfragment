@@ -4,16 +4,14 @@ from pyfragment.methods.premium import purchase_premium
 from pyfragment.methods.stars import purchase_stars
 from pyfragment.methods.ton import topup_ton
 from pyfragment.types import (
-    REQUIRED_COOKIE_KEYS,
-    SUPPORTED_WALLET_VERSIONS,
     AdsTopupResult,
     ConfigurationError,
     CookieError,
     PremiumResult,
     StarsResult,
     WalletInfo,
-    WalletVersion,
 )
+from pyfragment.types.constants import DEFAULT_TIMEOUT, REQUIRED_COOKIE_KEYS, SUPPORTED_WALLET_VERSIONS, WalletVersion
 from pyfragment.utils.wallet import get_wallet_info
 
 
@@ -30,6 +28,7 @@ class FragmentClient:
         api_key: Tonapi API key — get one at https://tonconsole.com.
         cookies: Fragment session cookies as a dict or JSON string.
         wallet_version: Wallet contract version — ``"V4R2"`` or ``"V5R1"`` (default).
+        timeout: HTTP request timeout in seconds. Defaults to ``30.0``.
 
     Raises:
         ConfigurationError: If ``seed``, ``api_key``, or ``wallet_version`` are missing or invalid.
@@ -53,6 +52,7 @@ class FragmentClient:
         api_key: str,
         cookies: dict | str,
         wallet_version: str = "V5R1",
+        timeout: float = DEFAULT_TIMEOUT,
     ) -> None:
         missing = [name for name, val in (("seed", seed), ("api_key", api_key)) if not val or not str(val).strip()]
         if missing:
@@ -87,6 +87,7 @@ class FragmentClient:
         self.api_key: str = api_key.strip()
         self.cookies: dict = cookies
         self.wallet_version: WalletVersion = version  # type: ignore[assignment]
+        self.timeout: float = timeout
 
     async def __aenter__(self) -> "FragmentClient":
         return self

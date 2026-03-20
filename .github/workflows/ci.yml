@@ -10,6 +10,8 @@ jobs:
   lint:
     name: Lint & Format
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - uses: actions/checkout@v6.0.2
@@ -26,9 +28,14 @@ jobs:
 
       - run: black --check . --target-version py312
 
+      - run: mypy pyfragment
+
   test:
     name: Tests
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      COOKIES_JSON: ${{ secrets.COOKIES_JSON }}
 
     steps:
       - uses: actions/checkout@v6.0.2
@@ -40,11 +47,5 @@ jobs:
       - uses: astral-sh/setup-uv@v7.5.0
 
       - run: uv pip install --system ".[dev]"
-
-      - name: Write cookies.json
-        if: ${{ env.COOKIES_JSON != '' }}
-        run: echo "$COOKIES_JSON" > cookies.json
-        env:
-          COOKIES_JSON: ${{ secrets.COOKIES_JSON }}
 
       - run: pytest

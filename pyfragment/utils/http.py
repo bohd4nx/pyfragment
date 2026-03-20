@@ -4,12 +4,14 @@ from typing import Any
 import httpx
 
 from pyfragment.types import FragmentPageError, ParseError, VerificationError
+from pyfragment.types.constants import DEFAULT_TIMEOUT
 
 
 async def get_fragment_hash(
     cookies: dict[str, Any],
     headers: dict[str, str],
     page_url: str,
+    timeout: float = DEFAULT_TIMEOUT,
 ) -> str:
     """Fetch the API hash from a Fragment page.
 
@@ -21,6 +23,7 @@ async def get_fragment_hash(
         cookies: Active Fragment session cookies.
         headers: Base headers for the relevant Fragment page.
         page_url: URL of the Fragment page to fetch the hash from.
+        timeout: HTTP request timeout in seconds. Defaults to ``DEFAULT_TIMEOUT``.
 
     Returns:
         Lowercase hex hash string.
@@ -44,7 +47,7 @@ async def get_fragment_hash(
         }
     )
 
-    async with httpx.AsyncClient(cookies=cookies) as session:
+    async with httpx.AsyncClient(cookies=cookies, timeout=timeout) as session:
         response = await session.get(page_url, headers=page_headers)
 
     if response.status_code != 200:
