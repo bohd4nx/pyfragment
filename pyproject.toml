@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pyfragment"
-version = "2026.0.1"
+version = "2026.0.2"
 description = "Python library for the Fragment.com API — purchase Telegram Stars, Premium, and top up TON Ads balance."
 readme = "README.md"
 license = { text = "MIT" }
