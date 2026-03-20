@@ -78,6 +78,8 @@ async def process_transaction(client: "FragmentClient", transaction_data: dict) 
         except Exception as exc:
             raise TransactionError(TransactionError.BROADCAST_FAILED.format(exc=exc)) from exc
 
+    raise TransactionError(TransactionError.BROADCAST_FAILED.format(exc="transfer loop exited without result"))
+
 
 async def get_account_info(client: "FragmentClient") -> dict[str, Any]:
     """Fetch wallet address, public key, and state-init for the Fragment API.
