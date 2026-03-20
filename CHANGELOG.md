@@ -7,6 +7,23 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ---
 
+## [Unreleased]
+
+### Added
+- `timeout` parameter on `FragmentClient` (default `30.0` s) — passed through to every HTTP request
+
+### Changed
+- Cookie validation: narrowed type internally so no `# type: ignore` is needed in `FragmentClient.__init__`
+- `WALLET_CLASSES` typed as `dict[str, Any]` so mypy resolves `from_mnemonic` correctly
+- All four `examples/` files updated to `async with FragmentClient`, f-strings, and aligned error messages
+- README usage section rewritten with a single comprehensive `async with` example
+
+### Fixed
+- mypy: missing return path in `process_transaction` after retry loop
+- mypy: `cookies` union-attr error in `FragmentClient.__init__`
+
+---
+
 ## [2026.0.1] — 2026-03-16
 
 ### Added
