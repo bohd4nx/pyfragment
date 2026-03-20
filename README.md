@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="fragment.svg" alt="Fragment Logo" width="120" height="120" style="border-radius: 24px;">
+  <img src="https://www.bohd4n.dev/assets/projects/pyfragment.svg" alt="Fragment Logo" width="120" height="120" style="border-radius: 24px;">
 
   <h1 style="margin-top: 24px;">Fragment API</h1>
 
@@ -82,15 +82,15 @@ async def main() -> None:
         },
     ) as client:
         try:
-            # Purchase 6 months of Telegram Premium for a user
+            # Purchase 6 months of Telegram Premium
             result = await client.purchase_premium("@username", months=6)
             print(f"{result.months} months of Premium successfully sent to {result.username} | tx: {result.transaction_id}")
 
-            # Purchase 500 Stars for a user (50–1 000 000)
+            # Purchase 500 Stars
             result = await client.purchase_stars("@username", amount=500)
             print(f"{result.stars} Stars successfully sent to {result.username} | tx: {result.transaction_id}")
 
-            # Top up 10 TON to Telegram Ads balance
+            # Top up 10 TON to Telegram balance
             # wallet must hold at least amount + ~0.056 TON for gas
             result = await client.topup_ton("@username", amount=10)
             print(f"{result.amount} TON successfully sent to {result.username} | tx: {result.transaction_id}")
