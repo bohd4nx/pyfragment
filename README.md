@@ -28,6 +28,12 @@
 pip install pyfragment
 ```
 
+To install the latest unreleased changes from the `dev` branch:
+
+```bash
+pip install git+https://github.com/bohd4nx/pyfragment.git@dev
+```
+
 Requires Python 3.12+.
 
 ---
