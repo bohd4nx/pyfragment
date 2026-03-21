@@ -79,6 +79,12 @@ async def test_giveaway_premium_winners_too_high(client: FragmentClient) -> None
 
 
 @pytest.mark.asyncio
+async def test_giveaway_premium_float_winners(client: FragmentClient) -> None:
+    with pytest.raises(ConfigurationError):
+        await client.giveaway_premium("@channel", winners=2.5, months=3)  # type: ignore[arg-type]
+
+
+@pytest.mark.asyncio
 async def test_giveaway_premium_invalid_months(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
         await client.giveaway_premium("@channel", winners=10, months=5)

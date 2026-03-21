@@ -90,6 +90,18 @@ async def test_giveaway_stars_amount_too_high(client: FragmentClient) -> None:
         await client.giveaway_stars("@channel", winners=1, amount=1_000_001)
 
 
+@pytest.mark.asyncio
+async def test_giveaway_stars_float_winners(client: FragmentClient) -> None:
+    with pytest.raises(ConfigurationError):
+        await client.giveaway_stars("@channel", winners=1.5, amount=500)  # type: ignore[arg-type]
+
+
+@pytest.mark.asyncio
+async def test_giveaway_stars_float_amount(client: FragmentClient) -> None:
+    with pytest.raises(ConfigurationError):
+        await client.giveaway_stars("@channel", winners=1, amount=500.5)  # type: ignore[arg-type]
+
+
 # Stars giveaway mocked tests
 
 

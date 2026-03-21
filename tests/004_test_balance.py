@@ -4,10 +4,16 @@ from contextlib import contextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from tonutils.exceptions import ProviderResponseError
 
 from pyfragment.types import TransactionError, WalletError
 from pyfragment.utils.wallet import process_transaction
 from tests.shared import VALID_SEED
+
+
+def _provider_error(code: int, message: str = "error") -> ProviderResponseError:
+    return ProviderResponseError(code=code, message=message, endpoint="api.tonapi.io")
+
 
 TRANSACTION_DATA = {
     "transaction": {
@@ -94,3 +100,34 @@ async def test_one_nanoton_below_minimum_raises() -> None:
 async def test_invalid_payload_raises() -> None:
     with pytest.raises(TransactionError):
         await process_transaction(_make_client(), {"transaction": {}})
+
+
+@pytest.mark.asyncio
+async def test_balance_check_failed_raises_wallet_error() -> None:
+    wallet = _make_wallet(balance_nanotons=1_000_000_000)
+    wallet.refresh = AsyncMock(side_effect=RuntimeError("network timeout"))
+    with _patch_wallet(wallet):
+        with pytest.raises(WalletError, match="balance"):
+            await process_transaction(_make_client(), TRANSACTION_DATA)
+    wallet.transfer.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_retries_and_succeeds() -> None:
+    wallet = _make_wallet(balance_nanotons=1_000_000_000)
+    wallet.transfer = AsyncMock(side_effect=[_provider_error(429, "rate limited"), MagicMock(normalized_hash="abc123")])
+    with _patch_wallet(wallet), patch("pyfragment.utils.wallet.clean_decode", return_value=""):
+        result = await process_transaction(_make_client(), TRANSACTION_DATA)
+    assert result == "abc123"
+    assert wallet.transfer.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_duplicate_seqno_raises_after_retries() -> None:
+    wallet = _make_wallet(balance_nanotons=1_000_000_000)
+    err = _provider_error(406, "Duplicate msg_seqno")
+    wallet.transfer = AsyncMock(side_effect=[err, err, err])
+    with _patch_wallet(wallet), patch("pyfragment.utils.wallet.clean_decode", return_value=""):
+        with pytest.raises(TransactionError, match="seqno"):
+            await process_transaction(_make_client(), TRANSACTION_DATA)
+    assert wallet.transfer.call_count == 3
