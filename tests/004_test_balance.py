@@ -1,4 +1,4 @@
-"""Unit tests for process_transaction() — balance checks before broadcast."""
+"""Unit tests for process_transaction() — balance validation and broadcast retry logic."""
 
 from contextlib import contextmanager
 from unittest.mock import AsyncMock, MagicMock, patch

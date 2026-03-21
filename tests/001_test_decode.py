@@ -1,4 +1,4 @@
-"""Tests for clean_decode() — BOC-encoded Fragment payloads decode to UTF-8."""
+"""Tests for clean_decode() — TON BOC payload decoding."""
 
 import re
 

@@ -1,27 +1,11 @@
-"""Unit tests for number methods — get_login_code, toggle_login_codes, terminate_sessions."""
+"""Unit tests for anonymous number methods — login codes and session management."""
 
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from pyfragment import AnonymousNumberError, FragmentClient, LoginCodeResult, TerminateSessionsResult
-from tests.shared import FAKE_HASH
-
-FAKE_HTML_WITH_CODE = """
-<table>
-  <tr>
-    <td class="table-cell-value">12345</td>
-  </tr>
-  <tr>
-    <td>session data</td>
-  </tr>
-</table>
-"""
-
-FAKE_HTML_NO_CODE = "<table><tr><td>no code here</td></tr></table>"
-
-FAKE_TERMINATE_HASH = "terminate_hash_abc123"
-
+from tests.shared import FAKE_HASH, FAKE_HTML_NO_CODE, FAKE_HTML_WITH_CODE, FAKE_TERMINATE_HASH
 
 # get_login_code tests
 

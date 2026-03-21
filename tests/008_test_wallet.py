@@ -1,14 +1,11 @@
-"""Unit tests for get_wallet — mocked network calls."""
+"""Unit tests for get_wallet() — wallet address and TON balance lookup."""
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from pyfragment import FragmentClient, WalletInfo
-
-FAKE_ADDRESS = "UQCppfw5DxWgdVHf3zkmZS8k1mt9oAUYxQLwq2fz3nhO8No5"
-FAKE_BALANCE_NANOTON = 1_500_000_000  # 1.5 TON
-
+from tests.shared import FAKE_ADDRESS, FAKE_BALANCE_NANOTON
 
 # Wallet mocked tests
 

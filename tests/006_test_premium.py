@@ -1,4 +1,4 @@
-"""Unit tests for purchase_premium and giveaway_premium — validation and mocked network calls."""
+"""Unit tests for Premium methods — purchase_premium and giveaway_premium."""
 
 from unittest.mock import AsyncMock, patch
 

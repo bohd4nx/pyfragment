@@ -1,4 +1,4 @@
-"""Unit tests for topup_ton — validation and mocked network calls."""
+"""Unit tests for topup_ton — TON Ads balance top-up."""
 
 from unittest.mock import AsyncMock, patch
 

@@ -1,14 +1,11 @@
-"""Unit tests for client.call() — raw Fragment API request."""
+"""Unit tests for FragmentClient.call() — raw Fragment API access."""
 
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from pyfragment import FragmentClient
-from tests.shared import FAKE_HASH
-
-FAKE_RESPONSE = {"status": "ok", "data": {"value": 42}}
-
+from tests.shared import FAKE_HASH, FAKE_RESPONSE
 
 # client.call() mocked tests
 
