@@ -1,6 +1,15 @@
 from dataclasses import dataclass
 
-__all__ = ["AdsTopupResult", "PremiumGiveawayResult", "PremiumResult", "StarsGiveawayResult", "StarsResult", "WalletInfo"]
+__all__ = [
+    "AdsTopupResult",
+    "LoginCodeResult",
+    "PremiumGiveawayResult",
+    "PremiumResult",
+    "StarsGiveawayResult",
+    "StarsResult",
+    "TerminateSessionsResult",
+    "WalletInfo",
+]
 
 
 @dataclass
@@ -81,3 +90,27 @@ class PremiumGiveawayResult:
             f"PremiumGiveawayResult(channel='{self.channel}', winners={self.winners}, "
             f"amount={self.amount} months per winner, tx='{self.transaction_id}')"
         )
+
+
+@dataclass
+class LoginCodeResult:
+    """Result of :meth:`FragmentClient.get_login_code`."""
+
+    number: str
+    code: str | None
+    active_sessions: int
+
+    def __repr__(self) -> str:
+        code_str = f"'{self.code}'" if self.code else "None"
+        return f"LoginCodeResult(number='{self.number}', code={code_str}, active_sessions={self.active_sessions})"
+
+
+@dataclass
+class TerminateSessionsResult:
+    """Result of :meth:`FragmentClient.terminate_sessions`."""
+
+    number: str
+    message: str | None
+
+    def __repr__(self) -> str:
+        return f"TerminateSessionsResult(number='{self.number}', message={self.message!r})"

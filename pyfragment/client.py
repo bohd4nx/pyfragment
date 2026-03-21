@@ -3,6 +3,7 @@ from typing import Any, cast
 
 import httpx
 
+from pyfragment.methods.anonymous_number import get_login_code, terminate_sessions, toggle_login_codes
 from pyfragment.methods.giveaway_premium import giveaway_premium
 from pyfragment.methods.giveaway_stars import giveaway_stars
 from pyfragment.methods.purchase_premium import purchase_premium
@@ -12,8 +13,10 @@ from pyfragment.types import (
     AdsTopupResult,
     ConfigurationError,
     CookieError,
+    LoginCodeResult,
     PremiumResult,
     StarsResult,
+    TerminateSessionsResult,
     WalletInfo,
 )
 from pyfragment.types.constants import (
@@ -196,6 +199,41 @@ class FragmentClient:
             ``winners``, and ``amount``.
         """
         return await giveaway_premium(self, channel, winners, months)
+
+    async def get_login_code(self, number: str) -> LoginCodeResult:
+        """Fetch the current pending login code for an anonymous number.
+
+        Args:
+            number: Phone number with or without leading ``+`` (e.g. ``"+1234567890"``).
+
+        Returns:
+            :class:`LoginCodeResult` with ``number``, ``code`` (``None`` if none pending),
+            and ``active_sessions`` count.
+        """
+        return await get_login_code(self, number)
+
+    async def toggle_login_codes(self, number: str, can_receive: bool) -> None:
+        """Enable or disable login code delivery for an anonymous number.
+
+        Args:
+            number: Phone number with or without leading ``+``.
+            can_receive: ``True`` to allow receiving codes, ``False`` to block them.
+        """
+        return await toggle_login_codes(self, number, can_receive)
+
+    async def terminate_sessions(self, number: str) -> TerminateSessionsResult:
+        """Terminate all active Telegram sessions for an anonymous number.
+
+        Args:
+            number: Phone number with or without leading ``+``.
+
+        Returns:
+            :class:`TerminateSessionsResult` with ``number`` and ``message``.
+
+        Raises:
+            AnonymousNumberError: If the number is not owned by this account or has no active sessions.
+        """
+        return await terminate_sessions(self, number)
 
     async def call(
         self, method: str, data: dict[str, Any] | None = None, *, page_url: str = FRAGMENT_BASE_URL

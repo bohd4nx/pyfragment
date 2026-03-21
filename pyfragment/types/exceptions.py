@@ -67,6 +67,13 @@ class UserNotFoundError(FragmentAPIError):
     )
 
 
+class AnonymousNumberError(FragmentAPIError):
+    """Raised for Fragment anonymous number API failures."""
+
+    NOT_OWNED = "Number '{number}' is not associated with your Fragment account or has no active sessions to terminate."
+    TERMINATE_FAILED = "Failed to terminate sessions for '{number}': {error}"
+
+
 class TransactionError(FragmentAPIError):
     """Raised when a TON transaction fails to build or broadcast."""
 
@@ -133,6 +140,7 @@ __all__ = [
     "CookieError",
     "FragmentAPIError",
     "FragmentPageError",
+    "AnonymousNumberError",
     "UserNotFoundError",
     "TransactionError",
     "ParseError",

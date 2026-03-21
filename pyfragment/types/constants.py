@@ -26,6 +26,7 @@ STARS_GIVEAWAY_PAGE: str = f"{FRAGMENT_BASE_URL}/stars/giveaway"
 PREMIUM_PAGE: str = f"{FRAGMENT_BASE_URL}/premium/gift"
 PREMIUM_GIVEAWAY_PAGE: str = f"{FRAGMENT_BASE_URL}/premium/giveaway"
 TON_PAGE: str = f"{FRAGMENT_BASE_URL}/ads/topup"
+NUMBERS_PAGE: str = f"{FRAGMENT_BASE_URL}/numbers"
 
 # Tonkeeper device fingerprint — serialized once, reused in every tx_data payload.
 DEVICE: str = json.dumps(
