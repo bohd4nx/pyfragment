@@ -14,12 +14,19 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - `giveaway_premium(channel, winners, months)` — run a Telegram Premium giveaway for a channel (1–24 000 winners, 3/6/12 months each)
 - `StarsGiveawayResult` and `PremiumGiveawayResult` result types
 - `STARS_GIVEAWAY_PAGE` and `PREMIUM_GIVEAWAY_PAGE` URL constants
+- `FragmentClient.call(method, data, *, page_url)` — send a raw request to any Fragment API method without waiting for a library update
+- `FRAGMENT_BASE_URL` constant — single source of truth for the Fragment base URL used across all page constants and headers
+- `examples/call.py` — usage example for `client.call()`
 
 ### Changed
 - All result types (`PremiumResult`, `StarsResult`, `StarsGiveawayResult`, `PremiumGiveawayResult`) now use a single unified `amount` field instead of `months`, `stars` — consistent API across every method
 - `__repr__` on result types now includes the unit (`3 months`, `500 stars`) for clarity
 - Method module files renamed to match their function: `premium.py` → `purchase_premium.py`, `stars.py` → `purchase_stars.py`, `ton.py` → `topup_ton.py`
 - `timestamp` field removed from all result dataclasses
+- All page URL constants (`STARS_PAGE`, `PREMIUM_PAGE`, etc.) now built from `FRAGMENT_BASE_URL` instead of hardcoded strings
+- `TransactionError` now includes an SSL hint when a broadcast fails due to certificate verification errors
+- `TransactionError.DUPLICATE_SEQNO` — dedicated error raised after 3 failed attempts due to a `406 Duplicate msg_seqno` response from the TON network; broadcast is automatically retried (up to 2 retries, 2 s apart) before giving up
+- All error message templates rewritten to follow a "what happened → why → what to do" pattern — every template is now actionable and includes a fix hint where applicable
 
 ---
 

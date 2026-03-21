@@ -35,7 +35,7 @@ async def main() -> None:
             return
 
     print(
-        f"Stars giveaway created for {result.channel} — {result.winners} winners × {result.amount} stars | tx: {result.transaction_id}"
+        f"Stars giveaway created for {result.channel} — {result.winners} winner(s) × {result.amount} stars each | tx: {result.transaction_id}"
     )
 
 

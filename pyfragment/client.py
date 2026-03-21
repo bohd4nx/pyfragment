@@ -120,7 +120,7 @@ class FragmentClient:
             show_sender: Show your name as the sender. Defaults to ``True``.
 
         Returns:
-            :class:`PremiumResult` with ``transaction_id``, ``username``, and ``months``.
+            :class:`PremiumResult` with ``transaction_id``, ``username``, and ``amount``.
         """
         return await purchase_premium(self, username, months, show_sender)
 
@@ -133,7 +133,7 @@ class FragmentClient:
             show_sender: Show your name as the gift sender. Defaults to ``True``.
 
         Returns:
-            :class:`StarsResult` with ``transaction_id``, ``username``, and ``stars``.
+            :class:`StarsResult` with ``transaction_id``, ``username``, and ``amount``.
         """
         return await purchase_stars(self, username, amount, show_sender)
 

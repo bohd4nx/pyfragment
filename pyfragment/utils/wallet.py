@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import ssl
 from typing import TYPE_CHECKING, Any
 
 from tonutils.clients import TonapiClient
@@ -38,9 +39,6 @@ async def process_transaction(client: "FragmentClient", transaction_data: dict) 
     message = transaction_data["transaction"]["messages"][0]
     amount_ton = int(message["amount"]) / 1_000_000_000
 
-    # TODO: Investigate 406 'inbound external message rejected before smart-contract execution'.
-    # This happens when the previous transaction's seqno hasn't been confirmed on-chain yet,
-    # causing the wallet contract to reject the new message.
     async with TonapiClient(network=NetworkGlobalID.MAINNET, api_key=client.api_key) as ton:
         wallet_cls = WALLET_CLASSES[client.wallet_version]
         wallet, _, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)
@@ -51,7 +49,7 @@ async def process_transaction(client: "FragmentClient", transaction_data: dict) 
             balance_ton = wallet.balance / 1_000_000_000
             required = amount_ton + MIN_TON_BALANCE
             if balance_ton < required:
-                raise WalletError(WalletError.LOW_BALANCE.format(balance=balance_ton, required=required))
+                raise WalletError(WalletError.LOW_BALANCE.format(balance=balance_ton, required=required, gas=MIN_TON_BALANCE))
         except WalletError:
             raise
         except Exception as exc:
@@ -60,7 +58,7 @@ async def process_transaction(client: "FragmentClient", transaction_data: dict) 
         try:
             payload = clean_decode(message["payload"])
 
-            for attempt in range(2):
+            for attempt in range(3):
                 try:
                     result = await wallet.transfer(
                         destination=message["address"],
@@ -72,10 +70,21 @@ async def process_transaction(client: "FragmentClient", transaction_data: dict) 
                     if exc.code == 429 and attempt == 0:
                         await asyncio.sleep(1)
                         continue
+                    if exc.code == 406 and "seqno" in str(exc).lower():
+                        # Previous tx seqno not yet confirmed — wallet will re-fetch seqno on retry
+                        if attempt < 2:
+                            await asyncio.sleep(2)
+                            continue
+                        raise TransactionError(TransactionError.DUPLICATE_SEQNO) from exc
                     raise
         except (WalletError, TransactionError):
             raise
         except Exception as exc:
+            cause: BaseException | None = exc
+            while cause is not None:
+                if isinstance(cause, ssl.SSLError):
+                    raise TransactionError(TransactionError.BROADCAST_FAILED_SSL.format(exc=exc)) from exc
+                cause = cause.__cause__ or cause.__context__
             raise TransactionError(TransactionError.BROADCAST_FAILED.format(exc=exc)) from exc
 
     raise TransactionError(TransactionError.BROADCAST_FAILED.format(exc="transfer loop exited without result"))

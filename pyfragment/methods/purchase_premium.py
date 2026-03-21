@@ -93,7 +93,7 @@ async def purchase_premium(client: "FragmentClient", username: str, months: int,
         show_sender: Show your name as the gift sender. Defaults to ``True``.
 
     Returns:
-        :class:`PremiumResult` with ``transaction_id``, ``username``, and ``months``.
+        :class:`PremiumResult` with ``transaction_id``, ``username``, and ``amount``.
 
     Raises:
         ConfigurationError: If ``months`` is not ``3``, ``6``, or ``12``.

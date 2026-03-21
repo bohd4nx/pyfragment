@@ -80,7 +80,7 @@ async def purchase_stars(client: "FragmentClient", username: str, amount: int, s
         show_sender: Show your name as the gift sender. Defaults to ``True``.
 
     Returns:
-        :class:`StarsResult` with ``transaction_id``, ``username``, and ``stars``.
+        :class:`StarsResult` with ``transaction_id``, ``username``, and ``amount``.
 
     Raises:
         ConfigurationError: If ``amount`` is not an integer between 50 and 1 000 000.

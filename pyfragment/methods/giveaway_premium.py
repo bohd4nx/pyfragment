@@ -91,7 +91,7 @@ async def giveaway_premium(
 
     Returns:
         :class:`PremiumGiveawayResult` with ``transaction_id``, ``channel``,
-        ``winners``, and ``months``.
+        ``winners``, and ``amount``.
 
     Raises:
         ConfigurationError: If ``winners`` is not 1–24 000 or ``months`` is not 3, 6, or 12.
