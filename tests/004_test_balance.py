@@ -7,8 +7,7 @@ import pytest
 
 from pyfragment.types import TransactionError, WalletError
 from pyfragment.utils.wallet import process_transaction
-
-VALID_SEED = "abandon " * 23 + "about"
+from tests.shared import VALID_SEED
 
 TRANSACTION_DATA = {
     "transaction": {
@@ -51,6 +50,9 @@ def _patch_wallet(wallet: MagicMock):
         yield
 
 
+# Balance threshold tests
+
+
 @pytest.mark.asyncio
 async def test_sufficient_balance_broadcasts() -> None:
     wallet = _make_wallet(balance_nanotons=1_000_000_000)  # 1 TON, needs 0.556 TON
@@ -83,6 +85,9 @@ async def test_one_nanoton_below_minimum_raises() -> None:
     with _patch_wallet(wallet):
         with pytest.raises(WalletError, match="required"):
             await process_transaction(_make_client(), TRANSACTION_DATA)
+
+
+# Error handling tests
 
 
 @pytest.mark.asyncio

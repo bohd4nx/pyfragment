@@ -23,12 +23,18 @@ PAYLOADS = [
 ]
 
 
+# Decode valid payload tests
+
+
 @pytest.mark.parametrize("payload", PAYLOADS)
 def test_decode_payload(payload: str) -> None:
     result = clean_decode(payload)
     assert "Telegram" in result
     assert re.search(r"Ref#[A-Za-z0-9]+", result), f"no Ref# in {result!r}"
     assert all(ord(c) < 128 for c in result), f"non-ASCII chars in {result!r}"
+
+
+# Edge case tests
 
 
 def test_empty_payload_returns_empty_string() -> None:
