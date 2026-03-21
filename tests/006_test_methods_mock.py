@@ -31,10 +31,10 @@ def client() -> FragmentClient:
 @pytest.mark.asyncio
 async def test_purchase_stars_success(client: FragmentClient) -> None:
     with (
-        patch("pyfragment.methods.stars.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch("pyfragment.methods.stars.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch("pyfragment.methods.purchase_stars.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
+        patch("pyfragment.methods.purchase_stars.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
         patch(
-            "pyfragment.methods.stars.fragment_post",
+            "pyfragment.methods.purchase_stars.fragment_post",
             AsyncMock(
                 side_effect=[
                     {"found": {"recipient": FAKE_RECIPIENT}},  # searchStarsRecipient
@@ -42,23 +42,23 @@ async def test_purchase_stars_success(client: FragmentClient) -> None:
                 ]
             ),
         ),
-        patch("pyfragment.methods.stars.execute_transaction_request", AsyncMock(return_value=FAKE_TRANSACTION)),
-        patch("pyfragment.methods.stars.process_transaction", AsyncMock(return_value=FAKE_TX_HASH)),
+        patch("pyfragment.methods.purchase_stars.execute_transaction_request", AsyncMock(return_value=FAKE_TRANSACTION)),
+        patch("pyfragment.methods.purchase_stars.process_transaction", AsyncMock(return_value=FAKE_TX_HASH)),
     ):
         result = await client.purchase_stars("testuser", amount=100)
 
     assert isinstance(result, StarsResult)
     assert result.transaction_id == FAKE_TX_HASH
     assert result.username == "testuser"
-    assert result.stars == 100
+    assert result.amount == 100
 
 
 @pytest.mark.asyncio
 async def test_purchase_stars_user_not_found(client: FragmentClient) -> None:
     with (
-        patch("pyfragment.methods.stars.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch("pyfragment.methods.stars.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch("pyfragment.methods.stars.fragment_post", AsyncMock(return_value={"found": {}})),
+        patch("pyfragment.methods.purchase_stars.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
+        patch("pyfragment.methods.purchase_stars.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch("pyfragment.methods.purchase_stars.fragment_post", AsyncMock(return_value={"found": {}})),
     ):
         with pytest.raises(UserNotFoundError):
             await client.purchase_stars("ghost", amount=100)
@@ -67,10 +67,10 @@ async def test_purchase_stars_user_not_found(client: FragmentClient) -> None:
 @pytest.mark.asyncio
 async def test_purchase_premium_success(client: FragmentClient) -> None:
     with (
-        patch("pyfragment.methods.premium.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch("pyfragment.methods.premium.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch("pyfragment.methods.purchase_premium.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
+        patch("pyfragment.methods.purchase_premium.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
         patch(
-            "pyfragment.methods.premium.fragment_post",
+            "pyfragment.methods.purchase_premium.fragment_post",
             AsyncMock(
                 side_effect=[
                     {"found": {"recipient": FAKE_RECIPIENT}},  # searchPremiumGiftRecipient
@@ -79,23 +79,23 @@ async def test_purchase_premium_success(client: FragmentClient) -> None:
                 ]
             ),
         ),
-        patch("pyfragment.methods.premium.execute_transaction_request", AsyncMock(return_value=FAKE_TRANSACTION)),
-        patch("pyfragment.methods.premium.process_transaction", AsyncMock(return_value=FAKE_TX_HASH)),
+        patch("pyfragment.methods.purchase_premium.execute_transaction_request", AsyncMock(return_value=FAKE_TRANSACTION)),
+        patch("pyfragment.methods.purchase_premium.process_transaction", AsyncMock(return_value=FAKE_TX_HASH)),
     ):
         result = await client.purchase_premium("testuser", months=6)
 
     assert isinstance(result, PremiumResult)
     assert result.transaction_id == FAKE_TX_HASH
     assert result.username == "testuser"
-    assert result.months == 6
+    assert result.amount == 6
 
 
 @pytest.mark.asyncio
 async def test_purchase_premium_user_not_found(client: FragmentClient) -> None:
     with (
-        patch("pyfragment.methods.premium.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch("pyfragment.methods.premium.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch("pyfragment.methods.premium.fragment_post", AsyncMock(return_value={"found": {}})),
+        patch("pyfragment.methods.purchase_premium.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
+        patch("pyfragment.methods.purchase_premium.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch("pyfragment.methods.purchase_premium.fragment_post", AsyncMock(return_value={"found": {}})),
     ):
         with pytest.raises(UserNotFoundError):
             await client.purchase_premium("ghost", months=3)
@@ -104,10 +104,10 @@ async def test_purchase_premium_user_not_found(client: FragmentClient) -> None:
 @pytest.mark.asyncio
 async def test_topup_ton_success(client: FragmentClient) -> None:
     with (
-        patch("pyfragment.methods.ton.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch("pyfragment.methods.ton.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch("pyfragment.methods.topup_ton.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
+        patch("pyfragment.methods.topup_ton.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
         patch(
-            "pyfragment.methods.ton.fragment_post",
+            "pyfragment.methods.topup_ton.fragment_post",
             AsyncMock(
                 side_effect=[
                     {},  # updateAdsTopupState
@@ -116,8 +116,8 @@ async def test_topup_ton_success(client: FragmentClient) -> None:
                 ]
             ),
         ),
-        patch("pyfragment.methods.ton.execute_transaction_request", AsyncMock(return_value=FAKE_TRANSACTION)),
-        patch("pyfragment.methods.ton.process_transaction", AsyncMock(return_value=FAKE_TX_HASH)),
+        patch("pyfragment.methods.topup_ton.execute_transaction_request", AsyncMock(return_value=FAKE_TRANSACTION)),
+        patch("pyfragment.methods.topup_ton.process_transaction", AsyncMock(return_value=FAKE_TX_HASH)),
     ):
         result = await client.topup_ton("testuser", amount=10)
 
@@ -130,10 +130,10 @@ async def test_topup_ton_success(client: FragmentClient) -> None:
 @pytest.mark.asyncio
 async def test_topup_ton_user_not_found(client: FragmentClient) -> None:
     with (
-        patch("pyfragment.methods.ton.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch("pyfragment.methods.ton.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch("pyfragment.methods.topup_ton.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
+        patch("pyfragment.methods.topup_ton.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
         patch(
-            "pyfragment.methods.ton.fragment_post",
+            "pyfragment.methods.topup_ton.fragment_post",
             AsyncMock(
                 side_effect=[
                     {},  # updateAdsTopupState

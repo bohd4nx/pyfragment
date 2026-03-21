@@ -21,7 +21,9 @@ REQUIRED_COOKIE_KEYS: tuple[str, ...] = ("stel_ssid", "stel_dt", "stel_token", "
 
 # Fragment page URLs
 STARS_PAGE: str = "https://fragment.com/stars/buy"
+STARS_GIVEAWAY_PAGE: str = "https://fragment.com/stars/giveaway"
 PREMIUM_PAGE: str = "https://fragment.com/premium/gift"
+PREMIUM_GIVEAWAY_PAGE: str = "https://fragment.com/premium/giveaway"
 TON_PAGE: str = "https://fragment.com/ads/topup"
 
 # Tonkeeper device fingerprint — serialized once, reused in every tx_data payload.

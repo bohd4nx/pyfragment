@@ -19,7 +19,7 @@ COOKIES = {
 }
 
 USERNAME = "@username"
-AMOUNT = 500  # 50–1 000 000
+AMOUNT = 500  # 50 to 1 000 000 stars, integer
 
 
 async def main() -> None:
@@ -33,7 +33,7 @@ async def main() -> None:
             print(f"Invalid argument: {e}")
             return
 
-    print(f"{result.stars} Stars successfully sent to {result.username} | tx: {result.transaction_id}")
+    print(f"{result.amount} Stars successfully sent to {result.username} | tx: {result.transaction_id}")
 
 
 if __name__ == "__main__":

@@ -1,9 +1,11 @@
 import json
 from typing import cast
 
-from pyfragment.methods.premium import purchase_premium
-from pyfragment.methods.stars import purchase_stars
-from pyfragment.methods.ton import topup_ton
+from pyfragment.methods.giveaway_premium import giveaway_premium
+from pyfragment.methods.giveaway_stars import giveaway_stars
+from pyfragment.methods.purchase_premium import purchase_premium
+from pyfragment.methods.purchase_stars import purchase_stars
+from pyfragment.methods.topup_ton import topup_ton
 from pyfragment.types import (
     AdsTopupResult,
     ConfigurationError,
@@ -13,6 +15,7 @@ from pyfragment.types import (
     WalletInfo,
 )
 from pyfragment.types.constants import DEFAULT_TIMEOUT, REQUIRED_COOKIE_KEYS, SUPPORTED_WALLET_VERSIONS, WalletVersion
+from pyfragment.types.results import PremiumGiveawayResult, StarsGiveawayResult
 from pyfragment.utils.wallet import get_wallet_info
 
 
@@ -108,7 +111,7 @@ class FragmentClient:
             show_sender: Show your name as the sender. Defaults to ``True``.
 
         Returns:
-            :class:`PremiumResult` with ``transaction_id``, ``username``, ``months``, ``timestamp``.
+            :class:`PremiumResult` with ``transaction_id``, ``username``, and ``months``.
         """
         return await purchase_premium(self, username, months, show_sender)
 
@@ -121,7 +124,7 @@ class FragmentClient:
             show_sender: Show your name as the gift sender. Defaults to ``True``.
 
         Returns:
-            :class:`StarsResult` with ``transaction_id``, ``username``, ``stars``, ``timestamp``.
+            :class:`StarsResult` with ``transaction_id``, ``username``, and ``stars``.
         """
         return await purchase_stars(self, username, amount, show_sender)
 
@@ -134,7 +137,7 @@ class FragmentClient:
             show_sender: Show your name as the sender. Defaults to ``True``.
 
         Returns:
-            :class:`AdsTopupResult` with ``transaction_id``, ``username``, ``amount``, ``timestamp``.
+            :class:`AdsTopupResult` with ``transaction_id``, ``username``, and ``amount``.
         """
         return await topup_ton(self, username, amount, show_sender)
 
@@ -146,3 +149,41 @@ class FragmentClient:
             (``"active"``, ``"uninit"``, or ``"frozen"``), and ``balance`` in TON.
         """
         return await get_wallet_info(self)
+
+    async def giveaway_stars(
+        self,
+        channel: str,
+        winners: int,
+        amount: int,
+    ) -> StarsGiveawayResult:
+        """Run a Telegram Stars giveaway for a channel.
+
+        Args:
+            channel: Channel username (with or without ``@``).
+            winners: Number of winners — integer from ``1`` to ``5``.
+            amount: Stars each winner receives — integer from ``500`` to ``1 000 000``.
+
+        Returns:
+            :class:`StarsGiveawayResult` with ``transaction_id``, ``channel``,
+            ``winners``, and ``amount``.
+        """
+        return await giveaway_stars(self, channel, winners, amount)
+
+    async def giveaway_premium(
+        self,
+        channel: str,
+        winners: int,
+        months: int = 3,
+    ) -> PremiumGiveawayResult:
+        """Run a Telegram Premium giveaway for a channel.
+
+        Args:
+            channel: Channel username (with or without ``@``).
+            winners: Number of winners — positive integer.
+            months: Premium duration per winner — ``3``, ``6``, or ``12``. Defaults to ``3``.
+
+        Returns:
+            :class:`PremiumGiveawayResult` with ``transaction_id``, ``channel``,
+            ``winners``, and ``amount``.
+        """
+        return await giveaway_premium(self, channel, winners, months)

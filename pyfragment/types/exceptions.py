@@ -19,6 +19,9 @@ class ConfigurationError(ClientError):
     INVALID_USERNAME = (
         "Invalid username '{username}'. Must be 5–32 characters: letters (A–Z, a–z), digits (0–9), or underscores (_)."
     )
+    INVALID_WINNERS_STARS = "winners must be an integer between 1 and 5."
+    INVALID_WINNERS_PREMIUM = "winners must be an integer between 1 and 24 000."
+    INVALID_STARS_PER_WINNER = "amount must be an integer between 500 and 1 000 000 stars."
 
 
 class CookieError(ClientError):

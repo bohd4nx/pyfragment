@@ -4,14 +4,14 @@ from typing import TYPE_CHECKING
 import httpx
 
 from pyfragment.types import (
-    AdsTopupResult,
     ConfigurationError,
     FragmentAPIError,
     FragmentError,
+    StarsResult,
     UnexpectedError,
     UserNotFoundError,
 )
-from pyfragment.types.constants import BASE_HEADERS, DEVICE, TON_PAGE
+from pyfragment.types.constants import BASE_HEADERS, DEVICE, STARS_PAGE
 from pyfragment.utils import (
     execute_transaction_request,
     fragment_post,
@@ -26,8 +26,8 @@ if TYPE_CHECKING:
 # Page-specific headers
 HEADERS: dict[str, str] = {
     **BASE_HEADERS,
-    "referer": TON_PAGE,
-    "x-aj-referer": TON_PAGE,
+    "referer": STARS_PAGE,
+    "x-aj-referer": STARS_PAGE,
 }
 
 
@@ -36,14 +36,14 @@ async def _search_recipient(
     fragment_hash: str,
     username: str,
 ) -> str:
-    await fragment_post(session, fragment_hash, HEADERS, {"mode": "new", "method": "updateAdsTopupState"})
     result = await fragment_post(
         session,
         fragment_hash,
         HEADERS,
         {
             "query": username,
-            "method": "searchAdsTopupRecipient",
+            "quantity": "",
+            "method": "searchStarsRecipient",
         },
     )
     recipient = result.get("found", {}).get("recipient")
@@ -64,22 +64,39 @@ async def _init_request(
         HEADERS,
         {
             "recipient": recipient,
-            "amount": amount,
-            "method": "initAdsTopupRequest",
+            "quantity": amount,
+            "method": "initBuyStarsRequest",
         },
     )
     req_id = result.get("req_id")
     if not req_id:
-        raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="TON topup"))
+        raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="Stars purchase"))
     return req_id
 
 
-async def topup_ton(client: "FragmentClient", username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
-    if not isinstance(amount, int) or not (1 <= amount <= 1_000_000_000):
-        raise ConfigurationError(ConfigurationError.INVALID_TON_AMOUNT)
+async def purchase_stars(client: "FragmentClient", username: str, amount: int, show_sender: bool = True) -> StarsResult:
+    """Send Telegram Stars to a user.
+
+    Args:
+        client: Authenticated :class:`FragmentClient` instance.
+        username: Recipient's Telegram username (with or without ``@``).
+        amount: Number of Stars to send — integer from ``50`` to ``1 000 000``.
+        show_sender: Show your name as the gift sender. Defaults to ``True``.
+
+    Returns:
+        :class:`StarsResult` with ``transaction_id``, ``username``, and ``stars``.
+
+    Raises:
+        ConfigurationError: If ``amount`` is not an integer between 50 and 1 000 000.
+        UserNotFoundError: If the user is not found on Fragment.
+        FragmentAPIError: If the Fragment API returns an error.
+        UnexpectedError: For any other unexpected failure.
+    """
+    if not isinstance(amount, int) or not (50 <= amount <= 1_000_000):
+        raise ConfigurationError(ConfigurationError.INVALID_STARS_AMOUNT)
 
     try:
-        fragment_hash = await get_fragment_hash(client.cookies, HEADERS, TON_PAGE, client.timeout)
+        fragment_hash = await get_fragment_hash(client.cookies, HEADERS, STARS_PAGE, client.timeout)
         account = await get_account_info(client)
 
         async with httpx.AsyncClient(cookies=client.cookies, timeout=client.timeout) as session:
@@ -92,12 +109,12 @@ async def topup_ton(client: "FragmentClient", username: str, amount: int, show_s
                 "transaction": 1,
                 "id": req_id,
                 "show_sender": int(show_sender),
-                "method": "getAdsTopupLink",
+                "method": "getBuyStarsLink",
             }
             transaction = await execute_transaction_request(session, HEADERS, tx_data, fragment_hash)
 
         tx_hash = await process_transaction(client, transaction)
-        return AdsTopupResult(transaction_id=tx_hash, username=username, amount=amount)
+        return StarsResult(transaction_id=tx_hash, username=username, amount=amount)
 
     except FragmentError:
         raise

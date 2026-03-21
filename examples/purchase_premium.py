@@ -33,7 +33,7 @@ async def main() -> None:
             print(f"Invalid argument: {e}")
             return
 
-    print(f"{result.months} months of Premium successfully sent to {result.username} | tx: {result.transaction_id}")
+    print(f"{result.amount} months of Premium successfully sent to {result.username} | tx: {result.transaction_id}")
 
 
 if __name__ == "__main__":

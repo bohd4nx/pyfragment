@@ -7,6 +7,22 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ---
 
+## [Unreleased]
+
+### Added
+- `giveaway_stars(channel, winners, amount)` — run a Telegram Stars giveaway for a channel (1–5 winners, 500–1 000 000 stars each)
+- `giveaway_premium(channel, winners, months)` — run a Telegram Premium giveaway for a channel (1–24 000 winners, 3/6/12 months each)
+- `StarsGiveawayResult` and `PremiumGiveawayResult` result types
+- `STARS_GIVEAWAY_PAGE` and `PREMIUM_GIVEAWAY_PAGE` URL constants
+
+### Changed
+- All result types (`PremiumResult`, `StarsResult`, `StarsGiveawayResult`, `PremiumGiveawayResult`) now use a single unified `amount` field instead of `months`, `stars` — consistent API across every method
+- `__repr__` on result types now includes the unit (`3 months`, `500 stars`) for clarity
+- Method module files renamed to match their function: `premium.py` → `purchase_premium.py`, `stars.py` → `purchase_stars.py`, `ton.py` → `topup_ton.py`
+- `timestamp` field removed from all result dataclasses
+
+---
+
 ## [2026.0.2] — 2026-03-20
 
 ### Added

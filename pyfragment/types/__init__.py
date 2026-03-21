@@ -13,7 +13,14 @@ from pyfragment.types.exceptions import (
     VerificationError,
     WalletError,
 )
-from pyfragment.types.results import AdsTopupResult, PremiumResult, StarsResult, WalletInfo
+from pyfragment.types.results import (
+    AdsTopupResult,
+    PremiumGiveawayResult,
+    PremiumResult,
+    StarsGiveawayResult,
+    StarsResult,
+    WalletInfo,
+)
 
 __all__ = [
     # client exceptions
@@ -33,7 +40,9 @@ __all__ = [
     "WalletError",
     # result types
     "AdsTopupResult",
+    "PremiumGiveawayResult",
     "PremiumResult",
+    "StarsGiveawayResult",
     "StarsResult",
     "WalletInfo",
 ]
