@@ -146,7 +146,7 @@ class FragmentClient:
 
         Returns:
             :class:`WalletInfo` with ``address`` (``"UQ..."``), ``state``
-            (``"active"``, ``"uninit"``, or ``"frozen"``), and ``balance`` in TON.
+            (``"active"``, ``"uninit"``, ``"nonexist"``, or ``"frozen"``), and ``balance`` in TON.
         """
         return await get_wallet_info(self)
 

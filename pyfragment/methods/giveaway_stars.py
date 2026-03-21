@@ -10,25 +10,21 @@ from pyfragment.types import (
     UnexpectedError,
     UserNotFoundError,
 )
-from pyfragment.types.constants import BASE_HEADERS, DEVICE, STARS_GIVEAWAY_PAGE
+from pyfragment.types.constants import DEVICE, STARS_GIVEAWAY_PAGE
 from pyfragment.types.results import StarsGiveawayResult
 from pyfragment.utils import (
     execute_transaction_request,
-    fragment_post,
+    fragment_request,
     get_account_info,
     get_fragment_hash,
+    make_headers,
     process_transaction,
 )
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
 
-# Page-specific headers
-HEADERS: dict[str, str] = {
-    **BASE_HEADERS,
-    "referer": STARS_GIVEAWAY_PAGE,
-    "x-aj-referer": STARS_GIVEAWAY_PAGE,
-}
+HEADERS: dict[str, str] = make_headers(STARS_GIVEAWAY_PAGE)
 
 
 async def _search_recipient(
@@ -36,7 +32,7 @@ async def _search_recipient(
     fragment_hash: str,
     channel: str,
 ) -> str:
-    result = await fragment_post(
+    result = await fragment_request(
         session,
         fragment_hash,
         HEADERS,
@@ -58,7 +54,7 @@ async def _init_request(
     winners: int,
     amount: int,
 ) -> str:
-    result = await fragment_post(
+    result = await fragment_request(
         session,
         fragment_hash,
         HEADERS,

@@ -19,7 +19,7 @@ COOKIES = {
 }
 
 USERNAME = "@username"
-MONTHS = 3  # 3, 6, or 12
+MONTHS = 3  # 3, 6 or 12
 
 
 async def main() -> None:

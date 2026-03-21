@@ -4,7 +4,11 @@ from typing import Any
 import httpx
 
 from pyfragment.types import FragmentPageError, ParseError, VerificationError
-from pyfragment.types.constants import DEFAULT_TIMEOUT
+from pyfragment.types.constants import BASE_HEADERS, DEFAULT_TIMEOUT
+
+
+def make_headers(page_url: str) -> dict[str, str]:
+    return {**BASE_HEADERS, "referer": page_url, "x-aj-referer": page_url}
 
 
 async def get_fragment_hash(
@@ -79,7 +83,7 @@ def parse_json_response(response: httpx.Response, context: str) -> dict[str, Any
         raise ParseError(ParseError.UNPARSEABLE.format(context=context, exc=exc)) from exc
 
 
-async def fragment_post(
+async def fragment_request(
     session: httpx.AsyncClient,
     fragment_hash: str,
     headers: dict[str, str],
@@ -129,7 +133,7 @@ async def execute_transaction_request(
         VerificationError: If Fragment requires KYC verification.
         ParseError: If the response cannot be parsed.
     """
-    transaction = await fragment_post(session, fragment_hash, headers, tx_data)
+    transaction = await fragment_request(session, fragment_hash, headers, tx_data)
 
     if transaction.get("need_verify"):
         raise VerificationError(VerificationError.KYC_REQUIRED)

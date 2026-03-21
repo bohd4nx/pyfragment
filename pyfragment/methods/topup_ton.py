@@ -11,24 +11,20 @@ from pyfragment.types import (
     UnexpectedError,
     UserNotFoundError,
 )
-from pyfragment.types.constants import BASE_HEADERS, DEVICE, TON_PAGE
+from pyfragment.types.constants import DEVICE, TON_PAGE
 from pyfragment.utils import (
     execute_transaction_request,
-    fragment_post,
+    fragment_request,
     get_account_info,
     get_fragment_hash,
+    make_headers,
     process_transaction,
 )
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
 
-# Page-specific headers
-HEADERS: dict[str, str] = {
-    **BASE_HEADERS,
-    "referer": TON_PAGE,
-    "x-aj-referer": TON_PAGE,
-}
+HEADERS: dict[str, str] = make_headers(TON_PAGE)
 
 
 async def _search_recipient(
@@ -36,8 +32,8 @@ async def _search_recipient(
     fragment_hash: str,
     username: str,
 ) -> str:
-    await fragment_post(session, fragment_hash, HEADERS, {"mode": "new", "method": "updateAdsTopupState"})
-    result = await fragment_post(
+    await fragment_request(session, fragment_hash, HEADERS, {"mode": "new", "method": "updateAdsTopupState"})
+    result = await fragment_request(
         session,
         fragment_hash,
         HEADERS,
@@ -58,7 +54,7 @@ async def _init_request(
     recipient: str,
     amount: int,
 ) -> str:
-    result = await fragment_post(
+    result = await fragment_request(
         session,
         fragment_hash,
         HEADERS,

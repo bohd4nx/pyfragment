@@ -19,7 +19,7 @@ COOKIES = {
 }
 
 USERNAME = "@username"
-AMOUNT = 10  # TON, integer — 1 to 1 000 000 000
+AMOUNT = 10  # 1–1 000 000 000 TON
 
 
 async def main() -> None:
