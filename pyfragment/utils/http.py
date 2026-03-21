@@ -4,10 +4,10 @@ from typing import Any
 import httpx
 
 from pyfragment.types import FragmentPageError, ParseError, VerificationError
-from pyfragment.types.constants import BASE_HEADERS, DEFAULT_TIMEOUT
+from pyfragment.types.constants import BASE_HEADERS, DEFAULT_TIMEOUT, FRAGMENT_BASE_URL
 
 
-def make_headers(page_url: str) -> dict[str, str]:
+def make_headers(page_url: str = FRAGMENT_BASE_URL) -> dict[str, str]:
     return {**BASE_HEADERS, "referer": page_url, "x-aj-referer": page_url}
 
 
@@ -44,7 +44,7 @@ async def get_fragment_hash(
     page_headers.update(
         {
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "referer": "https://fragment.com/",
+            "referer": f"{FRAGMENT_BASE_URL}/",
             "sec-fetch-dest": "document",
             "sec-fetch-mode": "navigate",
             "upgrade-insecure-requests": "1",
@@ -105,7 +105,7 @@ async def fragment_request(
         Parsed API response as a dict.
     """
     resp = await session.post(
-        f"https://fragment.com/api?hash={fragment_hash}",
+        f"{FRAGMENT_BASE_URL}/api?hash={fragment_hash}",
         headers=headers,
         data=data,
     )

@@ -1,5 +1,7 @@
 import json
-from typing import cast
+from typing import Any, cast
+
+import httpx
 
 from pyfragment.methods.giveaway_premium import giveaway_premium
 from pyfragment.methods.giveaway_stars import giveaway_stars
@@ -14,8 +16,15 @@ from pyfragment.types import (
     StarsResult,
     WalletInfo,
 )
-from pyfragment.types.constants import DEFAULT_TIMEOUT, REQUIRED_COOKIE_KEYS, SUPPORTED_WALLET_VERSIONS, WalletVersion
+from pyfragment.types.constants import (
+    DEFAULT_TIMEOUT,
+    FRAGMENT_BASE_URL,
+    REQUIRED_COOKIE_KEYS,
+    SUPPORTED_WALLET_VERSIONS,
+    WalletVersion,
+)
 from pyfragment.types.results import PremiumGiveawayResult, StarsGiveawayResult
+from pyfragment.utils.http import fragment_request, get_fragment_hash, make_headers
 from pyfragment.utils.wallet import get_wallet_info
 
 
@@ -187,3 +196,33 @@ class FragmentClient:
             ``winners``, and ``amount``.
         """
         return await giveaway_premium(self, channel, winners, months)
+
+    async def call(
+        self, method: str, data: dict[str, Any] | None = None, *, page_url: str = FRAGMENT_BASE_URL
+    ) -> dict[str, Any]:
+        """Send a raw request to the Fragment API.
+
+        Useful for accessing undocumented or future Fragment API methods
+        without waiting for a library update.
+
+        Args:
+            method: Fragment API method name, e.g. ``"searchPremiumGiftRecipient"``.
+            data: Additional form-data fields to include in the request body.
+            page_url: Fragment page URL used to derive the API hash and headers.
+                Defaults to ``FRAGMENT_BASE_URL`` (``"https://fragment.com"``).
+
+        Returns:
+            Raw parsed JSON response as a dict.
+
+        Example::
+
+            result = await client.call(
+                "searchPremiumGiftRecipient",
+                {"query": "@username", "months": 3},
+                page_url="https://fragment.com/premium/gift",
+            )
+        """
+        headers = make_headers(page_url)
+        async with httpx.AsyncClient(cookies=self.cookies, timeout=self.timeout) as session:
+            fragment_hash = await get_fragment_hash(self.cookies, headers, page_url, self.timeout)
+            return await fragment_request(session, fragment_hash, headers, {"method": method, **(data or {})})
