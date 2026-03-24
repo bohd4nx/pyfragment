@@ -7,6 +7,7 @@ from importlib.metadata import version
 
 from pyfragment.client import FragmentClient
 from pyfragment.types import (
+    AdsRechargeResult,
     AdsTopupResult,
     AnonymousNumberError,
     ClientError,
@@ -36,6 +37,7 @@ __version__: str = version("pyfragment")
 __all__ = [
     "__version__",
     "FragmentClient",
+    "AdsRechargeResult",
     "AdsTopupResult",
     "LoginCodeResult",
     "PremiumGiveawayResult",

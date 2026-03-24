@@ -8,8 +8,10 @@ from pyfragment.methods.giveaway_premium import giveaway_premium
 from pyfragment.methods.giveaway_stars import giveaway_stars
 from pyfragment.methods.purchase_premium import purchase_premium
 from pyfragment.methods.purchase_stars import purchase_stars
+from pyfragment.methods.recharge_ads import recharge_ads
 from pyfragment.methods.topup_ton import topup_ton
 from pyfragment.types import (
+    AdsRechargeResult,
     AdsTopupResult,
     ConfigurationError,
     CookieError,
@@ -152,6 +154,19 @@ class FragmentClient:
             :class:`AdsTopupResult` with ``transaction_id``, ``username``, and ``amount``.
         """
         return await topup_ton(self, username, amount, show_sender)
+
+    async def recharge_ads(self, account: str, amount: int) -> AdsRechargeResult:
+        """Add funds to your own Telegram Ads account.
+
+        Args:
+            account: Your Fragment Ads account identifier — the channel or bot username
+                the Ads account is linked to (e.g. ``"@mychannel"``).
+            amount: Amount in TON — integer from ``1`` to ``1 000 000 000``.
+
+        Returns:
+            :class:`AdsRechargeResult` with ``transaction_id`` and ``amount``.
+        """
+        return await recharge_ads(self, account, amount)
 
     async def get_wallet(self) -> WalletInfo:
         """Return the address, state and balance of the TON wallet.

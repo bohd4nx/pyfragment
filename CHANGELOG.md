@@ -16,6 +16,10 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - `giveaway_premium(channel, winners, months)` — run a Telegram Premium giveaway for a channel (1–24 000 winners, 3/6/12 months each); raises `UserNotFoundError` if the channel is not found on Fragment, `ConfigurationError` if `winners` or `months` are invalid
 - `StarsGiveawayResult` and `PremiumGiveawayResult` result types
 
+**Telegram Ads**
+- `recharge_ads(account, amount)` — add funds to your own Telegram Ads account; `account` is the channel or bot username linked to your Ads account; raises `ConfigurationError` if `amount` is out of range (1–1 000 000 000 TON)
+- `AdsRechargeResult` result type
+
 **Raw API access**
 - `FragmentClient.call(method, data, *, page_url)` — send a raw request to any Fragment API method without waiting for a library update
 - `FRAGMENT_BASE_URL` constant — single source of truth for the Fragment base URL used across all page constants and headers
@@ -32,6 +36,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - `examples/giveaway_premium.py` — Premium giveaway with `UserNotFoundError` / `ConfigurationError` handling
 - `examples/call.py` — raw API call via `client.call()`
 - `examples/anonymous_number.py` — login code fetch and session termination with `AnonymousNumberError` handling
+- `examples/recharge_ads.py` — self-service Ads recharge with `ConfigurationError` / `WalletError` handling
 
 ### Changed
 - All result types (`PremiumResult`, `StarsResult`, `StarsGiveawayResult`, `PremiumGiveawayResult`) now use a single unified `amount` field instead of `months`, `stars` — consistent API across every method
@@ -39,6 +44,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - Method module files renamed to match their function: `premium.py` → `purchase_premium.py`, `stars.py` → `purchase_stars.py`, `ton.py` → `topup_ton.py`
 - `timestamp` field removed from all result dataclasses
 - All page URL constants (`STARS_PAGE`, `PREMIUM_PAGE`, etc.) now built from `FRAGMENT_BASE_URL` instead of hardcoded strings
+- `STARS_REVENUE_PAGE` and `ADS_PAGE` constants replaced by a single `ADS_TOPUP_PAGE` shared by both `topup_ton` and `recharge_ads`
 - `TransactionError` now includes an SSL hint when a broadcast fails due to certificate verification errors
 - `TransactionError.DUPLICATE_SEQNO` — dedicated error raised after 3 failed attempts due to a `406 Duplicate msg_seqno` response from the TON network; broadcast is automatically retried (up to 2 retries, 2 s apart) before giving up
 - All error message templates rewritten to follow a "what happened → why → what to do" pattern — every template is now actionable and includes a fix hint where applicable

@@ -4,8 +4,9 @@ Example: send a raw request to any Fragment API method.
 Use client.call() when you need to access a method that is not yet
 wrapped by the library, or to inspect raw API responses directly.
 
-page_url must match the Fragment page the method belongs to — Fragment
-requires a hash derived from each specific page.
+page_url is optional — only set it when the target method belongs to a
+specific Fragment page (Fragment derives the API hash per page).
+Defaults to the Fragment base URL.
 """
 
 import asyncio
@@ -23,7 +24,7 @@ COOKIES = {
 
 METHOD = "anyFragmentMethod"  # replace with the actual method name
 DATA = {"key": "value"}  # replace with the actual request payload
-PAGE_URL = "https://fragment.com/stars/buy"  # replace with the matching Fragment page
+PAGE_URL = "https://fragment.com/stars/buy"  # replace with the matching Fragment page (optional)
 
 
 async def main() -> None:

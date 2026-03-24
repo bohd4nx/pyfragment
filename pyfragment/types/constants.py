@@ -25,7 +25,7 @@ STARS_PAGE: str = f"{FRAGMENT_BASE_URL}/stars/buy"
 STARS_GIVEAWAY_PAGE: str = f"{FRAGMENT_BASE_URL}/stars/giveaway"
 PREMIUM_PAGE: str = f"{FRAGMENT_BASE_URL}/premium/gift"
 PREMIUM_GIVEAWAY_PAGE: str = f"{FRAGMENT_BASE_URL}/premium/giveaway"
-TON_PAGE: str = f"{FRAGMENT_BASE_URL}/ads/topup"
+ADS_TOPUP_PAGE: str = f"{FRAGMENT_BASE_URL}/ads/topup"
 NUMBERS_PAGE: str = f"{FRAGMENT_BASE_URL}/numbers"
 
 # Tonkeeper device fingerprint — serialized once, reused in every tx_data payload.

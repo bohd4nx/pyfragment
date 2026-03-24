@@ -32,6 +32,13 @@ FAKE_RESPONSE: dict[str, Any] = {"status": "ok", "data": {"value": 42}}
 FAKE_ADDRESS: str = "UQCppfw5DxWgdVHf3zkmZS8k1mt9oAUYxQLwq2fz3nhO8No5"
 FAKE_BALANCE_NANOTON: int = 1_500_000_000  # 1.5 TON
 
+# recharge_ads
+FAKE_ADS_ACCOUNT: str = "@mychannel"
+
+# Revenue withdrawals
+FAKE_WITHDRAWAL_WALLET: str = "EQDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+FAKE_REVENUE_TX: str = "revenue_tx_abc123"
+
 # Anonymous number
 FAKE_HTML_WITH_CODE: str = """
 <table>

@@ -1,16 +1,5 @@
 from dataclasses import dataclass
 
-__all__ = [
-    "AdsTopupResult",
-    "LoginCodeResult",
-    "PremiumGiveawayResult",
-    "PremiumResult",
-    "StarsGiveawayResult",
-    "StarsResult",
-    "TerminateSessionsResult",
-    "WalletInfo",
-]
-
 
 @dataclass
 class WalletInfo:
@@ -106,6 +95,17 @@ class LoginCodeResult:
 
 
 @dataclass
+class AdsRechargeResult:
+    """Result of a successful self-recharge of Telegram Ads balance."""
+
+    transaction_id: str
+    amount: int
+
+    def __repr__(self) -> str:
+        return f"AdsRechargeResult(amount={self.amount} TON, tx='{self.transaction_id}')"
+
+
+@dataclass
 class TerminateSessionsResult:
     """Result of :meth:`FragmentClient.terminate_sessions`."""
 
@@ -114,3 +114,16 @@ class TerminateSessionsResult:
 
     def __repr__(self) -> str:
         return f"TerminateSessionsResult(number='{self.number}', message={self.message!r})"
+
+
+__all__ = [
+    "AdsRechargeResult",
+    "AdsTopupResult",
+    "LoginCodeResult",
+    "PremiumGiveawayResult",
+    "PremiumResult",
+    "StarsGiveawayResult",
+    "StarsResult",
+    "TerminateSessionsResult",
+    "WalletInfo",
+]
