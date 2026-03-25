@@ -48,6 +48,9 @@ FAKE_GIFTS_HTML = """
 """
 
 
+# search_gifts mocked tests
+
+
 @pytest.mark.asyncio
 async def test_search_gifts_basic(client: FragmentClient) -> None:
     with (

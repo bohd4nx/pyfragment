@@ -22,6 +22,9 @@ FAKE_HTML = """
 """
 
 
+# search_usernames mocked tests
+
+
 @pytest.mark.asyncio
 async def test_search_usernames_basic(client: FragmentClient) -> None:
     with (

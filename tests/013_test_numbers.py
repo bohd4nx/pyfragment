@@ -22,6 +22,9 @@ FAKE_HTML = """
 """
 
 
+# search_numbers mocked tests
+
+
 @pytest.mark.asyncio
 async def test_search_numbers_basic(client: FragmentClient) -> None:
     with (
