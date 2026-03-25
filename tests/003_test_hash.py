@@ -7,7 +7,6 @@ import pytest
 from pyfragment.types.constants import BASE_HEADERS, STARS_PAGE
 from pyfragment.utils import get_fragment_hash
 
-
 # Hash integration tests
 
 
