@@ -17,13 +17,15 @@ from pyfragment.types.exceptions import (
 from pyfragment.types.results import (
     AdsRechargeResult,
     AdsTopupResult,
-    AuctionsResult,
+    GiftsResult,
     LoginCodeResult,
+    NumbersResult,
     PremiumGiveawayResult,
     PremiumResult,
     StarsGiveawayResult,
     StarsResult,
     TerminateSessionsResult,
+    UsernamesResult,
     WalletInfo,
 )
 
@@ -47,12 +49,14 @@ __all__ = [
     # result types
     "AdsRechargeResult",
     "AdsTopupResult",
-    "AuctionsResult",
+    "GiftsResult",
     "LoginCodeResult",
+    "NumbersResult",
     "PremiumGiveawayResult",
     "PremiumResult",
     "StarsGiveawayResult",
     "StarsResult",
     "TerminateSessionsResult",
+    "UsernamesResult",
     "WalletInfo",
 ]

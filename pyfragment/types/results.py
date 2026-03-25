@@ -118,8 +118,8 @@ class TerminateSessionsResult:
 
 
 @dataclass
-class AuctionsResult:
-    """Result of :meth:`FragmentClient.search_auctions`.
+class UsernamesResult:
+    """Result of :meth:`FragmentClient.search_usernames`.
 
     Each dict in ``items`` has the keys:
 
@@ -127,7 +127,7 @@ class AuctionsResult:
     - ``name`` — display value (e.g. ``"@durov"``).
     - ``status`` — human-readable Fragment label (e.g. ``"On auction"``, ``"For sale"``).
     - ``price`` — price in TON formatted to two decimal places (e.g. ``"7.00"``), or ``None``.
-    - ``ends_at`` — ISO 8601 auction-end datetime, or ``None``.
+    - ``date`` — ISO 8601 datetime: auction end date, sale date, or listing date, or ``None``.
 
     Use ``next_offset_id`` to paginate to the next page of results.
     """
@@ -136,18 +136,64 @@ class AuctionsResult:
     next_offset_id: str | None
 
     def __repr__(self) -> str:
-        return f"AuctionsResult(items={len(self.items)}, next_offset_id={self.next_offset_id!r})"
+        return f"UsernamesResult(items={len(self.items)}, next_offset_id={self.next_offset_id!r})"
+
+
+@dataclass
+class NumbersResult:
+    """Result of :meth:`FragmentClient.search_numbers`.
+
+    Each dict in ``items`` has the keys:
+
+    - ``slug`` — URL path (e.g. ``"number/8880000111"``).
+    - ``name`` — display value (e.g. ``"+888 0000 111"``).
+    - ``status`` — human-readable Fragment label (e.g. ``"On auction"``, ``"For sale"``).
+    - ``price`` — price in TON formatted to two decimal places (e.g. ``"7.00"``), or ``None``.
+    - ``date`` — ISO 8601 datetime: auction end date, sale date, or listing date, or ``None``.
+
+    Use ``next_offset_id`` to paginate to the next page of results.
+    """
+
+    items: list[dict[str, Any]]
+    next_offset_id: str | None
+
+    def __repr__(self) -> str:
+        return f"NumbersResult(items={len(self.items)}, next_offset_id={self.next_offset_id!r})"
+
+
+@dataclass
+class GiftsResult:
+    """Result of :meth:`FragmentClient.search_gifts`.
+
+    Each dict in ``items`` has the keys:
+
+    - ``slug`` — URL path (e.g. ``"gift/plushpepe-1821"``).
+    - ``name`` — display name with number (e.g. ``"Plush Pepe #1821"``).
+    - ``status`` — human-readable Fragment label (e.g. ``"Sold"``, ``"For sale"``).
+    - ``price`` — price in TON formatted to two decimal places (e.g. ``"88888.00"``), or ``None``.
+    - ``date`` — ISO 8601 datetime of the sale/listing, or ``None``.
+
+    Use ``next_offset`` to paginate to the next page of results.
+    """
+
+    items: list[dict[str, Any]]
+    next_offset: int | None
+
+    def __repr__(self) -> str:
+        return f"GiftsResult(items={len(self.items)}, next_offset={self.next_offset!r})"
 
 
 __all__ = [
     "AdsRechargeResult",
     "AdsTopupResult",
-    "AuctionsResult",
+    "GiftsResult",
     "LoginCodeResult",
+    "NumbersResult",
     "PremiumGiveawayResult",
     "PremiumResult",
     "StarsGiveawayResult",
     "StarsResult",
     "TerminateSessionsResult",
+    "UsernamesResult",
     "WalletInfo",
 ]

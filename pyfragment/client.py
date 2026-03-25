@@ -9,18 +9,22 @@ from pyfragment.methods.giveaway_stars import giveaway_stars
 from pyfragment.methods.purchase_premium import purchase_premium
 from pyfragment.methods.purchase_stars import purchase_stars
 from pyfragment.methods.recharge_ads import recharge_ads
-from pyfragment.methods.search_auctions import search_auctions
+from pyfragment.methods.search_gifts import search_gifts
+from pyfragment.methods.search_numbers import search_numbers
+from pyfragment.methods.search_usernames import search_usernames
 from pyfragment.methods.topup_ton import topup_ton
 from pyfragment.types import (
     AdsRechargeResult,
     AdsTopupResult,
-    AuctionsResult,
     ConfigurationError,
     CookieError,
+    GiftsResult,
     LoginCodeResult,
+    NumbersResult,
     PremiumResult,
     StarsResult,
     TerminateSessionsResult,
+    UsernamesResult,
     WalletInfo,
 )
 from pyfragment.types.constants import (
@@ -252,32 +256,87 @@ class FragmentClient:
         """
         return await terminate_sessions(self, number)
 
-    async def search_auctions(
+    async def search_usernames(
         self,
-        query: str,
-        type: str | None = None,
+        query: str = "",
         sort: str | None = None,
         filter: str | None = None,
         offset_id: str | None = None,
-    ) -> AuctionsResult:
-        """Search the Fragment marketplace for auction listings.
+    ) -> UsernamesResult:
+        """Search the Fragment marketplace for Telegram usernames.
 
         Args:
-            query: Search text (e.g. ``"durov"`` or ``"888"``).
-            type: Narrow results by item type — ``"usernames"``, ``"numbers"``, or
-                ``"collectibles"``. Omit to search across all types.
+            query: Search text (e.g. ``"durov"``). Omit or pass ``""`` to browse all.
             sort: Sort order — ``"price_desc"``, ``"price_asc"``, ``"listed"``, or
                 ``"ending"``. Omit to use Fragment's default ordering.
             filter: Filter results — ``"auction"``, ``"sale"``, ``"sold"``, or
                 ``""`` (available items). Omit to return all.
-            offset_id: Pagination cursor — pass :attr:`AuctionsResult.next_offset_id`
+            offset_id: Pagination cursor — pass :attr:`UsernamesResult.next_offset_id`
                 from a previous result to fetch the next page.
 
         Returns:
-            :class:`AuctionsResult` with ``items`` (parsed list of item dicts)
+            :class:`UsernamesResult` with ``items`` (parsed list of item dicts)
             and ``next_offset_id`` (``None`` on the last page).
         """
-        return await search_auctions(self, query, type=type, sort=sort, filter=filter, offset_id=offset_id)
+        return await search_usernames(self, query, sort=sort, filter=filter, offset_id=offset_id)
+
+    async def search_numbers(
+        self,
+        query: str = "",
+        sort: str | None = None,
+        filter: str | None = None,
+        offset_id: str | None = None,
+    ) -> NumbersResult:
+        """Search the Fragment marketplace for anonymous Telegram numbers.
+
+        Args:
+            query: Search text (e.g. ``"888"``). Omit or pass ``""`` to browse all.
+            sort: Sort order — ``"price_desc"``, ``"price_asc"``, ``"listed"``, or
+                ``"ending"``. Omit to use Fragment's default ordering.
+            filter: Filter results — ``"auction"``, ``"sale"``, ``"sold"``, or
+                ``""`` (available items). Omit to return all.
+            offset_id: Pagination cursor — pass :attr:`NumbersResult.next_offset_id`
+                from a previous result to fetch the next page.
+
+        Returns:
+            :class:`NumbersResult` with ``items`` (parsed list of item dicts)
+            and ``next_offset_id`` (``None`` on the last page).
+        """
+        return await search_numbers(self, query, sort=sort, filter=filter, offset_id=offset_id)
+
+    async def search_gifts(
+        self,
+        query: str = "",
+        collection: str | None = None,
+        sort: str | None = None,
+        filter: str | None = None,
+        view: str | None = None,
+        attr: dict[str, list[str]] | None = None,
+        offset: int | None = None,
+    ) -> GiftsResult:
+        """Search the Fragment gifts marketplace.
+
+        Args:
+            query: Search text. Omit or pass ``""`` to browse without filtering by name.
+            collection: Filter by gift collection slug (e.g. ``"artisanbrick"``). Omit for all.
+            sort: Sort order — ``"price_desc"``, ``"price_asc"``, ``"listed"``, or
+                ``"ending"``. Omit to use Fragment's default ordering.
+            filter: Filter results — ``"auction"``, ``"sale"``, ``"sold"``, or
+                ``""`` (available items). Omit to return all.
+            view: Active attribute tab name (e.g. ``"Model"``, ``"Backdrop"``). Omit for default.
+            attr: Attribute filters — mapping of trait name to accepted values, e.g.
+                ``{"Model": ["Foosball"], "Backdrop": ["Celtic Blue", "Orange"]}``.
+                Each key is sent as ``attr[Key]`` with its list of values.
+            offset: Integer page offset from a previous :class:`GiftsResult`.
+                Pass ``next_offset`` to fetch the next page.
+
+        Returns:
+            :class:`GiftsResult` with ``items`` (parsed list of item dicts)
+            and ``next_offset`` (``None`` on the last page).
+        """
+        return await search_gifts(
+            self, query, collection=collection, sort=sort, filter=filter, view=view, attr=attr, offset=offset
+        )
 
     async def call(
         self, method: str, data: dict[str, Any] | None = None, *, page_url: str = FRAGMENT_BASE_URL

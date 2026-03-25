@@ -4,7 +4,9 @@ from pyfragment.methods.giveaway_stars import giveaway_stars
 from pyfragment.methods.purchase_premium import purchase_premium
 from pyfragment.methods.purchase_stars import purchase_stars
 from pyfragment.methods.recharge_ads import recharge_ads
-from pyfragment.methods.search_auctions import search_auctions
+from pyfragment.methods.search_gifts import search_gifts
+from pyfragment.methods.search_numbers import search_numbers
+from pyfragment.methods.search_usernames import search_usernames
 from pyfragment.methods.topup_ton import topup_ton
 
 __all__ = [
@@ -14,7 +16,9 @@ __all__ = [
     "purchase_premium",
     "purchase_stars",
     "recharge_ads",
-    "search_auctions",
+    "search_gifts",
+    "search_numbers",
+    "search_usernames",
     "terminate_sessions",
     "toggle_login_codes",
     "topup_ton",

@@ -4,7 +4,7 @@ import httpx
 
 from pyfragment.types import FragmentAPIError, FragmentError, UnexpectedError
 from pyfragment.types.constants import FRAGMENT_BASE_URL
-from pyfragment.types.results import AuctionsResult
+from pyfragment.types.results import UsernamesResult
 from pyfragment.utils import fragment_request, get_fragment_hash, make_headers, parse_auction_rows
 
 if TYPE_CHECKING:
@@ -13,39 +13,34 @@ if TYPE_CHECKING:
 HEADERS: dict[str, str] = make_headers(FRAGMENT_BASE_URL)
 
 
-async def search_auctions(
+async def search_usernames(
     client: "FragmentClient",
-    query: str,
-    type: str | None = None,
+    query: str = "",
     sort: str | None = None,
     filter: str | None = None,
     offset_id: str | None = None,
-) -> AuctionsResult:
-    """Search the Fragment marketplace for usernames, numbers, or collectibles.
+) -> UsernamesResult:
+    """Search the Fragment marketplace for Telegram usernames.
 
     Args:
         client: Authenticated :class:`FragmentClient` instance.
-        query: Search text (e.g. ``"durov"`` or ``"888"``).
-        type: Narrow results by item type — ``"usernames"``, ``"numbers"``, or
-            ``"collectibles"``. Omit to search across all types.
+        query: Search text (e.g. ``"durov"``). Omit or pass ``""`` to browse all.
         sort: Sort order — ``"price_desc"``, ``"price_asc"``, ``"listed"``, or
             ``"ending"``. Omit to use Fragment's default ordering.
         filter: Filter results — ``"auction"``, ``"sale"``, ``"sold"``, or ``""``
             (available items). Omit to return all.
-        offset_id: Pagination cursor from a previous :class:`AuctionsResult`.
+        offset_id: Pagination cursor from a previous :class:`UsernamesResult`.
             Pass ``next_offset_id`` to fetch the next page.
 
     Returns:
-        :class:`AuctionsResult` with ``items`` (parsed list of item dicts) and
+        :class:`UsernamesResult` with ``items`` (parsed list of item dicts) and
         ``next_offset_id`` (``None`` when there are no more pages).
 
     Raises:
         FragmentAPIError: If the Fragment API returns an error.
         UnexpectedError: For any other unexpected failure.
     """
-    data: dict[str, Any] = {"method": "searchAuctions", "query": query}
-    if type is not None:
-        data["type"] = type
+    data: dict[str, Any] = {"method": "searchAuctions", "type": "usernames", "query": query}
     if sort is not None:
         data["sort"] = sort
     if filter is not None:
@@ -64,7 +59,7 @@ async def search_auctions(
         items = parse_auction_rows(result.get("html") or "")
         raw_noi = result.get("next_offset_id")
         next_offset_id = str(raw_noi) if raw_noi else None
-        return AuctionsResult(items=items, next_offset_id=next_offset_id)
+        return UsernamesResult(items=items, next_offset_id=next_offset_id)
 
     except FragmentError:
         raise

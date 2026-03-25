@@ -21,8 +21,10 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - `AdsRechargeResult` result type
 
 **Marketplace**
-- `search_auctions(query, type?, sort?, filter?, offset_id?)` — search the Fragment marketplace for usernames, numbers, or collectibles; `type` is one of `"usernames"`, `"numbers"`, `"collectibles"` (optional); `sort` is one of `"price_desc"`, `"price_asc"`, `"listed"`, `"ending"`; `filter` is one of `""`, `"auction"`, `"sale"`, `"sold"`; supports pagination via `offset_id`; returns parsed item dicts with `slug`, `name`, `status`, `price`, `ends_at`
-- `AuctionsResult` result type
+- `search_usernames(query?, sort?, filter?, offset_id?)` — search the Fragment marketplace for Telegram usernames; `sort` is one of `"price_desc"`, `"price_asc"`, `"listed"`, `"ending"`; `filter` is one of `""`, `"auction"`, `"sale"`, `"sold"`; supports pagination via `offset_id`; returns parsed item dicts with `slug`, `name`, `status`, `price`, `date`
+- `search_numbers(query?, sort?, filter?, offset_id?)` — search the Fragment marketplace for anonymous Telegram numbers; same `sort` / `filter` / `offset_id` semantics as `search_usernames`
+- `search_gifts(query?, collection?, sort?, filter?, view?, attr?, offset?)` — search the Fragment gifts marketplace; `collection` is the gift collection slug (e.g. `"artisanbrick"`); `attr` accepts trait filters as `{"Model": ["Foosball"], "Backdrop": ["Celtic Blue"]}`; supports integer-based pagination via `offset`; returns parsed item dicts with `slug`, `name`, `status`, `price`, `date`
+- `UsernamesResult`, `NumbersResult`, `GiftsResult` result types
 
 **Raw API access**
 - `FragmentClient.call(method, data, *, page_url)` — send a raw request to any Fragment API method without waiting for a library update
@@ -41,6 +43,9 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - `examples/call.py` — raw API call via `client.call()`
 - `examples/anonymous_number.py` — login code fetch and session termination with `AnonymousNumberError` handling
 - `examples/recharge_ads.py` — self-service Ads recharge with `ConfigurationError` / `WalletError` handling
+- `examples/search_usernames.py` — username marketplace search with pagination
+- `examples/search_numbers.py` — number marketplace search with pagination
+- `examples/search_gifts.py` — gifts marketplace search with collection, attr, and pagination
 
 ### Changed
 - All result types (`PremiumResult`, `StarsResult`, `StarsGiveawayResult`, `PremiumGiveawayResult`) now use a single unified `amount` field instead of `months`, `stars` — consistent API across every method
