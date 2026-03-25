@@ -1,8 +1,9 @@
 """Shared test constants for the pyfragment test suite.
 
-pyfragment is an async Python client for Fragment.com — purchase Telegram Premium
-and Stars, run Stars and Premium giveaways for channels, top up TON Ads balance,
-and manage anonymous numbers, all through a clean typed API.
+pyfragment is an async Python client for the Fragment API — a unified toolkit
+to manage Telegram assets: purchase Stars and Premium, top up TON and Ads balances,
+run giveaways, manage anonymous numbers, and explore the marketplace for usernames,
+numbers, and gifts.
 """
 
 from typing import Any
