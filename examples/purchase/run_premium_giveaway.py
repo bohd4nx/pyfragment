@@ -26,13 +26,9 @@ MONTHS = 3  # 3, 6 or 12
 async def main() -> None:
     async with FragmentClient(seed=SEED, api_key=API_KEY, cookies=COOKIES) as client:
         try:
-            result = await client.giveaway_premium(
-                CHANNEL, winners=WINNERS, months=MONTHS
-            )
+            result = await client.giveaway_premium(CHANNEL, winners=WINNERS, months=MONTHS)
         except UserNotFoundError:
-            print(
-                f"Channel {CHANNEL} was not found on fragment.com — check the username and try again."
-            )
+            print(f"Channel {CHANNEL} was not found on fragment.com — check the username and try again.")
             return
         except ConfigurationError as e:
             print(f"Invalid argument: {e}")

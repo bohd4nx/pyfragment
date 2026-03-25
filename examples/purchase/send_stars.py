@@ -25,21 +25,15 @@ AMOUNT = 500  # 50–1 000 000 stars
 async def main() -> None:
     async with FragmentClient(seed=SEED, api_key=API_KEY, cookies=COOKIES) as client:
         try:
-            result = await client.purchase_stars(
-                USERNAME, amount=AMOUNT, show_sender=True
-            )
+            result = await client.purchase_stars(USERNAME, amount=AMOUNT, show_sender=True)
         except UserNotFoundError:
-            print(
-                f"User {USERNAME} was not found on fragment.com — check the username and try again."
-            )
+            print(f"User {USERNAME} was not found on fragment.com — check the username and try again.")
             return
         except ConfigurationError as e:
             print(f"Invalid argument: {e}")
             return
 
-    print(
-        f"{result.amount} Stars successfully sent to {result.username} | tx: {result.transaction_id}"
-    )
+    print(f"{result.amount} Stars successfully sent to {result.username} | tx: {result.transaction_id}")
 
 
 if __name__ == "__main__":

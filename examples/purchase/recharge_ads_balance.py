@@ -30,9 +30,7 @@ AMOUNT = 10  # 1–1 000 000 000 TON
 async def main() -> None:
     async with FragmentClient(seed=SEED, api_key=API_KEY, cookies=COOKIES) as client:
         try:
-            result: AdsRechargeResult = await client.recharge_ads(
-                ACCOUNT, amount=AMOUNT
-            )
+            result: AdsRechargeResult = await client.recharge_ads(ACCOUNT, amount=AMOUNT)
         except WalletError as e:
             print(f"Wallet error — insufficient balance or misconfiguration: {e}")
             return
@@ -40,9 +38,7 @@ async def main() -> None:
             print(f"Invalid argument: {e}")
             return
 
-    print(
-        f"{result.amount} TON recharged to Ads account {ACCOUNT} | tx: {result.transaction_id}"
-    )
+    print(f"{result.amount} TON recharged to Ads account {ACCOUNT} | tx: {result.transaction_id}")
 
 
 if __name__ == "__main__":

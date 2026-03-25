@@ -7,6 +7,7 @@ Use next_offset_id for pagination.
 """
 
 import asyncio
+import json
 
 from pyfragment import FragmentClient, NumbersResult
 
@@ -26,21 +27,13 @@ FILTER = ""  # "", "auction", "sale", "sold" — or omit
 
 async def main() -> None:
     async with FragmentClient(seed=SEED, api_key=API_KEY, cookies=COOKIES) as client:
-        result: NumbersResult = await client.search_numbers(
-            QUERY, sort=SORT, filter=FILTER
-        )
+        result: NumbersResult = await client.search_numbers(QUERY, sort=SORT, filter=FILTER)
 
         print(f"Found {len(result.items)} result(s):")
-        for item in result.items:
-            price = f"{item['price']} TON" if item["price"] else "n/a"
-            print(
-                f"  {item['name']:20s}  {item['status'] or '':15s}  {price:10s}  {item['date'] or '—'}"
-            )
+        print(json.dumps(result.items, indent=2))
 
         if result.next_offset_id:
-            print(
-                f"\nMore results available — next page offset: {result.next_offset_id}"
-            )
+            print(f"\nMore results available — next page offset: {result.next_offset_id}")
 
 
 if __name__ == "__main__":

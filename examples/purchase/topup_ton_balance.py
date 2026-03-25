@@ -34,9 +34,7 @@ async def main() -> None:
         try:
             result = await client.topup_ton(USERNAME, amount=AMOUNT, show_sender=True)
         except UserNotFoundError:
-            print(
-                f"User {USERNAME} was not found on fragment.com — check the username and try again."
-            )
+            print(f"User {USERNAME} was not found on fragment.com — check the username and try again.")
             return
         except WalletError as e:
             print(f"Wallet error — insufficient balance or misconfiguration: {e}")
@@ -45,9 +43,7 @@ async def main() -> None:
             print(f"Invalid argument: {e}")
             return
 
-    print(
-        f"{result.amount} TON successfully topped up for {result.username} | tx: {result.transaction_id}"
-    )
+    print(f"{result.amount} TON successfully topped up for {result.username} | tx: {result.transaction_id}")
 
 
 if __name__ == "__main__":

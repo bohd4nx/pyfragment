@@ -8,6 +8,7 @@ Use next_offset for pagination.
 """
 
 import asyncio
+import json
 
 from pyfragment import FragmentClient, GiftsResult
 
@@ -28,16 +29,10 @@ FILTER = ""  # "", "auction", "sale", "sold" — or omit
 
 async def main() -> None:
     async with FragmentClient(seed=SEED, api_key=API_KEY, cookies=COOKIES) as client:
-        result: GiftsResult = await client.search_gifts(
-            QUERY, collection=COLLECTION, sort=SORT, filter=FILTER
-        )
+        result: GiftsResult = await client.search_gifts(QUERY, collection=COLLECTION, sort=SORT, filter=FILTER)
 
         print(f"Found {len(result.items)} result(s):")
-        for item in result.items:
-            price = f"{item['price']} TON" if item["price"] else "n/a"
-            print(
-                f"  {item['name']:30s}  {item['status'] or '':15s}  {price:12s}  {item['date'] or '—'}"
-            )
+        print(json.dumps(result.items, indent=2))
 
         if result.next_offset:
             print(f"\nMore results available — next page offset: {result.next_offset}")

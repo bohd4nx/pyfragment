@@ -4,7 +4,7 @@
   <h1 style="margin-top: 24px;">Fragment API</h1>
 
   <p style="font-size: 18px; margin-bottom: 24px;">
-    <b>Async Python client for the Fragment.com API — buy Telegram Stars and Premium, run giveaways, top up TON, Ads balance, manage anonymous numbers, and search the marketplace for usernames, numbers, and gifts.</b>
+    <b>Async Python client for the Fragment API — a unified toolkit to manage Telegram assets: purchase Stars and Premium, top up TON and Ads balances, run giveaways, manage anonymous numbers, and explore the marketplace for usernames, numbers, and gifts.</b>
   </p>
 
 [![PyPI version](https://img.shields.io/pypi/v/pyfragment?style=flat&color=blue)](https://pypi.org/project/pyfragment/)
