@@ -4,7 +4,7 @@
   <h1 style="margin-top: 24px;">Fragment API</h1>
 
   <p style="font-size: 18px; margin-bottom: 24px;">
-    <b>Python library for the Fragment.com API — purchase Telegram Stars, Premium, and top up TON Ads balance.</b>
+    <b>Async Python client for the Fragment API — a unified toolkit to manage Telegram assets: purchase Stars and Premium, top up TON and Ads balances, run giveaways, manage anonymous numbers, and explore the marketplace for usernames, numbers, and gifts.</b>
   </p>
 
 [![PyPI version](https://img.shields.io/pypi/v/pyfragment?style=flat&color=blue)](https://pypi.org/project/pyfragment/)
@@ -90,11 +90,11 @@ async def main() -> None:
         try:
             # Purchase 6 months of Telegram Premium
             result = await client.purchase_premium("@username", months=6)
-            print(f"{result.months} months of Premium successfully sent to {result.username} | tx: {result.transaction_id}")
+            print(f"{result.amount} months of Premium successfully sent to {result.username} | tx: {result.transaction_id}")
 
             # Purchase 500 Stars
             result = await client.purchase_stars("@username", amount=500)
-            print(f"{result.stars} Stars successfully sent to {result.username} | tx: {result.transaction_id}")
+            print(f"{result.amount} Stars successfully sent to {result.username} | tx: {result.transaction_id}")
 
             # Top up 10 TON to Telegram balance
             # wallet must hold at least amount + ~0.056 TON for gas

@@ -11,24 +11,20 @@ from pyfragment.types import (
     UnexpectedError,
     UserNotFoundError,
 )
-from pyfragment.types.constants import BASE_HEADERS, DEVICE, STARS_PAGE
+from pyfragment.types.constants import DEVICE, STARS_PAGE
 from pyfragment.utils import (
     execute_transaction_request,
-    fragment_post,
+    fragment_request,
     get_account_info,
     get_fragment_hash,
+    make_headers,
     process_transaction,
 )
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
 
-# Page-specific headers
-HEADERS: dict[str, str] = {
-    **BASE_HEADERS,
-    "referer": STARS_PAGE,
-    "x-aj-referer": STARS_PAGE,
-}
+HEADERS: dict[str, str] = make_headers(STARS_PAGE)
 
 
 async def _search_recipient(
@@ -36,7 +32,7 @@ async def _search_recipient(
     fragment_hash: str,
     username: str,
 ) -> str:
-    result = await fragment_post(
+    result = await fragment_request(
         session,
         fragment_hash,
         HEADERS,
@@ -58,7 +54,7 @@ async def _init_request(
     recipient: str,
     amount: int,
 ) -> str:
-    result = await fragment_post(
+    result = await fragment_request(
         session,
         fragment_hash,
         HEADERS,
@@ -75,6 +71,23 @@ async def _init_request(
 
 
 async def purchase_stars(client: "FragmentClient", username: str, amount: int, show_sender: bool = True) -> StarsResult:
+    """Send Telegram Stars to a user.
+
+    Args:
+        client: Authenticated :class:`FragmentClient` instance.
+        username: Recipient's Telegram username (with or without ``@``).
+        amount: Number of Stars to send — integer from ``50`` to ``1 000 000``.
+        show_sender: Show your name as the gift sender. Defaults to ``True``.
+
+    Returns:
+        :class:`StarsResult` with ``transaction_id``, ``username``, and ``amount``.
+
+    Raises:
+        ConfigurationError: If ``amount`` is not an integer between 50 and 1 000 000.
+        UserNotFoundError: If the user is not found on Fragment.
+        FragmentAPIError: If the Fragment API returns an error.
+        UnexpectedError: For any other unexpected failure.
+    """
     if not isinstance(amount, int) or not (50 <= amount <= 1_000_000):
         raise ConfigurationError(ConfigurationError.INVALID_STARS_AMOUNT)
 
@@ -97,7 +110,7 @@ async def purchase_stars(client: "FragmentClient", username: str, amount: int, s
             transaction = await execute_transaction_request(session, HEADERS, tx_data, fragment_hash)
 
         tx_hash = await process_transaction(client, transaction)
-        return StarsResult(transaction_id=tx_hash, username=username, stars=amount)
+        return StarsResult(transaction_id=tx_hash, username=username, amount=amount)
 
     except FragmentError:
         raise

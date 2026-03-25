@@ -12,24 +12,20 @@ from pyfragment.types import (
     UnexpectedError,
     UserNotFoundError,
 )
-from pyfragment.types.constants import BASE_HEADERS, DEVICE, PREMIUM_PAGE
+from pyfragment.types.constants import DEVICE, PREMIUM_PAGE
 from pyfragment.utils import (
     execute_transaction_request,
-    fragment_post,
+    fragment_request,
     get_account_info,
     get_fragment_hash,
+    make_headers,
     process_transaction,
 )
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
 
-# Page-specific headers
-HEADERS: dict[str, str] = {
-    **BASE_HEADERS,
-    "referer": PREMIUM_PAGE,
-    "x-aj-referer": PREMIUM_PAGE,
-}
+HEADERS: dict[str, str] = make_headers(PREMIUM_PAGE)
 
 
 async def _search_recipient(
@@ -38,7 +34,7 @@ async def _search_recipient(
     username: str,
     months: int,
 ) -> str:
-    result = await fragment_post(
+    result = await fragment_request(
         session,
         fragment_hash,
         HEADERS,
@@ -60,7 +56,7 @@ async def _init_request(
     recipient: str,
     months: int,
 ) -> str:
-    await fragment_post(
+    await fragment_request(
         session,
         fragment_hash,
         HEADERS,
@@ -71,7 +67,7 @@ async def _init_request(
             "method": "updatePremiumState",
         },
     )
-    result = await fragment_post(
+    result = await fragment_request(
         session,
         fragment_hash,
         HEADERS,
@@ -88,6 +84,23 @@ async def _init_request(
 
 
 async def purchase_premium(client: "FragmentClient", username: str, months: int, show_sender: bool = True) -> PremiumResult:
+    """Gift Telegram Premium to a user.
+
+    Args:
+        client: Authenticated :class:`FragmentClient` instance.
+        username: Recipient's Telegram username (with or without ``@``).
+        months: Premium duration — ``3``, ``6``, or ``12``.
+        show_sender: Show your name as the gift sender. Defaults to ``True``.
+
+    Returns:
+        :class:`PremiumResult` with ``transaction_id``, ``username``, and ``amount``.
+
+    Raises:
+        ConfigurationError: If ``months`` is not ``3``, ``6``, or ``12``.
+        UserNotFoundError: If the user is not found on Fragment.
+        FragmentAPIError: If the Fragment API returns an error.
+        UnexpectedError: For any other unexpected failure.
+    """
     if months not in (3, 6, 12):
         raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
 
@@ -110,7 +123,7 @@ async def purchase_premium(client: "FragmentClient", username: str, months: int,
             transaction = await execute_transaction_request(session, HEADERS, tx_data, fragment_hash)
 
         tx_hash = await process_transaction(client, transaction)
-        return PremiumResult(transaction_id=tx_hash, username=username, months=months)
+        return PremiumResult(transaction_id=tx_hash, username=username, amount=months)
 
     except FragmentError:
         raise

@@ -1,5 +1,4 @@
-"""Tests for get_fragment_hash() — fetches a valid lowercase hex hash
-from the fragment.com/stars/buy page source."""
+"""Tests for get_fragment_hash() — API hash extraction from Fragment page source."""
 
 import re
 

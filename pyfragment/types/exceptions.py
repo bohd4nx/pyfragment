@@ -11,22 +11,29 @@ class ConfigurationError(ClientError):
 
     MISSING_VARS = "Missing required parameter(s): {keys}."
     UNSUPPORTED_VERSION = "Unsupported wallet_version '{version}'. Must be one of: {supported}."
-    INVALID_MNEMONIC = "Invalid mnemonic: got {count} words, expected 12, 18, or 24."
-    INVALID_API_KEY = "Invalid Tonapi key: got {length} characters, expected at least 68. Get one at https://tonconsole.com."
-    INVALID_MONTHS = "Invalid duration. Choose 3, 6, or 12 months."
-    INVALID_STARS_AMOUNT = "Amount must be an integer between 50 and 1 000 000 stars."
-    INVALID_TON_AMOUNT = "Amount must be an integer between 1 and 1 000 000 000 TON."
-    INVALID_USERNAME = (
-        "Invalid username '{username}'. Must be 5–32 characters: letters (A–Z, a–z), digits (0–9), or underscores (_)."
+    INVALID_MNEMONIC = "Invalid mnemonic: expected 12, 18, or 24 words, got {count}."
+    INVALID_API_KEY = (
+        "Invalid Tonapi API key: expected at least 68 characters, got {length}. " "Generate a key at https://tonconsole.com."
     )
+    INVALID_MONTHS = "Invalid Premium duration: choose 3, 6, or 12 months."
+    INVALID_STARS_AMOUNT = "Invalid Stars amount: must be an integer between 50 and 1 000 000."
+    INVALID_TON_AMOUNT = "Invalid TON amount: must be an integer between 1 and 1 000 000 000."
+    INVALID_USERNAME = (
+        "Invalid username '{username}'. "
+        "Must be 5–32 characters and contain only letters (A–Z, a–z), digits (0–9), or underscores (_)."
+    )
+    INVALID_WINNERS_STARS = "Invalid winners count: must be an integer between 1 and 5."
+    INVALID_WINNERS_PREMIUM = "Invalid winners count: must be an integer between 1 and 24 000."
+    INVALID_STARS_PER_WINNER = "Invalid Stars per winner: must be an integer between 500 and 1 000 000."
 
 
 class CookieError(ClientError):
     """Raised when cookies are unreadable or missing required fields."""
 
-    READ_FAILED = "Failed to parse cookies: {exc}"
+    READ_FAILED = "Failed to parse cookies — expected a JSON string or a dict, got: {exc}"
     MISSING_KEYS = (
-        "Cookies are missing or have empty values for: {keys}. " "Open Fragment.com in your browser and copy fresh cookies."
+        "Fragment cookies are missing or empty for key(s): {keys}. "
+        "Open fragment.com in your browser, log in, and copy fresh cookies."
     )
 
 
@@ -34,16 +41,21 @@ class FragmentAPIError(FragmentError):
     """Raised for errors returned by Fragment's API responses."""
 
     NO_REQUEST_ID = (
-        "Fragment did not return a request ID for '{context}'. " "The session may have expired — refresh your cookies."
+        "Fragment did not return a request ID for '{context}'. "
+        "Your session may have expired — log in to fragment.com and refresh your cookies."
     )
 
 
 class FragmentPageError(FragmentAPIError):
     """Raised when the Fragment page cannot be fetched or the API hash is not found."""
 
-    BAD_STATUS = "Fragment returned HTTP {status} for {url}. " "Check that your cookies are valid and not expired."
+    BAD_STATUS = (
+        "Fragment returned HTTP {status} when loading {url}. "
+        "Your cookies may be invalid or expired — log in to fragment.com and refresh them."
+    )
     NOT_FOUND = (
-        "Fragment hash not found in the page source of {url}. " "The page structure may have changed or you are not logged in."
+        "Could not extract the API hash from {url}. "
+        "The page structure may have changed, or you are not logged in — refresh your cookies."
     )
 
 
@@ -51,29 +63,52 @@ class UserNotFoundError(FragmentAPIError):
     """Raised when the target Telegram user is not found on Fragment."""
 
     NOT_FOUND = (
-        "Telegram user '{username}' was not found on Fragment. " "Make sure the username is correct and the account exists."
+        "Telegram user '{username}' was not found on Fragment. " "Double-check the username and make sure the account exists."
     )
+
+
+class AnonymousNumberError(FragmentAPIError):
+    """Raised for Fragment anonymous number API failures."""
+
+    NOT_OWNED = "Number '{number}' is not associated with your Fragment account or has no active sessions to terminate."
+    TERMINATE_FAILED = "Failed to terminate sessions for '{number}': {error}"
 
 
 class TransactionError(FragmentAPIError):
     """Raised when a TON transaction fails to build or broadcast."""
 
     INVALID_PAYLOAD = (
-        "Fragment returned an invalid transaction payload. " "The API response is missing expected 'transaction.messages' data."
+        "Fragment returned an invalid transaction payload — " "'transaction.messages' is missing or empty in the API response."
     )
     BROADCAST_FAILED = "Transaction broadcast failed: {exc}"
+    BROADCAST_FAILED_SSL = (
+        "Transaction broadcast failed due to an SSL certificate error: {exc}\n"
+        "This usually means your system's CA bundle is missing or outdated.\n"
+        "Fix: run `pip install --upgrade certifi` and retry. "
+        "On macOS you may also need to run the 'Install Certificates.command' "
+        "located in your Python installation folder."
+    )
+    DUPLICATE_SEQNO = (
+        "Transaction broadcast failed: the TON wallet rejected the message "
+        "because a previous transaction with the same sequence number (seqno) "
+        "is still pending confirmation on-chain.\n"
+        "Wait a few seconds for the previous transaction to confirm, then retry."
+    )
 
 
 class ParseError(FragmentAPIError):
     """Raised when a Fragment API response or payload cannot be parsed."""
 
-    UNPARSEABLE = "Fragment API returned an unparseable response for '{context}': {exc}"
+    UNPARSEABLE = "Failed to parse the Fragment API response for '{context}': {exc}"
 
 
 class VerificationError(FragmentAPIError):
     """Raised when Fragment requires KYC verification before proceeding."""
 
-    KYC_REQUIRED = "Fragment requires identity (KYC) verification. " "Complete it at https://fragment.com/my/profile and retry."
+    KYC_REQUIRED = (
+        "Fragment requires identity verification (KYC) before this action can be completed. "
+        "Complete verification at https://fragment.com/my/profile and retry."
+    )
 
 
 class OperationError(FragmentError):
@@ -83,16 +118,19 @@ class OperationError(FragmentError):
 class WalletError(OperationError):
     """Raised for TON wallet issues (connection, balance, account info)."""
 
-    LOW_BALANCE = "TON wallet balance is too low: {balance:.4f} TON available, {required:.4f} TON required."
-    BALANCE_CHECK_FAILED = "Wallet balance check failed: {exc}"
-    ACCOUNT_INFO_FAILED = "Failed to retrieve wallet account info: {exc}"
-    WALLET_INFO_FAILED = "Failed to retrieve wallet info: {exc}"
+    LOW_BALANCE = (
+        "Insufficient TON balance: {balance:.4f} TON available, {required:.4f} TON required "
+        "(transaction amount + {gas:.3f} TON gas reserve)."
+    )
+    BALANCE_CHECK_FAILED = "Failed to fetch wallet balance: {exc}"
+    ACCOUNT_INFO_FAILED = "Failed to retrieve wallet account info from TON network: {exc}"
+    WALLET_INFO_FAILED = "Failed to retrieve wallet info from TON network: {exc}"
 
 
 class UnexpectedError(OperationError):
     """Raised when an unexpected error occurs during an API call."""
 
-    UNEXPECTED = "An unexpected error occurred: {exc}"
+    UNEXPECTED = "An unexpected error occurred during the operation: {exc}"
 
 
 __all__ = [
@@ -102,6 +140,7 @@ __all__ = [
     "CookieError",
     "FragmentAPIError",
     "FragmentPageError",
+    "AnonymousNumberError",
     "UserNotFoundError",
     "TransactionError",
     "ParseError",

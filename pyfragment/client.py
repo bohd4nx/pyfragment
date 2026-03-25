@@ -1,18 +1,41 @@
 import json
-from typing import cast
+from typing import Any, cast
 
-from pyfragment.methods.premium import purchase_premium
-from pyfragment.methods.stars import purchase_stars
-from pyfragment.methods.ton import topup_ton
+import httpx
+
+from pyfragment.methods.anonymous_number import get_login_code, terminate_sessions, toggle_login_codes
+from pyfragment.methods.giveaway_premium import giveaway_premium
+from pyfragment.methods.giveaway_stars import giveaway_stars
+from pyfragment.methods.purchase_premium import purchase_premium
+from pyfragment.methods.purchase_stars import purchase_stars
+from pyfragment.methods.recharge_ads import recharge_ads
+from pyfragment.methods.search_gifts import search_gifts
+from pyfragment.methods.search_numbers import search_numbers
+from pyfragment.methods.search_usernames import search_usernames
+from pyfragment.methods.topup_ton import topup_ton
 from pyfragment.types import (
+    AdsRechargeResult,
     AdsTopupResult,
     ConfigurationError,
     CookieError,
+    GiftsResult,
+    LoginCodeResult,
+    NumbersResult,
     PremiumResult,
     StarsResult,
+    TerminateSessionsResult,
+    UsernamesResult,
     WalletInfo,
 )
-from pyfragment.types.constants import DEFAULT_TIMEOUT, REQUIRED_COOKIE_KEYS, SUPPORTED_WALLET_VERSIONS, WalletVersion
+from pyfragment.types.constants import (
+    DEFAULT_TIMEOUT,
+    FRAGMENT_BASE_URL,
+    REQUIRED_COOKIE_KEYS,
+    SUPPORTED_WALLET_VERSIONS,
+    WalletVersion,
+)
+from pyfragment.types.results import PremiumGiveawayResult, StarsGiveawayResult
+from pyfragment.utils.http import fragment_request, get_fragment_hash, make_headers
 from pyfragment.utils.wallet import get_wallet_info
 
 
@@ -108,7 +131,7 @@ class FragmentClient:
             show_sender: Show your name as the sender. Defaults to ``True``.
 
         Returns:
-            :class:`PremiumResult` with ``transaction_id``, ``username``, ``months``, ``timestamp``.
+            :class:`PremiumResult` with ``transaction_id``, ``username``, and ``amount``.
         """
         return await purchase_premium(self, username, months, show_sender)
 
@@ -121,28 +144,226 @@ class FragmentClient:
             show_sender: Show your name as the gift sender. Defaults to ``True``.
 
         Returns:
-            :class:`StarsResult` with ``transaction_id``, ``username``, ``stars``, ``timestamp``.
+            :class:`StarsResult` with ``transaction_id``, ``username``, and ``amount``.
         """
         return await purchase_stars(self, username, amount, show_sender)
 
     async def topup_ton(self, username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
-        """Top up Telegram Ads balance with TON.
+        """Topup ton to recipient's Telegram balance.
 
         Args:
-            username: Ads account username (with or without ``@``).
+            username: Recipient's Telegram username (with or without ``@``).
             amount: Amount in TON — integer from ``1`` to ``1 000 000 000``.
             show_sender: Show your name as the sender. Defaults to ``True``.
 
         Returns:
-            :class:`AdsTopupResult` with ``transaction_id``, ``username``, ``amount``, ``timestamp``.
+            :class:`AdsTopupResult` with ``transaction_id``, ``username``, and ``amount``.
         """
         return await topup_ton(self, username, amount, show_sender)
+
+    async def recharge_ads(self, account: str, amount: int) -> AdsRechargeResult:
+        """Add funds to your own Telegram Ads account.
+
+        Args:
+            account: Your Fragment Ads account identifier — the channel or bot username
+                the Ads account is linked to (e.g. ``"@mychannel"``).
+            amount: Amount in TON — integer from ``1`` to ``1 000 000 000``.
+
+        Returns:
+            :class:`AdsRechargeResult` with ``transaction_id`` and ``amount``.
+        """
+        return await recharge_ads(self, account, amount)
 
     async def get_wallet(self) -> WalletInfo:
         """Return the address, state and balance of the TON wallet.
 
         Returns:
             :class:`WalletInfo` with ``address`` (``"UQ..."``), ``state``
-            (``"active"``, ``"uninit"``, or ``"frozen"``), and ``balance`` in TON.
+            (``"active"``, ``"uninit"``, ``"nonexist"``, or ``"frozen"``), and ``balance`` in TON.
         """
         return await get_wallet_info(self)
+
+    async def giveaway_stars(
+        self,
+        channel: str,
+        winners: int,
+        amount: int,
+    ) -> StarsGiveawayResult:
+        """Run a Telegram Stars giveaway for a channel.
+
+        Args:
+            channel: Channel username (with or without ``@``).
+            winners: Number of winners — integer from ``1`` to ``5``.
+            amount: Stars each winner receives — integer from ``500`` to ``1 000 000``.
+
+        Returns:
+            :class:`StarsGiveawayResult` with ``transaction_id``, ``channel``,
+            ``winners``, and ``amount``.
+        """
+        return await giveaway_stars(self, channel, winners, amount)
+
+    async def giveaway_premium(
+        self,
+        channel: str,
+        winners: int,
+        months: int = 3,
+    ) -> PremiumGiveawayResult:
+        """Run a Telegram Premium giveaway for a channel.
+
+        Args:
+            channel: Channel username (with or without ``@``).
+            winners: Number of winners — positive integer.
+            months: Premium duration per winner — ``3``, ``6``, or ``12``. Defaults to ``3``.
+
+        Returns:
+            :class:`PremiumGiveawayResult` with ``transaction_id``, ``channel``,
+            ``winners``, and ``amount``.
+        """
+        return await giveaway_premium(self, channel, winners, months)
+
+    async def get_login_code(self, number: str) -> LoginCodeResult:
+        """Fetch the current pending login code for an anonymous number.
+
+        Args:
+            number: Phone number with or without leading ``+`` (e.g. ``"+1234567890"``).
+
+        Returns:
+            :class:`LoginCodeResult` with ``number``, ``code`` (``None`` if none pending),
+            and ``active_sessions`` count.
+        """
+        return await get_login_code(self, number)
+
+    async def toggle_login_codes(self, number: str, can_receive: bool) -> None:
+        """Enable or disable login code delivery for an anonymous number.
+
+        Args:
+            number: Phone number with or without leading ``+``.
+            can_receive: ``True`` to allow receiving codes, ``False`` to block them.
+        """
+        return await toggle_login_codes(self, number, can_receive)
+
+    async def terminate_sessions(self, number: str) -> TerminateSessionsResult:
+        """Terminate all active Telegram sessions for an anonymous number.
+
+        Args:
+            number: Phone number with or without leading ``+``.
+
+        Returns:
+            :class:`TerminateSessionsResult` with ``number`` and ``message``.
+
+        Raises:
+            AnonymousNumberError: If the number is not owned by this account or has no active sessions.
+        """
+        return await terminate_sessions(self, number)
+
+    async def search_usernames(
+        self,
+        query: str = "",
+        sort: str | None = None,
+        filter: str | None = None,
+        offset_id: str | None = None,
+    ) -> UsernamesResult:
+        """Search the Fragment marketplace for Telegram usernames.
+
+        Args:
+            query: Search text (e.g. ``"durov"``). Omit or pass ``""`` to browse all.
+            sort: Sort order — ``"price_desc"``, ``"price_asc"``, ``"listed"``, or
+                ``"ending"``. Omit to use Fragment's default ordering.
+            filter: Filter results — ``"auction"``, ``"sale"``, ``"sold"``, or
+                ``""`` (available items). Omit to return all.
+            offset_id: Pagination cursor — pass :attr:`UsernamesResult.next_offset_id`
+                from a previous result to fetch the next page.
+
+        Returns:
+            :class:`UsernamesResult` with ``items`` (parsed list of item dicts)
+            and ``next_offset_id`` (``None`` on the last page).
+        """
+        return await search_usernames(self, query, sort=sort, filter=filter, offset_id=offset_id)
+
+    async def search_numbers(
+        self,
+        query: str = "",
+        sort: str | None = None,
+        filter: str | None = None,
+        offset_id: str | None = None,
+    ) -> NumbersResult:
+        """Search the Fragment marketplace for anonymous Telegram numbers.
+
+        Args:
+            query: Search text (e.g. ``"888"``). Omit or pass ``""`` to browse all.
+            sort: Sort order — ``"price_desc"``, ``"price_asc"``, ``"listed"``, or
+                ``"ending"``. Omit to use Fragment's default ordering.
+            filter: Filter results — ``"auction"``, ``"sale"``, ``"sold"``, or
+                ``""`` (available items). Omit to return all.
+            offset_id: Pagination cursor — pass :attr:`NumbersResult.next_offset_id`
+                from a previous result to fetch the next page.
+
+        Returns:
+            :class:`NumbersResult` with ``items`` (parsed list of item dicts)
+            and ``next_offset_id`` (``None`` on the last page).
+        """
+        return await search_numbers(self, query, sort=sort, filter=filter, offset_id=offset_id)
+
+    async def search_gifts(
+        self,
+        query: str = "",
+        collection: str | None = None,
+        sort: str | None = None,
+        filter: str | None = None,
+        view: str | None = None,
+        attr: dict[str, list[str]] | None = None,
+        offset: int | None = None,
+    ) -> GiftsResult:
+        """Search the Fragment gifts marketplace.
+
+        Args:
+            query: Search text. Omit or pass ``""`` to browse without filtering by name.
+            collection: Filter by gift collection slug (e.g. ``"artisanbrick"``). Omit for all.
+            sort: Sort order — ``"price_desc"``, ``"price_asc"``, ``"listed"``, or
+                ``"ending"``. Omit to use Fragment's default ordering.
+            filter: Filter results — ``"auction"``, ``"sale"``, ``"sold"``, or
+                ``""`` (available items). Omit to return all.
+            view: Active attribute tab name (e.g. ``"Model"``, ``"Backdrop"``). Omit for default.
+            attr: Attribute filters — mapping of trait name to accepted values, e.g.
+                ``{"Model": ["Foosball"], "Backdrop": ["Celtic Blue", "Orange"]}``.
+                Each key is sent as ``attr[Key]`` with its list of values.
+            offset: Integer page offset from a previous :class:`GiftsResult`.
+                Pass ``next_offset`` to fetch the next page.
+
+        Returns:
+            :class:`GiftsResult` with ``items`` (parsed list of item dicts)
+            and ``next_offset`` (``None`` on the last page).
+        """
+        return await search_gifts(
+            self, query, collection=collection, sort=sort, filter=filter, view=view, attr=attr, offset=offset
+        )
+
+    async def call(
+        self, method: str, data: dict[str, Any] | None = None, *, page_url: str = FRAGMENT_BASE_URL
+    ) -> dict[str, Any]:
+        """Send a raw request to the Fragment API.
+
+        Useful for accessing undocumented or future Fragment API methods
+        without waiting for a library update.
+
+        Args:
+            method: Fragment API method name, e.g. ``"searchPremiumGiftRecipient"``.
+            data: Additional form-data fields to include in the request body.
+            page_url: Fragment page URL used to derive the API hash and headers.
+                Defaults to ``FRAGMENT_BASE_URL`` (``"https://fragment.com"``).
+
+        Returns:
+            Raw parsed JSON response as a dict.
+
+        Example::
+
+            result = await client.call(
+                "searchPremiumGiftRecipient",
+                {"query": "@username", "months": 3},
+                page_url="https://fragment.com/premium/gift",
+            )
+        """
+        headers = make_headers(page_url)
+        async with httpx.AsyncClient(cookies=self.cookies, timeout=self.timeout) as session:
+            fragment_hash = await get_fragment_hash(self.cookies, headers, page_url, self.timeout)
+            return await fragment_request(session, fragment_hash, headers, {"method": method, **(data or {})})

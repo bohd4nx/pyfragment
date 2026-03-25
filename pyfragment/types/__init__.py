@@ -1,4 +1,5 @@
 from pyfragment.types.exceptions import (
+    AnonymousNumberError,
     ClientError,
     ConfigurationError,
     CookieError,
@@ -13,7 +14,20 @@ from pyfragment.types.exceptions import (
     VerificationError,
     WalletError,
 )
-from pyfragment.types.results import AdsTopupResult, PremiumResult, StarsResult, WalletInfo
+from pyfragment.types.results import (
+    AdsRechargeResult,
+    AdsTopupResult,
+    GiftsResult,
+    LoginCodeResult,
+    NumbersResult,
+    PremiumGiveawayResult,
+    PremiumResult,
+    StarsGiveawayResult,
+    StarsResult,
+    TerminateSessionsResult,
+    UsernamesResult,
+    WalletInfo,
+)
 
 __all__ = [
     # client exceptions
@@ -24,6 +38,7 @@ __all__ = [
     "FragmentAPIError",
     "FragmentError",
     "FragmentPageError",
+    "AnonymousNumberError",
     "OperationError",
     "ParseError",
     "TransactionError",
@@ -32,8 +47,16 @@ __all__ = [
     "VerificationError",
     "WalletError",
     # result types
+    "AdsRechargeResult",
     "AdsTopupResult",
+    "GiftsResult",
+    "LoginCodeResult",
+    "NumbersResult",
+    "PremiumGiveawayResult",
     "PremiumResult",
+    "StarsGiveawayResult",
     "StarsResult",
+    "TerminateSessionsResult",
+    "UsernamesResult",
     "WalletInfo",
 ]

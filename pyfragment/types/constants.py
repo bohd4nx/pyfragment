@@ -20,9 +20,14 @@ DEFAULT_TIMEOUT: float = 30.0
 REQUIRED_COOKIE_KEYS: tuple[str, ...] = ("stel_ssid", "stel_dt", "stel_token", "stel_ton_token")
 
 # Fragment page URLs
-STARS_PAGE: str = "https://fragment.com/stars/buy"
-PREMIUM_PAGE: str = "https://fragment.com/premium/gift"
-TON_PAGE: str = "https://fragment.com/ads/topup"
+FRAGMENT_BASE_URL: str = "https://fragment.com"
+STARS_PAGE: str = f"{FRAGMENT_BASE_URL}/stars/buy"
+STARS_GIVEAWAY_PAGE: str = f"{FRAGMENT_BASE_URL}/stars/giveaway"
+PREMIUM_PAGE: str = f"{FRAGMENT_BASE_URL}/premium/gift"
+PREMIUM_GIVEAWAY_PAGE: str = f"{FRAGMENT_BASE_URL}/premium/giveaway"
+ADS_TOPUP_PAGE: str = f"{FRAGMENT_BASE_URL}/ads/topup"
+NUMBERS_PAGE: str = f"{FRAGMENT_BASE_URL}/numbers"
+GIFTS_PAGE: str = f"{FRAGMENT_BASE_URL}/gifts"
 
 # Tonkeeper device fingerprint — serialized once, reused in every tx_data payload.
 DEVICE: str = json.dumps(
@@ -45,7 +50,7 @@ BASE_HEADERS: dict[str, str] = {
     "accept": "application/json, text/javascript, */*; q=0.01",
     "accept-language": "en-US,en;q=0.9,uk;q=0.8,ru;q=0.7",
     "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-    "origin": "https://fragment.com",
+    "origin": FRAGMENT_BASE_URL,
     "priority": "u=1, i",
     "sec-fetch-dest": "empty",
     "sec-fetch-mode": "cors",
