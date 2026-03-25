@@ -1,13 +1,20 @@
 """
-Example: recharge your own Telegram Ads account with TON.
+Example: Topup ton to recipient's Telegram balance.
+
+For adding TON to  Telegram Ads account, use recharge_ads() instead.
 
 Amount must be an integer between 1 and 1 000 000 000 TON.
-Your wallet must hold at least the recharge amount + ~0.056 TON for gas.
+Your wallet must hold at least the topup amount + ~0.056 TON for gas.
 """
 
 import asyncio
 
-from pyfragment import AdsRechargeResult, ConfigurationError, FragmentClient, WalletError
+from pyfragment import (
+    ConfigurationError,
+    FragmentClient,
+    UserNotFoundError,
+    WalletError,
+)
 
 SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_TONAPI_KEY"
@@ -18,14 +25,19 @@ COOKIES = {
     "stel_ton_token": "YOUR_STEL_TON_TOKEN",
 }
 
-ACCOUNT = "@mychannel"  # channel or bot username linked to your Telegram Ads account
+USERNAME = "@username"
 AMOUNT = 10  # 1–1 000 000 000 TON
 
 
 async def main() -> None:
     async with FragmentClient(seed=SEED, api_key=API_KEY, cookies=COOKIES) as client:
         try:
-            result: AdsRechargeResult = await client.recharge_ads(ACCOUNT, amount=AMOUNT)
+            result = await client.topup_ton(USERNAME, amount=AMOUNT, show_sender=True)
+        except UserNotFoundError:
+            print(
+                f"User {USERNAME} was not found on fragment.com — check the username and try again."
+            )
+            return
         except WalletError as e:
             print(f"Wallet error — insufficient balance or misconfiguration: {e}")
             return
@@ -33,7 +45,9 @@ async def main() -> None:
             print(f"Invalid argument: {e}")
             return
 
-    print(f"{result.amount} TON recharged to Ads account {ACCOUNT} | tx: {result.transaction_id}")
+    print(
+        f"{result.amount} TON successfully topped up for {result.username} | tx: {result.transaction_id}"
+    )
 
 
 if __name__ == "__main__":

@@ -26,15 +26,21 @@ FILTER = "auction"  # "", "auction", "sale", "sold" — or omit
 
 async def main() -> None:
     async with FragmentClient(seed=SEED, api_key=API_KEY, cookies=COOKIES) as client:
-        result: UsernamesResult = await client.search_usernames(QUERY, sort=SORT, filter=FILTER)
+        result: UsernamesResult = await client.search_usernames(
+            QUERY, sort=SORT, filter=FILTER
+        )
 
         print(f"Found {len(result.items)} result(s):")
         for item in result.items:
             price = f"{item['price']} TON" if item["price"] else "n/a"
-            print(f"  {item['name']:20s}  {item['status'] or '':15s}  {price:10s}  {item['date'] or '—'}")
+            print(
+                f"  {item['name']:20s}  {item['status'] or '':15s}  {price:10s}  {item['date'] or '—'}"
+            )
 
         if result.next_offset_id:
-            print(f"\nMore results available — next page offset: {result.next_offset_id}")
+            print(
+                f"\nMore results available — next page offset: {result.next_offset_id}"
+            )
 
 
 if __name__ == "__main__":

@@ -12,51 +12,43 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 ### Added
 
 **Giveaways**
-- `giveaway_stars(channel, winners, amount)` — run a Telegram Stars giveaway for a channel (1–5 winners, 500–1 000 000 stars each); raises `UserNotFoundError` if the channel is not found on Fragment, `ConfigurationError` if `winners` or `amount` are out of range
-- `giveaway_premium(channel, winners, months)` — run a Telegram Premium giveaway for a channel (1–24 000 winners, 3/6/12 months each); raises `UserNotFoundError` if the channel is not found on Fragment, `ConfigurationError` if `winners` or `months` are invalid
-- `StarsGiveawayResult` and `PremiumGiveawayResult` result types
+- `giveaway_stars(channel, winners, amount)` — Stars giveaway; 1–5 winners, 500–1 000 000 stars each
+- `giveaway_premium(channel, winners, months)` — Premium giveaway; 1–24 000 winners, 3/6/12 months each
+- `StarsGiveawayResult`, `PremiumGiveawayResult` result types
 
 **Telegram Ads**
-- `recharge_ads(account, amount)` — add funds to your own Telegram Ads account; `account` is the channel or bot username linked to your Ads account; raises `ConfigurationError` if `amount` is out of range (1–1 000 000 000 TON)
+- `recharge_ads(account, amount)` — top up a Telegram Ads account; 1–1 000 000 000 TON
 - `AdsRechargeResult` result type
 
 **Marketplace**
-- `search_usernames(query?, sort?, filter?, offset_id?)` — search the Fragment marketplace for Telegram usernames; `sort` is one of `"price_desc"`, `"price_asc"`, `"listed"`, `"ending"`; `filter` is one of `""`, `"auction"`, `"sale"`, `"sold"`; supports pagination via `offset_id`; returns parsed item dicts with `slug`, `name`, `status`, `price`, `date`
-- `search_numbers(query?, sort?, filter?, offset_id?)` — search the Fragment marketplace for anonymous Telegram numbers; same `sort` / `filter` / `offset_id` semantics as `search_usernames`
-- `search_gifts(query?, collection?, sort?, filter?, view?, attr?, offset?)` — search the Fragment gifts marketplace; `collection` is the gift collection slug (e.g. `"artisanbrick"`); `attr` accepts trait filters as `{"Model": ["Foosball"], "Backdrop": ["Celtic Blue"]}`; supports integer-based pagination via `offset`; returns parsed item dicts with `slug`, `name`, `status`, `price`, `date`
+- `search_usernames(query?, sort?, filter?, offset_id?)` — search Fragment usernames; `sort`: `price_desc / price_asc / listed / ending`, `filter`: `auction / sale / sold`
+- `search_numbers(query?, sort?, filter?, offset_id?)` — search Fragment anonymous numbers; same `sort` / `filter` / pagination semantics
+- `search_gifts(query?, collection?, sort?, filter?, view?, attr?, offset?)` — search Fragment gifts; `attr` accepts `{"Model": ["Foosball"], "Backdrop": ["Celtic Blue"]}`
 - `UsernamesResult`, `NumbersResult`, `GiftsResult` result types
 
-**Raw API access**
-- `FragmentClient.call(method, data, *, page_url)` — send a raw request to any Fragment API method without waiting for a library update
-- `FRAGMENT_BASE_URL` constant — single source of truth for the Fragment base URL used across all page constants and headers
+**Anonymous numbers**
+- `get_login_code(number)` — fetch the current pending login code
+- `toggle_login_codes(number, can_receive)` — enable or disable login code delivery
+- `terminate_sessions(number)` — terminate all active Telegram sessions (two-step flow handled internally)
+- `LoginCodeResult`, `TerminateSessionsResult` result types; `AnonymousNumberError` exception
 
-**Anonymous number management**
-- `get_login_code(number)` — fetch the current pending login code for an anonymous number
-- `toggle_login_codes(number, can_receive)` — enable or disable login code delivery for an anonymous number
-- `terminate_sessions(number)` — terminate all active Telegram sessions for an anonymous number (two-step flow handled internally)
-- `LoginCodeResult` and `TerminateSessionsResult` result types
-- `AnonymousNumberError` exception — raised when a number is not owned or session termination fails
+**Raw API**
+- `FragmentClient.call(method, data, *, page_url)` — raw request to any Fragment API method
+- `FRAGMENT_BASE_URL` constant — base URL shared across all page constants and headers
 
 **Examples**
-- `examples/giveaway_stars.py` — Stars giveaway with `UserNotFoundError` / `ConfigurationError` handling
-- `examples/giveaway_premium.py` — Premium giveaway with `UserNotFoundError` / `ConfigurationError` handling
-- `examples/call.py` — raw API call via `client.call()`
-- `examples/anonymous_number.py` — login code fetch and session termination with `AnonymousNumberError` handling
-- `examples/recharge_ads.py` — self-service Ads recharge with `ConfigurationError` / `WalletError` handling
-- `examples/search_usernames.py` — username marketplace search with pagination
-- `examples/search_numbers.py` — number marketplace search with pagination
-- `examples/search_gifts.py` — gifts marketplace search with collection, attr, and pagination
+- `examples/client/` — `wallet_info.py` (wallet info), `raw_api_call.py` (raw API call)
+- `examples/numbers/` — `manage_number.py` (login code fetch, session termination)
+- `examples/auctions/` — `search_usernames.py`, `search_numbers.py`, `search_gifts.py` (marketplace search with pagination)
+- `examples/purchase/` — `send_stars.py`, `send_premium.py`, `topup_ton_balance.py`, `run_stars_giveaway.py`, `run_premium_giveaway.py`, `recharge_ads_balance.py`
 
 ### Changed
-- All result types (`PremiumResult`, `StarsResult`, `StarsGiveawayResult`, `PremiumGiveawayResult`) now use a single unified `amount` field instead of `months`, `stars` — consistent API across every method
-- `__repr__` on result types now includes the unit (`3 months`, `500 stars`) for clarity
-- Method module files renamed to match their function: `premium.py` → `purchase_premium.py`, `stars.py` → `purchase_stars.py`, `ton.py` → `topup_ton.py`
-- `timestamp` field removed from all result dataclasses
-- All page URL constants (`STARS_PAGE`, `PREMIUM_PAGE`, etc.) now built from `FRAGMENT_BASE_URL` instead of hardcoded strings
-- `STARS_REVENUE_PAGE` and `ADS_PAGE` constants replaced by a single `ADS_TOPUP_PAGE` shared by both `topup_ton` and `recharge_ads`
-- `TransactionError` now includes an SSL hint when a broadcast fails due to certificate verification errors
-- `TransactionError.DUPLICATE_SEQNO` — dedicated error raised after 3 failed attempts due to a `406 Duplicate msg_seqno` response from the TON network; broadcast is automatically retried (up to 2 retries, 2 s apart) before giving up
-- All error message templates rewritten to follow a "what happened → why → what to do" pattern — every template is now actionable and includes a fix hint where applicable
+- All result types now expose a unified `amount` field (`months` and `stars` removed)
+- `__repr__` includes the unit — `3 months`, `500 stars`, etc.
+- `timestamp` removed from all result dataclasses
+- All page URL constants built from `FRAGMENT_BASE_URL`;
+- `TransactionError` includes an SSL hint; `DUPLICATE_SEQNO` variant auto-retried up to 2 times (2 s apart)
+- Error messages rewritten: "what happened → why → what to do"
 
 ---
 

@@ -27,14 +27,21 @@ async def main() -> None:
         # Fetch the latest login code
         result = await client.get_login_code(NUMBER)
         if result.code:
-            print(f"Login code for {result.number}: {result.code} ({result.active_sessions} active session(s))")
+            print(
+                f"Login code for {result.number}: {result.code} ({result.active_sessions} active session(s))"
+            )
         else:
-            print(f"No pending login code for {result.number} ({result.active_sessions} active session(s))")
+            print(
+                f"No pending login code for {result.number} ({result.active_sessions} active session(s))"
+            )
 
         # Terminate all active sessions
         try:
             terminated = await client.terminate_sessions(NUMBER)
-            print(f"Sessions terminated for {terminated.number}" + (f": {terminated.message}" if terminated.message else ""))
+            print(
+                f"Sessions terminated for {terminated.number}"
+                + (f": {terminated.message}" if terminated.message else "")
+            )
         except AnonymousNumberError as e:
             print(f"Could not terminate sessions: {e}")
 

@@ -1,15 +1,14 @@
 """
-Example: search the Fragment gifts marketplace.
+Example: search the Fragment marketplace for anonymous Telegram numbers.
 
-collection filters by gift type slug (e.g. "plushpepe", "swisswatch").
 sort can be "price_desc", "price_asc", "listed", or "ending".
 filter can be "", "auction", "sale", or "sold".
-Use next_offset for pagination.
+Use next_offset_id for pagination.
 """
 
 import asyncio
 
-from pyfragment import FragmentClient, GiftsResult
+from pyfragment import FragmentClient, NumbersResult
 
 SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_TONAPI_KEY"
@@ -20,23 +19,28 @@ COOKIES = {
     "stel_ton_token": "YOUR_STEL_TON_TOKEN",
 }
 
-QUERY = ""  # search text — or omit for all
-COLLECTION = "plushpepe"  # gift collection slug — or omit for all
-SORT = "price_desc"  # "price_desc", "price_asc", "listed", "ending" — or omit
+QUERY = "888"  # search term — or omit for all
+SORT = "price_asc"  # "price_desc", "price_asc", "listed", "ending" — or omit
 FILTER = ""  # "", "auction", "sale", "sold" — or omit
 
 
 async def main() -> None:
     async with FragmentClient(seed=SEED, api_key=API_KEY, cookies=COOKIES) as client:
-        result: GiftsResult = await client.search_gifts(QUERY, collection=COLLECTION, sort=SORT, filter=FILTER)
+        result: NumbersResult = await client.search_numbers(
+            QUERY, sort=SORT, filter=FILTER
+        )
 
         print(f"Found {len(result.items)} result(s):")
         for item in result.items:
             price = f"{item['price']} TON" if item["price"] else "n/a"
-            print(f"  {item['name']:30s}  {item['status'] or '':15s}  {price:12s}  {item['date'] or '—'}")
+            print(
+                f"  {item['name']:20s}  {item['status'] or '':15s}  {price:10s}  {item['date'] or '—'}"
+            )
 
-        if result.next_offset:
-            print(f"\nMore results available — next page offset: {result.next_offset}")
+        if result.next_offset_id:
+            print(
+                f"\nMore results available — next page offset: {result.next_offset_id}"
+            )
 
 
 if __name__ == "__main__":
