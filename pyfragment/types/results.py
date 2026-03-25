@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -116,9 +117,32 @@ class TerminateSessionsResult:
         return f"TerminateSessionsResult(number='{self.number}', message={self.message!r})"
 
 
+@dataclass
+class AuctionsResult:
+    """Result of :meth:`FragmentClient.search_auctions`.
+
+    Each dict in ``items`` has the keys:
+
+    - ``slug`` — URL path (e.g. ``"username/durov"``).
+    - ``name`` — display value (e.g. ``"@durov"``).
+    - ``status`` — human-readable Fragment label (e.g. ``"On auction"``, ``"For sale"``).
+    - ``price`` — price in TON formatted to two decimal places (e.g. ``"7.00"``), or ``None``.
+    - ``ends_at`` — ISO 8601 auction-end datetime, or ``None``.
+
+    Use ``next_offset_id`` to paginate to the next page of results.
+    """
+
+    items: list[dict[str, Any]]
+    next_offset_id: str | None
+
+    def __repr__(self) -> str:
+        return f"AuctionsResult(items={len(self.items)}, next_offset_id={self.next_offset_id!r})"
+
+
 __all__ = [
     "AdsRechargeResult",
     "AdsTopupResult",
+    "AuctionsResult",
     "LoginCodeResult",
     "PremiumGiveawayResult",
     "PremiumResult",

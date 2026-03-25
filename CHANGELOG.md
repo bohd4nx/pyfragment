@@ -20,6 +20,10 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - `recharge_ads(account, amount)` — add funds to your own Telegram Ads account; `account` is the channel or bot username linked to your Ads account; raises `ConfigurationError` if `amount` is out of range (1–1 000 000 000 TON)
 - `AdsRechargeResult` result type
 
+**Marketplace**
+- `search_auctions(query, type?, sort?, filter?, offset_id?)` — search the Fragment marketplace for usernames, numbers, or collectibles; `type` is one of `"usernames"`, `"numbers"`, `"collectibles"` (optional); `sort` is one of `"price_desc"`, `"price_asc"`, `"listed"`, `"ending"`; `filter` is one of `""`, `"auction"`, `"sale"`, `"sold"`; supports pagination via `offset_id`; returns parsed item dicts with `slug`, `name`, `status`, `price`, `ends_at`
+- `AuctionsResult` result type
+
 **Raw API access**
 - `FragmentClient.call(method, data, *, page_url)` — send a raw request to any Fragment API method without waiting for a library update
 - `FRAGMENT_BASE_URL` constant — single source of truth for the Fragment base URL used across all page constants and headers

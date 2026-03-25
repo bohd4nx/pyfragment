@@ -9,10 +9,12 @@ from pyfragment.methods.giveaway_stars import giveaway_stars
 from pyfragment.methods.purchase_premium import purchase_premium
 from pyfragment.methods.purchase_stars import purchase_stars
 from pyfragment.methods.recharge_ads import recharge_ads
+from pyfragment.methods.search_auctions import search_auctions
 from pyfragment.methods.topup_ton import topup_ton
 from pyfragment.types import (
     AdsRechargeResult,
     AdsTopupResult,
+    AuctionsResult,
     ConfigurationError,
     CookieError,
     LoginCodeResult,
@@ -143,10 +145,10 @@ class FragmentClient:
         return await purchase_stars(self, username, amount, show_sender)
 
     async def topup_ton(self, username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
-        """Top up Telegram Ads balance with TON.
+        """Topup ton to recipient's Telegram balance.
 
         Args:
-            username: Ads account username (with or without ``@``).
+            username: Recipient's Telegram username (with or without ``@``).
             amount: Amount in TON — integer from ``1`` to ``1 000 000 000``.
             show_sender: Show your name as the sender. Defaults to ``True``.
 
@@ -249,6 +251,33 @@ class FragmentClient:
             AnonymousNumberError: If the number is not owned by this account or has no active sessions.
         """
         return await terminate_sessions(self, number)
+
+    async def search_auctions(
+        self,
+        query: str,
+        type: str | None = None,
+        sort: str | None = None,
+        filter: str | None = None,
+        offset_id: str | None = None,
+    ) -> AuctionsResult:
+        """Search the Fragment marketplace for auction listings.
+
+        Args:
+            query: Search text (e.g. ``"durov"`` or ``"888"``).
+            type: Narrow results by item type — ``"usernames"``, ``"numbers"``, or
+                ``"collectibles"``. Omit to search across all types.
+            sort: Sort order — ``"price_desc"``, ``"price_asc"``, ``"listed"``, or
+                ``"ending"``. Omit to use Fragment's default ordering.
+            filter: Filter results — ``"auction"``, ``"sale"``, ``"sold"``, or
+                ``""`` (available items). Omit to return all.
+            offset_id: Pagination cursor — pass :attr:`AuctionsResult.next_offset_id`
+                from a previous result to fetch the next page.
+
+        Returns:
+            :class:`AuctionsResult` with ``items`` (parsed list of item dicts)
+            and ``next_offset_id`` (``None`` on the last page).
+        """
+        return await search_auctions(self, query, type=type, sort=sort, filter=filter, offset_id=offset_id)
 
     async def call(
         self, method: str, data: dict[str, Any] | None = None, *, page_url: str = FRAGMENT_BASE_URL
