@@ -27,21 +27,32 @@ jobs:
       - run: ruff check . && black --check . --target-version py312 && mypy pyfragment
 
   test:
-    name: Tests
+    name: Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       COOKIES_JSON: ${{ secrets.COOKIES_JSON }}
 
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
+
     steps:
       - uses: actions/checkout@v6.0.2
 
-      - uses: actions/setup-python@v6.2.0
+      - name: Set up conda (Miniconda)
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: "3.12"
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+          activate-environment: pyfragment-test
+          auto-activate-base: false
 
-      - uses: astral-sh/setup-uv@v7.6.0
+      - name: Install package and dev dependencies
+        shell: bash -el {0}
+        run: pip install ".[dev]"
 
-      - run: uv pip install --system ".[dev]"
-
-      - run: pytest
+      - name: Run tests
+        shell: bash -el {0}
+        run: pytest

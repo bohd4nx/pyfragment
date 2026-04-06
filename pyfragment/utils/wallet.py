@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
 
 
-async def process_transaction(client: "FragmentClient", transaction_data: dict) -> str:
+async def process_transaction(client: "FragmentClient", transaction_data: dict[str, Any]) -> str:
     """Sign and broadcast a Fragment transaction to the TON network.
 
     Validates the payload structure, checks the wallet balance, decodes the

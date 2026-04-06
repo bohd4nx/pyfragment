@@ -114,7 +114,7 @@ async def fragment_request(
 
 async def execute_transaction_request(
     session: httpx.AsyncClient,
-    headers: dict,
+    headers: dict[str, str],
     tx_data: dict[str, Any],
     fragment_hash: str,
 ) -> dict[str, Any]:
