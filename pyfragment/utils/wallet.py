@@ -3,9 +3,9 @@ import base64
 import ssl
 from typing import TYPE_CHECKING, Any
 
+from ton_core import NetworkGlobalID
 from tonutils.clients import TonapiClient
 from tonutils.exceptions import ProviderResponseError
-from tonutils.types import NetworkGlobalID
 
 from pyfragment.types import TransactionError, WalletError
 from pyfragment.types.constants import MIN_TON_BALANCE, WALLET_CLASSES

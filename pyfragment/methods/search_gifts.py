@@ -1,16 +1,12 @@
 from typing import TYPE_CHECKING, Any
 
-import httpx
-
 from pyfragment.types import FragmentAPIError, FragmentError, UnexpectedError
 from pyfragment.types.constants import GIFTS_PAGE
 from pyfragment.types.results import GiftsResult
-from pyfragment.utils import fragment_request, get_fragment_hash, make_headers, parse_gift_items
+from pyfragment.utils import parse_gift_items
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
-
-HEADERS: dict[str, str] = make_headers(GIFTS_PAGE)
 
 
 async def search_gifts(
@@ -64,9 +60,7 @@ async def search_gifts(
         data["offset"] = offset
 
     try:
-        fragment_hash = await get_fragment_hash(client.cookies, HEADERS, GIFTS_PAGE, client.timeout)
-        async with httpx.AsyncClient(cookies=client.cookies, timeout=client.timeout) as session:
-            result = await fragment_request(session, fragment_hash, HEADERS, data)
+        result = await client.call("searchAuctions", data, page_url=GIFTS_PAGE)
 
         if result.get("error"):
             raise FragmentAPIError(result["error"])

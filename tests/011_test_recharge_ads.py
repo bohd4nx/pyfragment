@@ -6,7 +6,7 @@ import pytest
 
 from pyfragment import FragmentClient
 from pyfragment.types import AdsRechargeResult, ConfigurationError
-from tests.shared import FAKE_ACCOUNT, FAKE_ADS_ACCOUNT, FAKE_HASH, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
+from tests.shared import FAKE_ACCOUNT, FAKE_ADS_ACCOUNT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
 
 # recharge_ads validation tests
 
@@ -35,18 +35,18 @@ async def test_recharge_ads_float_amount(client: FragmentClient) -> None:
 @pytest.mark.asyncio
 async def test_recharge_ads_success(client: FragmentClient) -> None:
     with (
-        patch("pyfragment.methods.recharge_ads.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch("pyfragment.methods.recharge_ads.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch(
-            "pyfragment.methods.recharge_ads.fragment_request",
+        patch.object(
+            client,
+            "call",
             AsyncMock(
                 side_effect=[
                     {},  # updateAdsState
                     {"req_id": FAKE_REQ_ID},  # initAdsRechargeRequest
+                    FAKE_TRANSACTION,  # getAdsRechargeLink
                 ]
             ),
         ),
-        patch("pyfragment.methods.recharge_ads.execute_transaction_request", AsyncMock(return_value=FAKE_TRANSACTION)),
+        patch("pyfragment.methods.recharge_ads.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
         patch("pyfragment.methods.recharge_ads.process_transaction", AsyncMock(return_value=FAKE_TX_HASH)),
     ):
         result = await client.recharge_ads(FAKE_ADS_ACCOUNT, amount=10)

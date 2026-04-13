@@ -1,78 +1,20 @@
 import json
 from typing import TYPE_CHECKING
 
-import httpx
-
 from pyfragment.types import (
     ConfigurationError,
     FragmentAPIError,
     FragmentError,
     UnexpectedError,
     UserNotFoundError,
+    VerificationError,
 )
 from pyfragment.types.constants import DEVICE, PREMIUM_GIVEAWAY_PAGE
 from pyfragment.types.results import PremiumGiveawayResult
-from pyfragment.utils import (
-    execute_transaction_request,
-    fragment_request,
-    get_account_info,
-    get_fragment_hash,
-    make_headers,
-    process_transaction,
-)
+from pyfragment.utils import get_account_info, process_transaction
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
-
-HEADERS: dict[str, str] = make_headers(PREMIUM_GIVEAWAY_PAGE)
-
-
-async def _search_recipient(
-    session: httpx.AsyncClient,
-    fragment_hash: str,
-    channel: str,
-    winners: int,
-    months: int,
-) -> str:
-    result = await fragment_request(
-        session,
-        fragment_hash,
-        HEADERS,
-        {
-            "query": channel,
-            "quantity": winners,
-            "months": months,
-            "method": "searchPremiumGiveawayRecipient",
-        },
-    )
-    recipient = result.get("found", {}).get("recipient")
-    if not recipient:
-        raise UserNotFoundError(UserNotFoundError.NOT_FOUND.format(username=channel))
-    return recipient
-
-
-async def _init_request(
-    session: httpx.AsyncClient,
-    fragment_hash: str,
-    recipient: str,
-    winners: int,
-    months: int,
-) -> str:
-    result = await fragment_request(
-        session,
-        fragment_hash,
-        HEADERS,
-        {
-            "recipient": recipient,
-            "quantity": str(winners),
-            "months": str(months),
-            "method": "initGiveawayPremiumRequest",
-        },
-    )
-    req_id = result.get("req_id")
-    if not req_id:
-        raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="Premium giveaway"))
-    return req_id
 
 
 async def giveaway_premium(
@@ -105,21 +47,37 @@ async def giveaway_premium(
         raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
 
     try:
-        fragment_hash = await get_fragment_hash(client.cookies, HEADERS, PREMIUM_GIVEAWAY_PAGE, client.timeout)
+        result = await client.call(
+            "searchPremiumGiveawayRecipient",
+            {"query": channel, "quantity": winners, "months": months},
+            page_url=PREMIUM_GIVEAWAY_PAGE,
+        )
+        recipient = result.get("found", {}).get("recipient")
+        if not recipient:
+            raise UserNotFoundError(UserNotFoundError.NOT_FOUND.format(username=channel))
+
+        result = await client.call(
+            "initGiveawayPremiumRequest",
+            {"recipient": recipient, "quantity": str(winners), "months": str(months)},
+            page_url=PREMIUM_GIVEAWAY_PAGE,
+        )
+        req_id = result.get("req_id")
+        if not req_id:
+            raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="Premium giveaway"))
+
         account = await get_account_info(client)
-
-        async with httpx.AsyncClient(cookies=client.cookies, timeout=client.timeout) as session:
-            recipient = await _search_recipient(session, fragment_hash, channel, winners, months)
-            req_id = await _init_request(session, fragment_hash, recipient, winners, months)
-
-            tx_data = {
+        transaction = await client.call(
+            "getGiveawayPremiumLink",
+            {
                 "account": json.dumps(account),
                 "device": DEVICE,
                 "transaction": 1,
                 "id": req_id,
-                "method": "getGiveawayPremiumLink",
-            }
-            transaction = await execute_transaction_request(session, HEADERS, tx_data, fragment_hash)
+            },
+            page_url=PREMIUM_GIVEAWAY_PAGE,
+        )
+        if transaction.get("need_verify"):
+            raise VerificationError(VerificationError.KYC_REQUIRED)
 
         tx_hash = await process_transaction(client, transaction)
         return PremiumGiveawayResult(

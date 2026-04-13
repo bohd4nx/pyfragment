@@ -34,12 +34,14 @@ from pyfragment.types import (
     WalletError,
     WalletInfo,
 )
+from pyfragment.utils.cookies import get_cookies_from_browser
 
 __version__: str = version("pyfragment")
 
 __all__ = [
     "__version__",
     "FragmentClient",
+    "get_cookies_from_browser",
     "AdsRechargeResult",
     "AdsTopupResult",
     "GiftsResult",

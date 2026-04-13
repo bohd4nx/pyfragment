@@ -1,16 +1,12 @@
 from typing import TYPE_CHECKING, Any
 
-import httpx
-
 from pyfragment.types import FragmentAPIError, FragmentError, UnexpectedError
 from pyfragment.types.constants import FRAGMENT_BASE_URL
 from pyfragment.types.results import UsernamesResult
-from pyfragment.utils import fragment_request, get_fragment_hash, make_headers, parse_auction_rows
+from pyfragment.utils import parse_auction_rows
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
-
-HEADERS: dict[str, str] = make_headers(FRAGMENT_BASE_URL)
 
 
 async def search_usernames(
@@ -49,9 +45,7 @@ async def search_usernames(
         data["offset_id"] = offset_id
 
     try:
-        fragment_hash = await get_fragment_hash(client.cookies, HEADERS, FRAGMENT_BASE_URL, client.timeout)
-        async with httpx.AsyncClient(cookies=client.cookies, timeout=client.timeout) as session:
-            result = await fragment_request(session, fragment_hash, HEADERS, data)
+        result = await client.call("searchAuctions", data, page_url=FRAGMENT_BASE_URL)
 
         if result.get("error"):
             raise FragmentAPIError(result["error"])

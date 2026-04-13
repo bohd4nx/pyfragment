@@ -6,7 +6,7 @@ import pytest
 
 from pyfragment import FragmentClient
 from pyfragment.types import ConfigurationError, PremiumGiveawayResult, PremiumResult, UserNotFoundError
-from tests.shared import FAKE_ACCOUNT, FAKE_HASH, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
+from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
 
 # Premium purchase validation tests
 
@@ -29,19 +29,19 @@ async def test_purchase_premium_months_zero(client: FragmentClient) -> None:
 @pytest.mark.asyncio
 async def test_purchase_premium_success(client: FragmentClient) -> None:
     with (
-        patch("pyfragment.methods.purchase_premium.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch("pyfragment.methods.purchase_premium.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch(
-            "pyfragment.methods.purchase_premium.fragment_request",
+        patch.object(
+            client,
+            "call",
             AsyncMock(
                 side_effect=[
                     {"found": {"recipient": FAKE_RECIPIENT}},
                     {},  # updatePremiumState
                     {"req_id": FAKE_REQ_ID},
+                    FAKE_TRANSACTION,
                 ]
             ),
         ),
-        patch("pyfragment.methods.purchase_premium.execute_transaction_request", AsyncMock(return_value=FAKE_TRANSACTION)),
+        patch("pyfragment.methods.purchase_premium.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
         patch("pyfragment.methods.purchase_premium.process_transaction", AsyncMock(return_value=FAKE_TX_HASH)),
     ):
         result = await client.purchase_premium("@user", months=3)
@@ -54,11 +54,7 @@ async def test_purchase_premium_success(client: FragmentClient) -> None:
 
 @pytest.mark.asyncio
 async def test_purchase_premium_user_not_found(client: FragmentClient) -> None:
-    with (
-        patch("pyfragment.methods.purchase_premium.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch("pyfragment.methods.purchase_premium.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch("pyfragment.methods.purchase_premium.fragment_request", AsyncMock(return_value={"found": {}})),
-    ):
+    with patch.object(client, "call", AsyncMock(return_value={"found": {}})):
         with pytest.raises(UserNotFoundError):
             await client.purchase_premium("@ghost", months=3)
 
@@ -96,13 +92,18 @@ async def test_giveaway_premium_invalid_months(client: FragmentClient) -> None:
 @pytest.mark.asyncio
 async def test_giveaway_premium_success(client: FragmentClient) -> None:
     with (
-        patch("pyfragment.methods.giveaway_premium.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch("pyfragment.methods.giveaway_premium.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch(
-            "pyfragment.methods.giveaway_premium.fragment_request",
-            AsyncMock(side_effect=[{"found": {"recipient": FAKE_RECIPIENT}}, {"req_id": FAKE_REQ_ID}]),
+        patch.object(
+            client,
+            "call",
+            AsyncMock(
+                side_effect=[
+                    {"found": {"recipient": FAKE_RECIPIENT}},
+                    {"req_id": FAKE_REQ_ID},
+                    FAKE_TRANSACTION,
+                ]
+            ),
         ),
-        patch("pyfragment.methods.giveaway_premium.execute_transaction_request", AsyncMock(return_value=FAKE_TRANSACTION)),
+        patch("pyfragment.methods.giveaway_premium.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
         patch("pyfragment.methods.giveaway_premium.process_transaction", AsyncMock(return_value=FAKE_TX_HASH)),
     ):
         result = await client.giveaway_premium("@channel", winners=10, months=3)
@@ -116,10 +117,6 @@ async def test_giveaway_premium_success(client: FragmentClient) -> None:
 
 @pytest.mark.asyncio
 async def test_giveaway_premium_channel_not_found(client: FragmentClient) -> None:
-    with (
-        patch("pyfragment.methods.giveaway_premium.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch("pyfragment.methods.giveaway_premium.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch("pyfragment.methods.giveaway_premium.fragment_request", AsyncMock(return_value={"found": {}})),
-    ):
+    with patch.object(client, "call", AsyncMock(return_value={"found": {}})):
         with pytest.raises(UserNotFoundError):
             await client.giveaway_premium("@ghost", winners=1, months=3)

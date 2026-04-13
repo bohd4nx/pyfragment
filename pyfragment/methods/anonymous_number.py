@@ -1,17 +1,13 @@
 import html
 from typing import TYPE_CHECKING
 
-import httpx
-
 from pyfragment.types import AnonymousNumberError, FragmentAPIError, FragmentError, UnexpectedError
 from pyfragment.types.constants import NUMBERS_PAGE
 from pyfragment.types.results import LoginCodeResult, TerminateSessionsResult
-from pyfragment.utils import fragment_request, get_fragment_hash, make_headers, parse_login_code
+from pyfragment.utils import parse_login_code
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
-
-HEADERS: dict[str, str] = make_headers(NUMBERS_PAGE)
 
 
 def _strip_plus(number: str) -> str:
@@ -35,14 +31,11 @@ async def get_login_code(client: "FragmentClient", number: str) -> LoginCodeResu
     """
     try:
         clean = _strip_plus(number)
-        async with httpx.AsyncClient(cookies=client.cookies, timeout=client.timeout) as session:
-            fragment_hash = await get_fragment_hash(client.cookies, HEADERS, NUMBERS_PAGE, client.timeout)
-            result = await fragment_request(
-                session,
-                fragment_hash,
-                HEADERS,
-                {"number": clean, "lt": "0", "from_app": "1", "method": "updateLoginCodes"},
-            )
+        result = await client.call(
+            "updateLoginCodes",
+            {"number": clean, "lt": "0", "from_app": "1"},
+            page_url=NUMBERS_PAGE,
+        )
 
         if result.get("html"):
             code, active_sessions = parse_login_code(result["html"])
@@ -71,14 +64,11 @@ async def toggle_login_codes(client: "FragmentClient", number: str, can_receive:
     """
     try:
         clean = _strip_plus(number)
-        async with httpx.AsyncClient(cookies=client.cookies, timeout=client.timeout) as session:
-            fragment_hash = await get_fragment_hash(client.cookies, HEADERS, NUMBERS_PAGE, client.timeout)
-            result = await fragment_request(
-                session,
-                fragment_hash,
-                HEADERS,
-                {"number": clean, "can_receive": 1 if can_receive else 0, "method": "toggleLoginCodes"},
-            )
+        result = await client.call(
+            "toggleLoginCodes",
+            {"number": clean, "can_receive": 1 if can_receive else 0},
+            page_url=NUMBERS_PAGE,
+        )
 
         if result.get("error"):
             raise FragmentAPIError(html.unescape(result["error"]))
@@ -110,38 +100,32 @@ async def terminate_sessions(client: "FragmentClient", number: str) -> Terminate
     """
     try:
         clean = _strip_plus(number)
-        async with httpx.AsyncClient(cookies=client.cookies, timeout=client.timeout) as session:
-            fragment_hash = await get_fragment_hash(client.cookies, HEADERS, NUMBERS_PAGE, client.timeout)
 
-            # Step 1: initiate — Fragment returns a confirmation hash.
-            confirmation = await fragment_request(
-                session,
-                fragment_hash,
-                HEADERS,
-                {"number": clean, "method": "terminatePhoneSessions"},
+        confirmation = await client.call(
+            "terminatePhoneSessions",
+            {"number": clean},
+            page_url=NUMBERS_PAGE,
+        )
+
+        if confirmation.get("error"):
+            raise AnonymousNumberError(
+                AnonymousNumberError.TERMINATE_FAILED.format(number=number, error=html.unescape(confirmation["error"]))
             )
 
-            if confirmation.get("error"):
-                raise AnonymousNumberError(
-                    AnonymousNumberError.TERMINATE_FAILED.format(number=number, error=html.unescape(confirmation["error"]))
-                )
+        terminate_hash = confirmation.get("terminate_hash")
+        if not terminate_hash:
+            raise AnonymousNumberError(AnonymousNumberError.NOT_OWNED.format(number=number))
 
-            terminate_hash = confirmation.get("terminate_hash")
-            if not terminate_hash:
-                raise AnonymousNumberError(AnonymousNumberError.NOT_OWNED.format(number=number))
+        result = await client.call(
+            "terminatePhoneSessions",
+            {"number": clean, "terminate_hash": terminate_hash},
+            page_url=NUMBERS_PAGE,
+        )
 
-            # Step 2: confirm with the hash.
-            result = await fragment_request(
-                session,
-                fragment_hash,
-                HEADERS,
-                {"number": clean, "terminate_hash": terminate_hash, "method": "terminatePhoneSessions"},
+        if result.get("error"):
+            raise AnonymousNumberError(
+                AnonymousNumberError.TERMINATE_FAILED.format(number=number, error=html.unescape(result["error"]))
             )
-
-            if result.get("error"):
-                raise AnonymousNumberError(
-                    AnonymousNumberError.TERMINATE_FAILED.format(number=number, error=html.unescape(result["error"]))
-                )
 
         return TerminateSessionsResult(number=number, message=result.get("msg"))
 
