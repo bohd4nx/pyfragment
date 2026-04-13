@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import base64
 
-from pytoniq_core import Cell
+from ton_core import Cell
 
 from pyfragment.types import ParseError
 

@@ -1,12 +1,14 @@
 """Unit tests for topup_ton — TON Ads balance top-up."""
 
+import importlib
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
+_topup_ton_mod = importlib.import_module("pyfragment.methods.topup_ton")
 from pyfragment import FragmentClient
 from pyfragment.types import AdsTopupResult, ConfigurationError, UserNotFoundError
-from tests.shared import FAKE_ACCOUNT, FAKE_HASH, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
+from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
 
 # Topup TON validation tests
 
@@ -35,20 +37,20 @@ async def test_topup_ton_float_amount(client: FragmentClient) -> None:
 @pytest.mark.asyncio
 async def test_topup_ton_success(client: FragmentClient) -> None:
     with (
-        patch("pyfragment.methods.topup_ton.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch("pyfragment.methods.topup_ton.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch(
-            "pyfragment.methods.topup_ton.fragment_request",
+        patch.object(
+            client,
+            "call",
             AsyncMock(
                 side_effect=[
                     {},  # updateAdsTopupState
                     {"found": {"recipient": FAKE_RECIPIENT}},
                     {"req_id": FAKE_REQ_ID},
+                    FAKE_TRANSACTION,
                 ]
             ),
         ),
-        patch("pyfragment.methods.topup_ton.execute_transaction_request", AsyncMock(return_value=FAKE_TRANSACTION)),
-        patch("pyfragment.methods.topup_ton.process_transaction", AsyncMock(return_value=FAKE_TX_HASH)),
+        patch.object(_topup_ton_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_topup_ton_mod, "process_transaction", AsyncMock(return_value=FAKE_TX_HASH)),
     ):
         result = await client.topup_ton("@user", amount=10)
 
@@ -60,12 +62,14 @@ async def test_topup_ton_success(client: FragmentClient) -> None:
 
 @pytest.mark.asyncio
 async def test_topup_ton_user_not_found(client: FragmentClient) -> None:
-    with (
-        patch("pyfragment.methods.topup_ton.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch("pyfragment.methods.topup_ton.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch(
-            "pyfragment.methods.topup_ton.fragment_request",
-            AsyncMock(side_effect=[{}, {"found": {}}]),
+    with patch.object(
+        client,
+        "call",
+        AsyncMock(
+            side_effect=[
+                {},  # updateAdsTopupState
+                {"found": {}},
+            ]
         ),
     ):
         with pytest.raises(UserNotFoundError):

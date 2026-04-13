@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from typing import Any, Literal, get_args
 
@@ -19,8 +21,9 @@ DEFAULT_TIMEOUT: float = 30.0
 # Required Fragment session cookie keys
 REQUIRED_COOKIE_KEYS: tuple[str, ...] = ("stel_ssid", "stel_dt", "stel_token", "stel_ton_token")
 
-# Fragment page URLs
-FRAGMENT_BASE_URL: str = "https://fragment.com"
+# Fragment domain and page URLs
+FRAGMENT_DOMAIN: str = "fragment.com"  # for rookiepy
+FRAGMENT_BASE_URL: str = f"https://{FRAGMENT_DOMAIN}"
 STARS_PAGE: str = f"{FRAGMENT_BASE_URL}/stars/buy"
 STARS_GIVEAWAY_PAGE: str = f"{FRAGMENT_BASE_URL}/stars/giveaway"
 PREMIUM_PAGE: str = f"{FRAGMENT_BASE_URL}/premium/gift"
@@ -29,12 +32,31 @@ ADS_TOPUP_PAGE: str = f"{FRAGMENT_BASE_URL}/ads/topup"
 NUMBERS_PAGE: str = f"{FRAGMENT_BASE_URL}/numbers"
 GIFTS_PAGE: str = f"{FRAGMENT_BASE_URL}/gifts"
 
+# Browsers supported by get_cookies_from_browser()
+SUPPORTED_BROWSERS: frozenset[str] = frozenset(
+    {
+        "arc",
+        "brave",
+        "chrome",
+        "chromium",
+        "chromium_based",
+        "edge",
+        "firefox",
+        "firefox_based",
+        "librewolf",
+        "opera",
+        "opera_gx",
+        "safari",
+        "vivaldi",
+    }
+)
+
 # Tonkeeper device fingerprint — serialized once, reused in every tx_data payload.
 DEVICE: str = json.dumps(
     {
         "platform": "iphone",
         "appName": "Tonkeeper",
-        "appVersion": "5.5.2",
+        "appVersion": "26.04.0",
         "maxProtocolVersion": 2,
         "features": [
             "SendTransaction",

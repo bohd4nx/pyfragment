@@ -17,6 +17,7 @@ from pyfragment.types.exceptions import (
 from pyfragment.types.results import (
     AdsRechargeResult,
     AdsTopupResult,
+    CookieResult,
     GiftsResult,
     LoginCodeResult,
     NumbersResult,
@@ -49,6 +50,7 @@ __all__ = [
     # result types
     "AdsRechargeResult",
     "AdsTopupResult",
+    "CookieResult",
     "GiftsResult",
     "LoginCodeResult",
     "NumbersResult",

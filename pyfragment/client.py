@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from typing import Any, cast
 
@@ -21,7 +23,9 @@ from pyfragment.types import (
     GiftsResult,
     LoginCodeResult,
     NumbersResult,
+    PremiumGiveawayResult,
     PremiumResult,
+    StarsGiveawayResult,
     StarsResult,
     TerminateSessionsResult,
     UsernamesResult,
@@ -34,7 +38,6 @@ from pyfragment.types.constants import (
     SUPPORTED_WALLET_VERSIONS,
     WalletVersion,
 )
-from pyfragment.types.results import PremiumGiveawayResult, StarsGiveawayResult
 from pyfragment.utils.http import fragment_request, get_fragment_hash, make_headers
 from pyfragment.utils.wallet import get_wallet_info
 
@@ -123,7 +126,7 @@ class FragmentClient:
         return f"FragmentClient(wallet_version='{self.wallet_version}', cookies={len(self.cookies)} keys)"
 
     async def purchase_premium(self, username: str, months: int, show_sender: bool = True) -> PremiumResult:
-        """Purchase Telegram Premium for a user.
+        """Gift Telegram Premium to a user.
 
         Args:
             username: Recipient's Telegram username (with or without ``@``).
@@ -136,7 +139,7 @@ class FragmentClient:
         return await purchase_premium(self, username, months, show_sender)
 
     async def purchase_stars(self, username: str, amount: int, show_sender: bool = True) -> StarsResult:
-        """Purchase Telegram Stars for a user.
+        """Send Telegram Stars to a user.
 
         Args:
             username: Recipient's Telegram username (with or without ``@``).
@@ -149,7 +152,7 @@ class FragmentClient:
         return await purchase_stars(self, username, amount, show_sender)
 
     async def topup_ton(self, username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
-        """Topup ton to recipient's Telegram balance.
+        """Top up TON to a recipient's Telegram balance.
 
         Args:
             username: Recipient's Telegram username (with or without ``@``).

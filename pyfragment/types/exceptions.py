@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 class FragmentError(Exception):
     """Base exception for all pyfragment library errors."""
 
@@ -34,6 +37,14 @@ class CookieError(ClientError):
     MISSING_KEYS = (
         "Fragment cookies are missing or empty for key(s): {keys}. "
         "Open fragment.com in your browser, log in, and copy fresh cookies."
+    )
+    UNSUPPORTED_BROWSER = "Unsupported browser: '{browser}'. Supported: {supported}."
+    BROWSER_READ_FAILED = (
+        "Failed to read {browser} cookies: {exc}. " "Make sure {browser} is installed and you are logged in to {url}."
+    )
+    MISSING_BROWSER_KEYS = (
+        "Fragment cookies not found in {browser}: {keys}. "
+        "Make sure you are logged in to {url} and have connected your TON wallet in {browser}."
     )
 
 

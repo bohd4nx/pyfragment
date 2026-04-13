@@ -1,10 +1,10 @@
 """
-Example: Topup ton to recipient's Telegram balance.
+Example: top up TON to a recipient's Telegram balance.
 
-For adding TON to  Telegram Ads account, use recharge_ads() instead.
+For adding TON to a Telegram Ads account, use recharge_ads() instead.
 
 Amount must be an integer between 1 and 1 000 000 000 TON.
-Your wallet must hold at least the topup amount + ~0.056 TON for gas.
+Your wallet must hold at least the top-up amount + ~0.056 TON for gas.
 """
 
 import asyncio
@@ -15,9 +15,15 @@ from pyfragment import (
     UserNotFoundError,
     WalletError,
 )
+from pyfragment.utils import get_cookies_from_browser  # noqa: F401
 
 SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_TONAPI_KEY"
+
+# Option A: extract cookies directly from your browser (no manual copy-paste needed)
+# COOKIES = get_cookies_from_browser("chrome").cookies  # or "firefox", "edge", "brave", ...
+
+# Option B: provide cookies manually
 COOKIES = {
     "stel_ssid": "YOUR_STEL_SSID",
     "stel_dt": "YOUR_STEL_DT",

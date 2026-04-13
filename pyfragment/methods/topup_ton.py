@@ -1,7 +1,7 @@
+from __future__ import annotations
+
 import json
 from typing import TYPE_CHECKING
-
-import httpx
 
 from pyfragment.types import (
     AdsTopupResult,
@@ -10,68 +10,17 @@ from pyfragment.types import (
     FragmentError,
     UnexpectedError,
     UserNotFoundError,
+    VerificationError,
 )
 from pyfragment.types.constants import ADS_TOPUP_PAGE, DEVICE
-from pyfragment.utils import (
-    execute_transaction_request,
-    fragment_request,
-    get_account_info,
-    get_fragment_hash,
-    make_headers,
-    process_transaction,
-)
+from pyfragment.utils import get_account_info, process_transaction
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
 
-HEADERS: dict[str, str] = make_headers(ADS_TOPUP_PAGE)
-
-
-async def _search_recipient(
-    session: httpx.AsyncClient,
-    fragment_hash: str,
-    username: str,
-) -> str:
-    await fragment_request(session, fragment_hash, HEADERS, {"mode": "new", "method": "updateAdsTopupState"})
-    result = await fragment_request(
-        session,
-        fragment_hash,
-        HEADERS,
-        {
-            "query": username,
-            "method": "searchAdsTopupRecipient",
-        },
-    )
-    recipient = result.get("found", {}).get("recipient")
-    if not recipient:
-        raise UserNotFoundError(UserNotFoundError.NOT_FOUND.format(username=username))
-    return recipient
-
-
-async def _init_request(
-    session: httpx.AsyncClient,
-    fragment_hash: str,
-    recipient: str,
-    amount: int,
-) -> str:
-    result = await fragment_request(
-        session,
-        fragment_hash,
-        HEADERS,
-        {
-            "recipient": recipient,
-            "amount": amount,
-            "method": "initAdsTopupRequest",
-        },
-    )
-    req_id = result.get("req_id")
-    if not req_id:
-        raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="TON topup"))
-    return req_id
-
 
 async def topup_ton(client: "FragmentClient", username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
-    """Topup ton to recipient's Telegram balance.
+    """Top up TON to a recipient's Telegram balance.
 
     Args:
         client: Authenticated :class:`FragmentClient` instance.
@@ -84,7 +33,7 @@ async def topup_ton(client: "FragmentClient", username: str, amount: int, show_s
 
     Raises:
         ConfigurationError: If ``amount`` is not an integer between 1 and 1 000 000 000.
-        UserNotFoundError: If the recipient is not found on Fragment.
+        UserNotFoundError: If the recipient is not found on Telegram.
         FragmentAPIError: If the Fragment API returns an error.
         UnexpectedError: For any other unexpected failure.
     """
@@ -92,22 +41,32 @@ async def topup_ton(client: "FragmentClient", username: str, amount: int, show_s
         raise ConfigurationError(ConfigurationError.INVALID_TON_AMOUNT)
 
     try:
-        fragment_hash = await get_fragment_hash(client.cookies, HEADERS, ADS_TOPUP_PAGE, client.timeout)
+        await client.call("updateAdsTopupState", {"mode": "new"}, page_url=ADS_TOPUP_PAGE)
+
+        result = await client.call("searchAdsTopupRecipient", {"query": username}, page_url=ADS_TOPUP_PAGE)
+        recipient = result.get("found", {}).get("recipient")
+        if not recipient:
+            raise UserNotFoundError(UserNotFoundError.NOT_FOUND.format(username=username))
+
+        result = await client.call("initAdsTopupRequest", {"recipient": recipient, "amount": amount}, page_url=ADS_TOPUP_PAGE)
+        req_id = result.get("req_id")
+        if not req_id:
+            raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="TON topup"))
+
         account = await get_account_info(client)
-
-        async with httpx.AsyncClient(cookies=client.cookies, timeout=client.timeout) as session:
-            recipient = await _search_recipient(session, fragment_hash, username)
-            req_id = await _init_request(session, fragment_hash, recipient, amount)
-
-            tx_data = {
+        transaction = await client.call(
+            "getAdsTopupLink",
+            {
                 "account": json.dumps(account),
                 "device": DEVICE,
                 "transaction": 1,
                 "id": req_id,
                 "show_sender": int(show_sender),
-                "method": "getAdsTopupLink",
-            }
-            transaction = await execute_transaction_request(session, HEADERS, tx_data, fragment_hash)
+            },
+            page_url=ADS_TOPUP_PAGE,
+        )
+        if transaction.get("need_verify"):
+            raise VerificationError(VerificationError.KYC_REQUIRED)
 
         tx_hash = await process_transaction(client, transaction)
         return AdsTopupResult(transaction_id=tx_hash, username=username, amount=amount)

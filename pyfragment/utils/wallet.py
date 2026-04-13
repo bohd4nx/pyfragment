@@ -1,22 +1,23 @@
+from __future__ import annotations
+
 import asyncio
 import base64
 import ssl
 from typing import TYPE_CHECKING, Any
 
+from ton_core import NetworkGlobalID
 from tonutils.clients import TonapiClient
 from tonutils.exceptions import ProviderResponseError
-from tonutils.types import NetworkGlobalID
 
-from pyfragment.types import TransactionError, WalletError
+from pyfragment.types import TransactionError, WalletError, WalletInfo
 from pyfragment.types.constants import MIN_TON_BALANCE, WALLET_CLASSES
-from pyfragment.types.results import WalletInfo
 from pyfragment.utils.decoder import clean_decode
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
 
 
-async def process_transaction(client: "FragmentClient", transaction_data: dict) -> str:
+async def process_transaction(client: "FragmentClient", transaction_data: dict[str, Any]) -> str:
     """Sign and broadcast a Fragment transaction to the TON network.
 
     Validates the payload structure, checks the wallet balance, decodes the

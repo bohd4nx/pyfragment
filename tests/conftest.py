@@ -3,6 +3,12 @@ import os
 
 import pytest
 
+import pyfragment.methods.giveaway_premium  # noqa: F401
+import pyfragment.methods.giveaway_stars  # noqa: F401
+import pyfragment.methods.purchase_premium  # noqa: F401
+import pyfragment.methods.purchase_stars  # noqa: F401
+import pyfragment.methods.recharge_ads  # noqa: F401
+import pyfragment.methods.topup_ton  # noqa: F401
 from pyfragment import FragmentClient
 from tests.shared import VALID_API_KEY, VALID_COOKIES, VALID_SEED
 

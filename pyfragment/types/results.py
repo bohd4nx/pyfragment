@@ -1,5 +1,24 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any
+
+
+@dataclass
+class CookieResult:
+    """Result returned by :func:`~pyfragment.utils.get_cookies_from_browser`.
+
+    Attributes:
+        cookies: Dict with the four required Fragment cookie keys.
+        expires: Expiry of the ``stel_ssid`` session cookie in ISO 8601 format (UTC),
+            or ``None`` for session cookies.
+    """
+
+    cookies: dict[str, str]
+    expires: str | None
+
+    def __repr__(self) -> str:
+        return f"CookieResult(expires={self.expires!r})"
 
 
 @dataclass

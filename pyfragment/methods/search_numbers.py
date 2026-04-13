@@ -1,16 +1,13 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any
 
-import httpx
-
-from pyfragment.types import FragmentAPIError, FragmentError, UnexpectedError
+from pyfragment.types import FragmentAPIError, FragmentError, NumbersResult, UnexpectedError
 from pyfragment.types.constants import NUMBERS_PAGE
-from pyfragment.types.results import NumbersResult
-from pyfragment.utils import fragment_request, get_fragment_hash, make_headers, parse_auction_rows
+from pyfragment.utils import parse_auction_rows
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
-
-HEADERS: dict[str, str] = make_headers(NUMBERS_PAGE)
 
 
 async def search_numbers(
@@ -49,9 +46,7 @@ async def search_numbers(
         data["offset_id"] = offset_id
 
     try:
-        fragment_hash = await get_fragment_hash(client.cookies, HEADERS, NUMBERS_PAGE, client.timeout)
-        async with httpx.AsyncClient(cookies=client.cookies, timeout=client.timeout) as session:
-            result = await fragment_request(session, fragment_hash, HEADERS, data)
+        result = await client.call("searchAuctions", data, page_url=NUMBERS_PAGE)
 
         if result.get("error"):
             raise FragmentAPIError(result["error"])

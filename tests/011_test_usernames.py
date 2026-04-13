@@ -6,7 +6,6 @@ import pytest
 
 from pyfragment import FragmentClient
 from pyfragment.types import UsernamesResult
-from tests.shared import FAKE_HASH
 
 FAKE_HTML = """
 <tr class="tm-row-selectable">
@@ -22,15 +21,12 @@ FAKE_HTML = """
 """
 
 
+# search_usernames result parsing tests
+
+
 @pytest.mark.asyncio
 async def test_search_usernames_basic(client: FragmentClient) -> None:
-    with (
-        patch("pyfragment.methods.search_usernames.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch(
-            "pyfragment.methods.search_usernames.fragment_request",
-            AsyncMock(return_value={"ok": True, "html": FAKE_HTML}),
-        ),
-    ):
+    with patch.object(client, "call", AsyncMock(return_value={"ok": True, "html": FAKE_HTML})):
         result = await client.search_usernames("coolname")
 
     assert isinstance(result, UsernamesResult)
@@ -43,13 +39,7 @@ async def test_search_usernames_basic(client: FragmentClient) -> None:
 
 @pytest.mark.asyncio
 async def test_search_usernames_empty_html(client: FragmentClient) -> None:
-    with (
-        patch("pyfragment.methods.search_usernames.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch(
-            "pyfragment.methods.search_usernames.fragment_request",
-            AsyncMock(return_value={"ok": True}),
-        ),
-    ):
+    with patch.object(client, "call", AsyncMock(return_value={"ok": True})):
         result = await client.search_usernames("zzz_no_results")
 
     assert isinstance(result, UsernamesResult)
@@ -57,21 +47,18 @@ async def test_search_usernames_empty_html(client: FragmentClient) -> None:
     assert result.next_offset_id is None
 
 
+# search_usernames parameter forwarding tests
+
+
 @pytest.mark.asyncio
 async def test_search_usernames_with_sort_and_filter(client: FragmentClient) -> None:
-    with (
-        patch("pyfragment.methods.search_usernames.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch(
-            "pyfragment.methods.search_usernames.fragment_request",
-            AsyncMock(return_value={"ok": True, "html": FAKE_HTML}),
-        ) as mock_request,
-    ):
+    mock_call = AsyncMock(return_value={"ok": True, "html": FAKE_HTML})
+    with patch.object(client, "call", mock_call):
         result = await client.search_usernames("durov", sort="price_desc", filter="auction")
 
     assert isinstance(result, UsernamesResult)
-    call_data = mock_request.call_args[0][3]
+    call_data = mock_call.call_args[0][1]
     assert call_data["type"] == "usernames"
-    assert call_data["method"] == "searchAuctions"
     assert call_data["sort"] == "price_desc"
     assert call_data["filter"] == "auction"
     assert call_data["query"] == "durov"
@@ -79,33 +66,23 @@ async def test_search_usernames_with_sort_and_filter(client: FragmentClient) -> 
 
 @pytest.mark.asyncio
 async def test_search_usernames_with_offset_id(client: FragmentClient) -> None:
-    with (
-        patch("pyfragment.methods.search_usernames.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch(
-            "pyfragment.methods.search_usernames.fragment_request",
-            AsyncMock(return_value={"ok": True, "html": FAKE_HTML, "next_offset_id": "offset_99"}),
-        ) as mock_request,
-    ):
+    mock_call = AsyncMock(return_value={"ok": True, "html": FAKE_HTML, "next_offset_id": "offset_99"})
+    with patch.object(client, "call", mock_call):
         result = await client.search_usernames("durov", offset_id="offset_10")
 
     assert isinstance(result, UsernamesResult)
     assert result.next_offset_id == "offset_99"
-    call_data = mock_request.call_args[0][3]
+    call_data = mock_call.call_args[0][1]
     assert call_data["offset_id"] == "offset_10"
 
 
 @pytest.mark.asyncio
 async def test_search_usernames_default_query(client: FragmentClient) -> None:
-    with (
-        patch("pyfragment.methods.search_usernames.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch(
-            "pyfragment.methods.search_usernames.fragment_request",
-            AsyncMock(return_value={"ok": True, "html": FAKE_HTML}),
-        ) as mock_request,
-    ):
+    mock_call = AsyncMock(return_value={"ok": True, "html": FAKE_HTML})
+    with patch.object(client, "call", mock_call):
         result = await client.search_usernames()
 
     assert isinstance(result, UsernamesResult)
-    call_data = mock_request.call_args[0][3]
+    call_data = mock_call.call_args[0][1]
     assert call_data["query"] == ""
     assert call_data["type"] == "usernames"

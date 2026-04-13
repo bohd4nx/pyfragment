@@ -6,7 +6,6 @@ import pytest
 
 from pyfragment import FragmentClient
 from pyfragment.types import GiftsResult
-from tests.shared import FAKE_HASH
 
 FAKE_GIFTS_HTML = """
 <div class="tm-catalog-grid">
@@ -48,15 +47,12 @@ FAKE_GIFTS_HTML = """
 """
 
 
+# search_gifts result parsing tests
+
+
 @pytest.mark.asyncio
 async def test_search_gifts_basic(client: FragmentClient) -> None:
-    with (
-        patch("pyfragment.methods.search_gifts.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch(
-            "pyfragment.methods.search_gifts.fragment_request",
-            AsyncMock(return_value={"ok": True, "html": FAKE_GIFTS_HTML}),
-        ),
-    ):
+    with patch.object(client, "call", AsyncMock(return_value={"ok": True, "html": FAKE_GIFTS_HTML})):
         result = await client.search_gifts()
 
     assert isinstance(result, GiftsResult)
@@ -73,13 +69,7 @@ async def test_search_gifts_basic(client: FragmentClient) -> None:
 
 @pytest.mark.asyncio
 async def test_search_gifts_empty(client: FragmentClient) -> None:
-    with (
-        patch("pyfragment.methods.search_gifts.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch(
-            "pyfragment.methods.search_gifts.fragment_request",
-            AsyncMock(return_value={"ok": True}),
-        ),
-    ):
+    with patch.object(client, "call", AsyncMock(return_value={"ok": True})):
         result = await client.search_gifts(query="zzz_no_results")
 
     assert isinstance(result, GiftsResult)
@@ -87,68 +77,50 @@ async def test_search_gifts_empty(client: FragmentClient) -> None:
     assert result.next_offset is None
 
 
+# search_gifts parameter forwarding tests
+
+
 @pytest.mark.asyncio
 async def test_search_gifts_with_collection_and_sort(client: FragmentClient) -> None:
-    with (
-        patch("pyfragment.methods.search_gifts.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch(
-            "pyfragment.methods.search_gifts.fragment_request",
-            AsyncMock(return_value={"ok": True, "html": FAKE_GIFTS_HTML}),
-        ) as mock_request,
-    ):
+    mock_call = AsyncMock(return_value={"ok": True, "html": FAKE_GIFTS_HTML})
+    with patch.object(client, "call", mock_call):
         result = await client.search_gifts(collection="plushpepe", sort="price_desc", filter="sold")
 
     assert isinstance(result, GiftsResult)
-    call_data = mock_request.call_args[0][3]
+    call_data = mock_call.call_args[0][1]
     assert call_data["collection"] == "plushpepe"
     assert call_data["sort"] == "price_desc"
     assert call_data["filter"] == "sold"
     assert call_data["type"] == "gifts"
-    assert call_data["method"] == "searchAuctions"
 
 
 @pytest.mark.asyncio
 async def test_search_gifts_with_offset(client: FragmentClient) -> None:
-    with (
-        patch("pyfragment.methods.search_gifts.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch(
-            "pyfragment.methods.search_gifts.fragment_request",
-            AsyncMock(return_value={"ok": True, "html": FAKE_GIFTS_HTML}),
-        ) as mock_request,
-    ):
+    mock_call = AsyncMock(return_value={"ok": True, "html": FAKE_GIFTS_HTML})
+    with patch.object(client, "call", mock_call):
         result = await client.search_gifts(offset=60)
 
     assert isinstance(result, GiftsResult)
-    call_data = mock_request.call_args[0][3]
+    call_data = mock_call.call_args[0][1]
     assert call_data["offset"] == 60
 
 
 @pytest.mark.asyncio
 async def test_search_gifts_with_view(client: FragmentClient) -> None:
-    with (
-        patch("pyfragment.methods.search_gifts.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch(
-            "pyfragment.methods.search_gifts.fragment_request",
-            AsyncMock(return_value={"ok": True, "html": FAKE_GIFTS_HTML}),
-        ) as mock_request,
-    ):
+    mock_call = AsyncMock(return_value={"ok": True, "html": FAKE_GIFTS_HTML})
+    with patch.object(client, "call", mock_call):
         result = await client.search_gifts(collection="artisanbrick", view="Model")
 
     assert isinstance(result, GiftsResult)
-    call_data = mock_request.call_args[0][3]
+    call_data = mock_call.call_args[0][1]
     assert call_data["view"] == "Model"
     assert call_data["collection"] == "artisanbrick"
 
 
 @pytest.mark.asyncio
 async def test_search_gifts_with_attr(client: FragmentClient) -> None:
-    with (
-        patch("pyfragment.methods.search_gifts.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch(
-            "pyfragment.methods.search_gifts.fragment_request",
-            AsyncMock(return_value={"ok": True, "html": FAKE_GIFTS_HTML}),
-        ) as mock_request,
-    ):
+    mock_call = AsyncMock(return_value={"ok": True, "html": FAKE_GIFTS_HTML})
+    with patch.object(client, "call", mock_call):
         result = await client.search_gifts(
             collection="artisanbrick",
             sort="listed",
@@ -161,7 +133,7 @@ async def test_search_gifts_with_attr(client: FragmentClient) -> None:
         )
 
     assert isinstance(result, GiftsResult)
-    call_data = mock_request.call_args[0][3]
+    call_data = mock_call.call_args[0][1]
     assert call_data["attr[Model]"] == ["Delicate Wash", "Foosball", "Chocolate"]
     assert call_data["attr[Backdrop]"] == ["Celtic Blue", "Carrot Juice", "Orange"]
     assert call_data["attr[Symbol]"] == ["Crystal Ball", "Tetsubin", "Acorn"]
@@ -173,16 +145,11 @@ async def test_search_gifts_with_attr(client: FragmentClient) -> None:
 
 @pytest.mark.asyncio
 async def test_search_gifts_attr_not_in_data_when_none(client: FragmentClient) -> None:
-    with (
-        patch("pyfragment.methods.search_gifts.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch(
-            "pyfragment.methods.search_gifts.fragment_request",
-            AsyncMock(return_value={"ok": True, "html": FAKE_GIFTS_HTML}),
-        ) as mock_request,
-    ):
+    mock_call = AsyncMock(return_value={"ok": True, "html": FAKE_GIFTS_HTML})
+    with patch.object(client, "call", mock_call):
         result = await client.search_gifts()
 
     assert isinstance(result, GiftsResult)
-    call_data = mock_request.call_args[0][3]
+    call_data = mock_call.call_args[0][1]
     assert "view" not in call_data
     assert not any(k.startswith("attr[") for k in call_data)

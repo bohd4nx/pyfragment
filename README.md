@@ -9,7 +9,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/pyfragment?style=flat&color=blue)](https://pypi.org/project/pyfragment/)
 [![PyPI downloads](https://img.shields.io/pypi/dm/pyfragment?style=flat&color=brightgreen)](https://pypi.org/project/pyfragment/)
-[![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
 [![License](https://img.shields.io/github/license/bohd4nx/pyfragment?style=flat&color=lightgrey)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/bohd4nx/pyfragment?style=flat&color=yellow)](https://github.com/bohd4nx/pyfragment/stargazers)
 [![CI](https://img.shields.io/github/actions/workflow/status/bohd4nx/pyfragment/ci.yml?style=flat&label=tests&logo=github)](https://github.com/bohd4nx/pyfragment/actions)
@@ -34,7 +34,7 @@ To install the latest unreleased changes from the `dev` branch:
 pip install git+https://github.com/bohd4nx/pyfragment.git@dev
 ```
 
-Requires Python 3.12+.
+Requires Python 3.10+.
 
 ---
 
@@ -52,7 +52,18 @@ Requires Python 3.12+.
 
 ## Credentials
 
-**Fragment cookies** — log in to [fragment.com](https://fragment.com), install [Cookie Editor](https://chromewebstore.google.com/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm), and export these four keys: `stel_ssid`, `stel_dt`, `stel_token`, `stel_ton_token`. Pass them as a `dict` or as a JSON string. Refresh when you get authentication errors.
+**Fragment cookies** — log in to [fragment.com](https://fragment.com) and connect your TON wallet. You can get cookies in two ways:
+
+- **Automatically** (recommended) — use `get_cookies_from_browser()`, which reads them directly from your browser's on-disk store. No extension needed:
+  ```python
+  from pyfragment.utils import get_cookies_from_browser
+  result = get_cookies_from_browser("chrome")  # or "firefox", "edge", "brave", ...
+  # result.cookies — dict[str, str] to pass to FragmentClient
+  # result.expires — ISO 8601 expiry of stel_ssid, or None for session cookies
+  ```
+- **Manually** — install [Cookie Editor](https://chromewebstore.google.com/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm) and export these four keys: `stel_ssid`, `stel_dt`, `stel_token`, `stel_ton_token`. Pass them as a `dict` or JSON string.
+
+Refresh when you get authentication errors.
 
 **Tonapi key** — generate at [tonconsole.com](https://tonconsole.com).
 
