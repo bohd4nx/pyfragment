@@ -38,19 +38,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.2
 
-      - name: Set up conda (Miniconda)
-        uses: conda-incubator/setup-miniconda@v3.2.0
+      - uses: actions/setup-python@v6.2.0
         with:
-          auto-update-conda: true
           python-version: ${{ matrix.python-version }}
-          activate-environment: pyfragment-test
-          auto-activate: true
-          conda-remove-defaults: true
 
       - name: Install package and dev dependencies
-        shell: bash -el {0}
         run: pip install ".[dev]"
 
       - name: Run tests
-        shell: bash -el {0}
         run: pytest
