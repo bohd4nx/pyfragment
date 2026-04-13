@@ -1,9 +1,12 @@
 """Unit tests for Stars methods — purchase_stars and giveaway_stars."""
 
+import importlib
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
+_purchase_stars_mod = importlib.import_module("pyfragment.methods.purchase_stars")
+_giveaway_stars_mod = importlib.import_module("pyfragment.methods.giveaway_stars")
 from pyfragment import FragmentClient
 from pyfragment.types import ConfigurationError, StarsGiveawayResult, StarsResult, UserNotFoundError
 from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
@@ -46,8 +49,8 @@ async def test_purchase_stars_success(client: FragmentClient) -> None:
                 ]
             ),
         ),
-        patch("pyfragment.methods.purchase_stars.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch("pyfragment.methods.purchase_stars.process_transaction", AsyncMock(return_value=FAKE_TX_HASH)),
+        patch.object(_purchase_stars_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_purchase_stars_mod, "process_transaction", AsyncMock(return_value=FAKE_TX_HASH)),
     ):
         result = await client.purchase_stars("@user", amount=500)
 
@@ -120,8 +123,8 @@ async def test_giveaway_stars_success(client: FragmentClient) -> None:
                 ]
             ),
         ),
-        patch("pyfragment.methods.giveaway_stars.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch("pyfragment.methods.giveaway_stars.process_transaction", AsyncMock(return_value=FAKE_TX_HASH)),
+        patch.object(_giveaway_stars_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_giveaway_stars_mod, "process_transaction", AsyncMock(return_value=FAKE_TX_HASH)),
     ):
         result = await client.giveaway_stars("@channel", winners=3, amount=1000)
 

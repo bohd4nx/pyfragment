@@ -1,9 +1,12 @@
 """Unit tests for Premium methods — purchase_premium and giveaway_premium."""
 
+import importlib
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
+_purchase_premium_mod = importlib.import_module("pyfragment.methods.purchase_premium")
+_giveaway_premium_mod = importlib.import_module("pyfragment.methods.giveaway_premium")
 from pyfragment import FragmentClient
 from pyfragment.types import ConfigurationError, PremiumGiveawayResult, PremiumResult, UserNotFoundError
 from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
@@ -41,8 +44,8 @@ async def test_purchase_premium_success(client: FragmentClient) -> None:
                 ]
             ),
         ),
-        patch("pyfragment.methods.purchase_premium.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch("pyfragment.methods.purchase_premium.process_transaction", AsyncMock(return_value=FAKE_TX_HASH)),
+        patch.object(_purchase_premium_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_purchase_premium_mod, "process_transaction", AsyncMock(return_value=FAKE_TX_HASH)),
     ):
         result = await client.purchase_premium("@user", months=3)
 
@@ -103,8 +106,8 @@ async def test_giveaway_premium_success(client: FragmentClient) -> None:
                 ]
             ),
         ),
-        patch("pyfragment.methods.giveaway_premium.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch("pyfragment.methods.giveaway_premium.process_transaction", AsyncMock(return_value=FAKE_TX_HASH)),
+        patch.object(_giveaway_premium_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_giveaway_premium_mod, "process_transaction", AsyncMock(return_value=FAKE_TX_HASH)),
     ):
         result = await client.giveaway_premium("@channel", winners=10, months=3)
 

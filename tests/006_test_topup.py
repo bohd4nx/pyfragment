@@ -1,9 +1,11 @@
 """Unit tests for topup_ton — TON Ads balance top-up."""
 
+import importlib
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
+_topup_ton_mod = importlib.import_module("pyfragment.methods.topup_ton")
 from pyfragment import FragmentClient
 from pyfragment.types import AdsTopupResult, ConfigurationError, UserNotFoundError
 from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
@@ -47,8 +49,8 @@ async def test_topup_ton_success(client: FragmentClient) -> None:
                 ]
             ),
         ),
-        patch("pyfragment.methods.topup_ton.get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch("pyfragment.methods.topup_ton.process_transaction", AsyncMock(return_value=FAKE_TX_HASH)),
+        patch.object(_topup_ton_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_topup_ton_mod, "process_transaction", AsyncMock(return_value=FAKE_TX_HASH)),
     ):
         result = await client.topup_ton("@user", amount=10)
 
