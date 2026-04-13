@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 async def topup_ton(client: "FragmentClient", username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
-    """Topup ton to recipient's Telegram balance.
+    """Top up TON to a recipient's Telegram balance.
 
     Args:
         client: Authenticated :class:`FragmentClient` instance.
@@ -31,7 +31,7 @@ async def topup_ton(client: "FragmentClient", username: str, amount: int, show_s
 
     Raises:
         ConfigurationError: If ``amount`` is not an integer between 1 and 1 000 000 000.
-        UserNotFoundError: If the recipient is not found on Fragment.
+        UserNotFoundError: If the recipient is not found on Telegram.
         FragmentAPIError: If the Fragment API returns an error.
         UnexpectedError: For any other unexpected failure.
     """

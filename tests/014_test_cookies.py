@@ -4,9 +4,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pyfragment import get_cookies_from_browser
 from pyfragment.types import CookieError
 from pyfragment.types.constants import REQUIRED_COOKIE_KEYS
+from pyfragment.utils import get_cookies_from_browser
 
 FAKE_JAR = [
     {"name": "stel_ssid", "value": "abc123", "domain": "fragment.com"},

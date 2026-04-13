@@ -10,9 +10,15 @@ import asyncio
 import json
 
 from pyfragment import FragmentClient, UsernamesResult
+from pyfragment.utils import get_cookies_from_browser  # noqa: F401
 
 SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_TONAPI_KEY"
+
+# Option A: extract cookies directly from your browser (no manual copy-paste needed)
+# COOKIES = get_cookies_from_browser("chrome")  # or "firefox", "edge", "brave", ...
+
+# Option B: provide cookies manually
 COOKIES = {
     "stel_ssid": "YOUR_STEL_SSID",
     "stel_dt": "YOUR_STEL_DT",
