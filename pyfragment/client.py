@@ -21,7 +21,9 @@ from pyfragment.types import (
     GiftsResult,
     LoginCodeResult,
     NumbersResult,
+    PremiumGiveawayResult,
     PremiumResult,
+    StarsGiveawayResult,
     StarsResult,
     TerminateSessionsResult,
     UsernamesResult,
@@ -34,7 +36,6 @@ from pyfragment.types.constants import (
     SUPPORTED_WALLET_VERSIONS,
     WalletVersion,
 )
-from pyfragment.types.results import PremiumGiveawayResult, StarsGiveawayResult
 from pyfragment.utils.http import fragment_request, get_fragment_hash, make_headers
 from pyfragment.utils.wallet import get_wallet_info
 

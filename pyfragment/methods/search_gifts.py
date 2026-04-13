@@ -1,8 +1,7 @@
 from typing import TYPE_CHECKING, Any
 
-from pyfragment.types import FragmentAPIError, FragmentError, UnexpectedError
+from pyfragment.types import FragmentAPIError, FragmentError, GiftsResult, UnexpectedError
 from pyfragment.types.constants import GIFTS_PAGE
-from pyfragment.types.results import GiftsResult
 from pyfragment.utils import parse_gift_items
 
 if TYPE_CHECKING:

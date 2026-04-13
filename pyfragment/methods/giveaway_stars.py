@@ -5,12 +5,12 @@ from pyfragment.types import (
     ConfigurationError,
     FragmentAPIError,
     FragmentError,
+    StarsGiveawayResult,
     UnexpectedError,
     UserNotFoundError,
     VerificationError,
 )
 from pyfragment.types.constants import DEVICE, STARS_GIVEAWAY_PAGE
-from pyfragment.types.results import StarsGiveawayResult
 from pyfragment.utils import get_account_info, process_transaction
 
 if TYPE_CHECKING:

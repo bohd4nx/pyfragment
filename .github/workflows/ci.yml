@@ -29,7 +29,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-      COOKIES_JSON: ${{ secrets.COOKIES_JSON }}
 
     strategy:
       fail-fast: false

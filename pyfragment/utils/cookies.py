@@ -1,16 +1,19 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 import rookiepy
 
-from pyfragment.types import CookieError
+from pyfragment.types import CookieError, CookieResult
 from pyfragment.types.constants import FRAGMENT_BASE_URL, FRAGMENT_DOMAIN, REQUIRED_COOKIE_KEYS, SUPPORTED_BROWSERS
 
 
-def get_cookies_from_browser(browser: str = "chrome") -> dict[str, str]:
+def get_cookies_from_browser(browser: str = "chrome") -> CookieResult:
     """Extract Fragment session cookies directly from an installed browser.
 
     Reads the browser's on-disk cookie store (no extension required) and
-    returns the four cookies required by :class:`~pyfragment.FragmentClient`.
+    returns the four cookies required by :class:`~pyfragment.FragmentClient`
+    along with the session expiry timestamp.
 
     Args:
         browser: Browser name to read cookies from — case-insensitive. Supported values:
@@ -19,8 +22,7 @@ def get_cookies_from_browser(browser: str = "chrome") -> dict[str, str]:
             ``"firefox_based"``, ``"vivaldi"``, ``"librewolf"``, ``"safari"``.
 
     Returns:
-        A dict with the four required Fragment cookie keys:
-        ``stel_ssid``, ``stel_dt``, ``stel_token``, ``stel_ton_token``.
+        :class:`CookieResult` with ``.cookies`` (dict) and ``.expires`` (ISO 8601 string or ``None``).
 
     Raises:
         CookieError: If the browser is not supported, cookies cannot be read,
@@ -42,4 +44,22 @@ def get_cookies_from_browser(browser: str = "chrome") -> dict[str, str]:
     if missing:
         raise CookieError(CookieError.MISSING_BROWSER_KEYS.format(browser=browser, keys=missing, url=FRAGMENT_BASE_URL))
 
-    return {k: cookie_map[k] for k in REQUIRED_COOKIE_KEYS}
+    expires_iso: str | None = None
+    for cookie in jar:
+        if cookie.get("name") == "stel_ssid":
+            raw = cookie.get("expires")
+            if isinstance(raw, (int, float)):
+                expires_iso = datetime.fromtimestamp(raw, tz=timezone.utc).isoformat()
+            elif isinstance(raw, str) and raw:
+                for fmt in ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"):
+                    try:
+                        expires_iso = datetime.strptime(raw, fmt).replace(tzinfo=timezone.utc).isoformat()
+                        break
+                    except ValueError:
+                        continue
+            break
+
+    return CookieResult(
+        cookies={k: cookie_map[k] for k in REQUIRED_COOKIE_KEYS},
+        expires=expires_iso,
+    )

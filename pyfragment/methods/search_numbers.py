@@ -1,8 +1,7 @@
 from typing import TYPE_CHECKING, Any
 
-from pyfragment.types import FragmentAPIError, FragmentError, UnexpectedError
+from pyfragment.types import FragmentAPIError, FragmentError, NumbersResult, UnexpectedError
 from pyfragment.types.constants import NUMBERS_PAGE
-from pyfragment.types.results import NumbersResult
 from pyfragment.utils import parse_auction_rows
 
 if TYPE_CHECKING:

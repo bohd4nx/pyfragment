@@ -7,9 +7,8 @@ from ton_core import NetworkGlobalID
 from tonutils.clients import TonapiClient
 from tonutils.exceptions import ProviderResponseError
 
-from pyfragment.types import TransactionError, WalletError
+from pyfragment.types import TransactionError, WalletError, WalletInfo
 from pyfragment.types.constants import MIN_TON_BALANCE, WALLET_CLASSES
-from pyfragment.types.results import WalletInfo
 from pyfragment.utils.decoder import clean_decode
 
 if TYPE_CHECKING:

@@ -1,9 +1,15 @@
 import html
 from typing import TYPE_CHECKING
 
-from pyfragment.types import AnonymousNumberError, FragmentAPIError, FragmentError, UnexpectedError
+from pyfragment.types import (
+    AnonymousNumberError,
+    FragmentAPIError,
+    FragmentError,
+    LoginCodeResult,
+    TerminateSessionsResult,
+    UnexpectedError,
+)
 from pyfragment.types.constants import NUMBERS_PAGE
-from pyfragment.types.results import LoginCodeResult, TerminateSessionsResult
 from pyfragment.utils import parse_login_code
 
 if TYPE_CHECKING:

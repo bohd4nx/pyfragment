@@ -2,6 +2,7 @@ import json
 from typing import TYPE_CHECKING
 
 from pyfragment.types import (
+    AdsRechargeResult,
     ConfigurationError,
     FragmentAPIError,
     FragmentError,
@@ -9,7 +10,6 @@ from pyfragment.types import (
     VerificationError,
 )
 from pyfragment.types.constants import ADS_TOPUP_PAGE, DEVICE
-from pyfragment.types.results import AdsRechargeResult
 from pyfragment.utils import get_account_info, process_transaction
 
 if TYPE_CHECKING:

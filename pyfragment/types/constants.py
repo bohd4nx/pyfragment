@@ -54,7 +54,7 @@ DEVICE: str = json.dumps(
     {
         "platform": "iphone",
         "appName": "Tonkeeper",
-        "appVersion": "5.5.2",
+        "appVersion": "26.04.0",
         "maxProtocolVersion": 2,
         "features": [
             "SendTransaction",
