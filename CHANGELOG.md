@@ -14,13 +14,17 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - `get_cookies_from_browser(browser)` — extract Fragment session cookies directly from an installed browser (Chrome, Firefox, Edge, Brave, Arc, Opera, Safari, and more); no browser extension or manual copy-paste required
   ```python
   from pyfragment.utils import get_cookies_from_browser
-  cookies = get_cookies_from_browser("chrome")  # or "firefox", "edge", "brave", ...
-  client = FragmentClient(seed="...", api_key="...", cookies=cookies)
+  result = get_cookies_from_browser("chrome")  # or "firefox", "edge", "brave", ...
+  client = FragmentClient(seed="...", api_key="...", cookies=result.cookies)
+  print(result.expires)  # ISO 8601 expiry of stel_ssid, or None for session cookies
   ```
+- `CookieResult` — return type of `get_cookies_from_browser()`; exposes `.cookies` (`dict[str, str]`) and `.expires` (ISO 8601 string or `None`)
 
 ### Changed
 
+- `DEVICE` Tonkeeper fingerprint updated: `appVersion` → `26.04.0`
 - `tonutils` upgraded to **2.1.0**
+- Minimum Python version lowered to **3.10** (previously 3.12)
 
 ---
 
