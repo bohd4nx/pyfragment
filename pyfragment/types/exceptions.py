@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 class FragmentError(Exception):
     """Base exception for all pyfragment library errors."""
 

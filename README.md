@@ -9,7 +9,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/pyfragment?style=flat&color=blue)](https://pypi.org/project/pyfragment/)
 [![PyPI downloads](https://img.shields.io/pypi/dm/pyfragment?style=flat&color=brightgreen)](https://pypi.org/project/pyfragment/)
-[![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
 [![License](https://img.shields.io/github/license/bohd4nx/pyfragment?style=flat&color=lightgrey)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/bohd4nx/pyfragment?style=flat&color=yellow)](https://github.com/bohd4nx/pyfragment/stargazers)
 [![CI](https://img.shields.io/github/actions/workflow/status/bohd4nx/pyfragment/ci.yml?style=flat&label=tests&logo=github)](https://github.com/bohd4nx/pyfragment/actions)
@@ -34,7 +34,7 @@ To install the latest unreleased changes from the `dev` branch:
 pip install git+https://github.com/bohd4nx/pyfragment.git@dev
 ```
 
-Requires Python 3.12+.
+Requires Python 3.10+.
 
 ---
 

@@ -8,7 +8,7 @@ version = "2026.2.0"
 description = "Async Python client for the Fragment API — a unified toolkit to manage Telegram assets: purchase Stars and Premium, top up TON and Ads balances, run giveaways, manage anonymous numbers, and explore the marketplace for usernames, numbers, and gifts."
 readme = "README.md"
 license = { text = "MIT" }
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 authors = [{ name = "bohd4nx", url = "https://github.com/bohd4nx" }]
 keywords = ["fragment", "telegram", "ton", "stars", "premium", "crypto", "blockchain"]
 classifiers = [
@@ -18,6 +18,8 @@ classifiers = [
     "Natural Language :: English",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Framework :: AsyncIO",
     "Topic :: Software Development :: Libraries :: Python Modules",
