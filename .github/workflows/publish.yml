@@ -100,10 +100,18 @@ jobs:
           name: dist
           path: dist
 
+      - name: Extract latest changelog entry
+        id: changelog
+        run: |
+          body=$(awk '/^## \[/{if(found) exit; found=1; next} found{print}' CHANGELOG.md)
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$body" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - uses: softprops/action-gh-release@v2.6.1
         with:
           tag_name: v${{ needs.version-check.outputs.version }}
           name: v${{ needs.version-check.outputs.version }}
           files: dist/*
-          generate_release_notes: true
+          body: ${{ steps.changelog.outputs.body }}
           make_latest: true

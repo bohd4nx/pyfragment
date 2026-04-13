@@ -7,6 +7,23 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ---
 
+## [2026.2.0] — 2026-04-14
+
+### Added
+
+- `get_cookies_from_browser(browser)` — extract Fragment session cookies directly from an installed browser (Chrome, Firefox, Edge, Brave, Arc, Opera, Safari, and more); no browser extension or manual copy-paste required
+  ```python
+  from pyfragment.utils import get_cookies_from_browser
+  cookies = get_cookies_from_browser("chrome")  # or "firefox", "edge", "brave", ...
+  client = FragmentClient(seed="...", api_key="...", cookies=cookies)
+  ```
+
+### Changed
+
+- `tonutils` upgraded to **2.1.0**
+
+---
+
 ## [2026.1.0] — 2026-03-25
 
 ### Added
@@ -83,6 +100,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - `py.typed` marker — full PEP 561 typing support for type-checkers
 - `__repr__` on all result types for readable debug output
 
+[2026.2.0]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.2.0
 [2026.1.0]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.1.0
 [2026.0.2]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.0.2
 [2026.0.1]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.0.1

@@ -52,7 +52,16 @@ Requires Python 3.12+.
 
 ## Credentials
 
-**Fragment cookies** — log in to [fragment.com](https://fragment.com), install [Cookie Editor](https://chromewebstore.google.com/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm), and export these four keys: `stel_ssid`, `stel_dt`, `stel_token`, `stel_ton_token`. Pass them as a `dict` or as a JSON string. Refresh when you get authentication errors.
+**Fragment cookies** — log in to [fragment.com](https://fragment.com) and connect your TON wallet. You can get cookies in two ways:
+
+- **Automatically** (recommended) — use `get_cookies_from_browser()`, which reads them directly from your browser's on-disk store. No extension needed:
+  ```python
+  from pyfragment.utils import get_cookies_from_browser
+  cookies = get_cookies_from_browser("chrome")  # or "firefox", "edge", "brave", ...
+  ```
+- **Manually** — install [Cookie Editor](https://chromewebstore.google.com/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm) and export these four keys: `stel_ssid`, `stel_dt`, `stel_token`, `stel_ton_token`. Pass them as a `dict` or JSON string.
+
+Refresh when you get authentication errors.
 
 **Tonapi key** — generate at [tonconsole.com](https://tonconsole.com).
 

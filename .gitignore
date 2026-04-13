@@ -31,7 +31,7 @@ Thumbs.db
 .ruff_cache/
 .coverage
 htmlcov/
-demo.run.py
+systests/
 
 # Build & distribution
 dist/
