@@ -65,7 +65,8 @@ target-version = "py312"
 # E — pycodestyle errors, F — pyflakes, W — warnings, I — isort, UP — pyupgrade
 select = ["E", "F", "W", "I", "UP"]
 # E501 — line too long (covered by line-length above)
-ignore = ["E501"]
+# UP017 — use datetime.UTC (only available in Python 3.11+, we support 3.10)
+ignore = ["E501", "UP017"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*"    = ["E402"]
