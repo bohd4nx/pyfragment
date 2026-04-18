@@ -77,7 +77,7 @@ class FragmentClient:
         self,
         seed: str,
         api_key: str,
-        cookies: dict | str,
+        cookies: dict[str, Any] | str,
         wallet_version: str = "V5R1",
         timeout: float = DEFAULT_TIMEOUT,
     ) -> None:
@@ -98,7 +98,7 @@ class FragmentClient:
             except Exception as exc:
                 raise CookieError(CookieError.READ_FAILED.format(exc=exc)) from exc
 
-        missing_keys = [k for k in REQUIRED_COOKIE_KEYS if not str(cast(dict, cookies).get(k, "")).strip()]
+        missing_keys = [k for k in REQUIRED_COOKIE_KEYS if not str(cast(dict[str, Any], cookies).get(k, "")).strip()]
         if missing_keys:
             raise CookieError(CookieError.MISSING_KEYS.format(keys=", ".join(missing_keys)))
 
@@ -112,11 +112,11 @@ class FragmentClient:
 
         self.seed: str = seed.strip()
         self.api_key: str = api_key.strip()
-        self.cookies: dict = cast(dict, cookies)
+        self.cookies: dict[str, Any] = cast(dict[str, Any], cookies)
         self.wallet_version: WalletVersion = version  # type: ignore[assignment]
         self.timeout: float = timeout
 
-    async def __aenter__(self) -> "FragmentClient":
+    async def __aenter__(self) -> FragmentClient:
         return self
 
     async def __aexit__(self, *_: object) -> None:

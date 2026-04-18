@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 async def search_gifts(
-    client: "FragmentClient",
+    client: FragmentClient,
     query: str = "",
     collection: str | None = None,
     sort: str | None = None,

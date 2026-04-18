@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, cast
 
 import httpx
 
@@ -80,7 +80,7 @@ def parse_json_response(response: httpx.Response, context: str) -> dict[str, Any
         ParseError: If the response body cannot be decoded as JSON.
     """
     try:
-        return response.json()
+        return cast(dict[str, Any], response.json())
     except Exception as exc:
         raise ParseError(ParseError.UNPARSEABLE.format(context=context, exc=exc)) from exc
 

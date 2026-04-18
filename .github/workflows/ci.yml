@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: ["**"]
+    branches: [ "**" ]
   pull_request:
-    branches: ["**"]
+    branches: [ "**" ]
 
 jobs:
   lint:
@@ -14,15 +14,15 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
-      - uses: actions/checkout@v6.0.2
+    - uses: actions/checkout@v6.0.2
 
-      - uses: actions/setup-python@v6.2.0
-        with:
-          python-version: "3.12"
+    - uses: actions/setup-python@v6.2.0
+      with:
+        python-version: "3.12"
 
-      - run: pip install ".[dev]"
+    - run: pip install ".[dev]"
 
-      - run: ruff check . && black --check . --target-version py312 && mypy pyfragment
+    - run: ruff check . --fix && ruff format . && mypy pyfragment
 
   test:
     name: Tests (Python ${{ matrix.python-version }})
@@ -33,17 +33,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12"] # 3.13, 3.14 are not supported by some dependencies yet
+        python-version: [ "3.10", "3.11", "3.12" ] # 3.13, 3.14 are not supported by some dependencies yet
 
     steps:
-      - uses: actions/checkout@v6.0.2
+    - uses: actions/checkout@v6.0.2
 
-      - uses: actions/setup-python@v6.2.0
-        with:
-          python-version: ${{ matrix.python-version }}
+    - uses: actions/setup-python@v6.2.0
+      with:
+        python-version: ${{ matrix.python-version }}
 
-      - name: Install package and dev dependencies
-        run: pip install ".[dev]"
+    - name: Install package and dev dependencies
+      run: pip install ".[dev]"
 
-      - name: Run tests
-        run: pytest
+    - name: Run tests
+      run: pytest

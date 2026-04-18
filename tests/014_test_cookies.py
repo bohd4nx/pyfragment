@@ -17,7 +17,7 @@ FAKE_JAR = [
 ]
 
 
-def _mock_rookiepy(jar: list[dict] | None = None) -> MagicMock:
+def _mock_rookiepy(jar: list[dict[str, str]] | None = None) -> MagicMock:
     mock = MagicMock()
     mock.chrome.return_value = jar if jar is not None else FAKE_JAR
     return mock

@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 async def search_usernames(
-    client: "FragmentClient",
+    client: FragmentClient,
     query: str = "",
     sort: str | None = None,
     filter: str | None = None,

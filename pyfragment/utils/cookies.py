@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Any
 
 import rookiepy
 
-from pyfragment.types import CookieError, CookieResult
+from pyfragment.types import CookieError
+from pyfragment.types import CookieResult as CookieResult
 from pyfragment.types.constants import FRAGMENT_BASE_URL, FRAGMENT_DOMAIN, REQUIRED_COOKIE_KEYS, SUPPORTED_BROWSERS
 
 
@@ -34,7 +36,7 @@ def get_cookies_from_browser(browser: str = "chrome") -> CookieResult:
         raise CookieError(CookieError.UNSUPPORTED_BROWSER.format(browser=browser, supported=supported))
 
     try:
-        jar: list[dict] = getattr(rookiepy, key)([FRAGMENT_DOMAIN])
+        jar: list[dict[str, Any]] = getattr(rookiepy, key)([FRAGMENT_DOMAIN])
     except Exception as exc:
         raise CookieError(CookieError.BROWSER_READ_FAILED.format(browser=browser, exc=exc, url=FRAGMENT_BASE_URL)) from exc
 

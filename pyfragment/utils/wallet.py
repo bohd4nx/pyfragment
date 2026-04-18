@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
 
 
-async def process_transaction(client: "FragmentClient", transaction_data: dict[str, Any]) -> str:
+async def process_transaction(client: FragmentClient, transaction_data: dict[str, Any]) -> str:
     """Sign and broadcast a Fragment transaction to the TON network.
 
     Validates the payload structure, checks the wallet balance, decodes the
@@ -66,7 +66,7 @@ async def process_transaction(client: "FragmentClient", transaction_data: dict[s
                         amount=int(message["amount"]),  # nanotons, not TON
                         body=payload,
                     )
-                    return result.normalized_hash
+                    return str(result.normalized_hash)
                 except ProviderResponseError as exc:
                     if exc.code == 429 and attempt == 0:
                         await asyncio.sleep(1)
@@ -91,7 +91,7 @@ async def process_transaction(client: "FragmentClient", transaction_data: dict[s
     raise TransactionError(TransactionError.BROADCAST_FAILED.format(exc="transfer loop exited without result"))
 
 
-async def get_account_info(client: "FragmentClient") -> dict[str, Any]:
+async def get_account_info(client: FragmentClient) -> dict[str, Any]:
     """Fetch wallet address, public key, and state-init for the Fragment API.
 
     Fragment requires account info to build each transaction payload. The
@@ -122,7 +122,7 @@ async def get_account_info(client: "FragmentClient") -> dict[str, Any]:
             raise WalletError(WalletError.ACCOUNT_INFO_FAILED.format(exc=exc)) from exc
 
 
-async def get_wallet_info(client: "FragmentClient") -> "WalletInfo":
+async def get_wallet_info(client: FragmentClient) -> WalletInfo:
     """Return the address, state and balance of the TON wallet.
 
     Args:
