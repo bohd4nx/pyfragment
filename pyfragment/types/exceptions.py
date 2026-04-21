@@ -46,6 +46,7 @@ class CookieError(ClientError):
         "Fragment cookies not found in {browser}: {keys}. "
         "Make sure you are logged in to {url} and have connected your TON wallet in {browser}."
     )
+    EXPIRED = "Fragment session cookie expired at {expires}. Log in to fragment.com in your browser and extract fresh cookies."
 
 
 class FragmentAPIError(FragmentError):

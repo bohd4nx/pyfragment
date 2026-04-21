@@ -61,6 +61,11 @@ def get_cookies_from_browser(browser: str = "chrome") -> CookieResult:
                         continue
             break
 
+    if expires_iso:
+        expires_dt = datetime.fromisoformat(expires_iso)
+        if expires_dt < datetime.now(timezone.utc):
+            raise CookieError(CookieError.EXPIRED.format(expires=expires_iso))
+
     return CookieResult(
         cookies={k: cookie_map[k] for k in REQUIRED_COOKIE_KEYS},
         expires=expires_iso,

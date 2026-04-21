@@ -106,6 +106,21 @@ def test_empty_cookie_value_treated_as_missing() -> None:
             get_cookies_from_browser("chrome")
 
 
+# expired cookie tests
+
+
+def test_expired_cookie_raises() -> None:
+    expired_jar = [
+        {"name": "stel_ssid", "value": "abc123", "expires": "2020-01-01T00:00:00.000Z"},
+        {"name": "stel_dt", "value": "-120"},
+        {"name": "stel_token", "value": "tok_xyz"},
+        {"name": "stel_ton_token", "value": "ton_xyz"},
+    ]
+    with patch(PATCH, _mock_rookiepy(expired_jar)):
+        with pytest.raises(CookieError, match="expired"):
+            get_cookies_from_browser("chrome")
+
+
 # read failure tests
 
 

@@ -104,6 +104,12 @@ async def test_invalid_payload_raises() -> None:
 
 
 @pytest.mark.asyncio
+async def test_empty_messages_list_raises() -> None:
+    with pytest.raises(TransactionError):
+        await process_transaction(_make_client(), {"transaction": {"messages": []}})
+
+
+@pytest.mark.asyncio
 async def test_balance_check_failed_raises_wallet_error() -> None:
     wallet = _make_wallet(balance_nanotons=1_000_000_000)
     wallet.refresh = AsyncMock(side_effect=RuntimeError("network timeout"))

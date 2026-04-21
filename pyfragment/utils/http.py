@@ -111,6 +111,8 @@ async def fragment_request(
         headers=headers,
         data=data,
     )
+    if resp.status_code != 200:
+        raise FragmentPageError(FragmentPageError.BAD_STATUS.format(status=resp.status_code, url=f"{FRAGMENT_BASE_URL}/api"))
     return parse_json_response(resp, data.get("method", "request"))
 
 

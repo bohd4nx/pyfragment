@@ -34,7 +34,7 @@ async def process_transaction(client: FragmentClient, transaction_data: dict[str
         TransactionError: If the payload is malformed or the broadcast fails.
         WalletError: If the wallet balance is too low or cannot be fetched.
     """
-    if "transaction" not in transaction_data or "messages" not in transaction_data["transaction"]:
+    if "transaction" not in transaction_data or not transaction_data["transaction"].get("messages"):
         raise TransactionError(TransactionError.INVALID_PAYLOAD)
 
     message = transaction_data["transaction"]["messages"][0]
