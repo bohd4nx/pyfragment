@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 async def giveaway_premium(
-    client: "FragmentClient",
+    client: FragmentClient,
     channel: str,
     winners: int,
     months: int = 3,

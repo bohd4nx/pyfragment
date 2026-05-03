@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
 
 
-async def purchase_stars(client: "FragmentClient", username: str, amount: int, show_sender: bool = True) -> StarsResult:
+async def purchase_stars(client: FragmentClient, username: str, amount: int, show_sender: bool = True) -> StarsResult:
     """Send Telegram Stars to a user.
 
     Args:

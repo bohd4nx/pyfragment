@@ -22,7 +22,7 @@ def _strip_plus(number: str) -> str:
     return number.lstrip("+") if isinstance(number, str) else number
 
 
-async def get_login_code(client: "FragmentClient", number: str) -> LoginCodeResult:
+async def get_login_code(client: FragmentClient, number: str) -> LoginCodeResult:
     """Fetch the current pending login code for an anonymous number.
 
     Args:
@@ -58,7 +58,7 @@ async def get_login_code(client: "FragmentClient", number: str) -> LoginCodeResu
         raise UnexpectedError(UnexpectedError.UNEXPECTED.format(exc=exc)) from exc
 
 
-async def toggle_login_codes(client: "FragmentClient", number: str, can_receive: bool) -> None:
+async def toggle_login_codes(client: FragmentClient, number: str, can_receive: bool) -> None:
     """Enable or disable login code delivery for an anonymous number.
 
     Args:
@@ -87,7 +87,7 @@ async def toggle_login_codes(client: "FragmentClient", number: str, can_receive:
         raise UnexpectedError(UnexpectedError.UNEXPECTED.format(exc=exc)) from exc
 
 
-async def terminate_sessions(client: "FragmentClient", number: str) -> TerminateSessionsResult:
+async def terminate_sessions(client: FragmentClient, number: str) -> TerminateSessionsResult:
     """Terminate all active Telegram sessions for an anonymous number.
 
     This is a two-step operation: Fragment first returns a confirmation hash,

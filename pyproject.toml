@@ -4,44 +4,56 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pyfragment"
-version = "2026.2.0"
+version = "2026.2.1"
 description = "Async Python client for the Fragment API — a unified toolkit to manage Telegram assets: purchase Stars and Premium, top up TON and Ads balances, run giveaways, manage anonymous numbers, and explore the marketplace for usernames, numbers, and gifts."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
-authors = [{ name = "bohd4nx", url = "https://github.com/bohd4nx" }]
-keywords = ["fragment", "telegram", "ton", "stars", "premium", "crypto", "blockchain"]
+authors = [{ name = "bohd4nx" }]
+keywords = [
+    "fragment",
+    "fragment-api",
+    "telegram",
+    "telegram-stars",
+    "telegram-premium",
+    "ton",
+    "tonkeeper",
+    "tonapi",
+    "crypto",
+    "blockchain",
+    "web3",
+    "giveaway",
+    "anonymous-number",
+    "username",
+    "nft",
+    "async",
+    "asyncio",
+]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
     "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
     "Operating System :: OS Independent",
+    "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Framework :: AsyncIO",
+    "Topic :: Software Development :: Libraries",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Internet",
+    "Topic :: Internet :: WWW/HTTP",
     "Topic :: Office/Business :: Financial",
+    "Topic :: Office/Business :: Financial :: Investment",
     "Typing :: Typed",
 ]
-dependencies = [
-    "httpx==0.28.1",
-    "rookiepy==0.5.6",
-    "tonutils==2.1.0",
-]
+dependencies = ["httpx>=0.25", "rookiepy>=0.5.6", "tonutils>=2.0.1"]
 
 [project.optional-dependencies]
-dev = [
-    "pytest==9.0.3",
-    "pytest-asyncio==1.3.0",
-    "pytest-mock",
-    "mypy",
-    "ruff",
-    "black",
-]
+dev = ["pytest", "pytest-asyncio", "pytest-mock", "mypy", "ruff"]
 
 [project.urls]
 Homepage = "https://github.com/bohd4nx/pyfragment"
@@ -53,24 +65,27 @@ Changelog = "https://github.com/bohd4nx/pyfragment/blob/master/CHANGELOG.md"
 packages = ["pyfragment"]
 
 [tool.pytest.ini_options]
-testpaths    = ["tests"]
+testpaths = ["tests"]
 python_files = ["[0-9][0-9][0-9]_test_*.py"]
 asyncio_mode = "auto"
-addopts      = "-v --tb=short"
-
-[tool.black]
-line-length = 128
-target-version = ["py312"]
+addopts = "-v --tb=short"
 
 [tool.ruff]
 line-length = 128
 target-version = "py312"
 
 [tool.ruff.lint]
-# E — pycodestyle errors, F — pyflakes, W — warnings, I — isort
-select = ["E", "F", "W", "I"]
-ignore = ["E501"]
+# E — pycodestyle errors, F — pyflakes, W — warnings, I — isort, UP — pyupgrade
+select = ["E", "F", "W", "I", "UP"]
+# E501 — line too long (covered by line-length above)
+# UP017 — use datetime.UTC (only available in Python 3.11+, we support 3.10)
+ignore = ["E501", "UP017"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["E402"]
 "systests/*" = ["E402"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+exclude = ["^systests/", "^examples/"]

@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 async def search_gifts(
-    client: "FragmentClient",
+    client: FragmentClient,
     query: str = "",
     collection: str | None = None,
     sort: str | None = None,
@@ -45,7 +45,7 @@ async def search_gifts(
         FragmentAPIError: If the Fragment API returns an error.
         UnexpectedError: For any other unexpected failure.
     """
-    data: dict[str, Any] = {"method": "searchAuctions", "type": "gifts", "query": query}
+    data: dict[str, Any] = {"type": "gifts", "query": query}
     if collection is not None:
         data["collection"] = collection
     if sort is not None:

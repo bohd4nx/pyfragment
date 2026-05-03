@@ -1,5 +1,6 @@
 """Unit tests for process_transaction() — balance validation and broadcast retry logic."""
 
+from collections.abc import Generator
 from contextlib import contextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -45,7 +46,7 @@ def _make_wallet(balance_nanotons: int) -> MagicMock:
 
 
 @contextmanager
-def _patch_wallet(wallet: MagicMock):
+def _patch_wallet(wallet: MagicMock) -> Generator[None, None, None]:
     with (
         patch("pyfragment.utils.wallet.TonapiClient") as mock_tonapi,
         patch("pyfragment.utils.wallet.WALLET_CLASSES") as mock_classes,
@@ -100,6 +101,12 @@ async def test_one_nanoton_below_minimum_raises() -> None:
 async def test_invalid_payload_raises() -> None:
     with pytest.raises(TransactionError):
         await process_transaction(_make_client(), {"transaction": {}})
+
+
+@pytest.mark.asyncio
+async def test_empty_messages_list_raises() -> None:
+    with pytest.raises(TransactionError):
+        await process_transaction(_make_client(), {"transaction": {"messages": []}})
 
 
 @pytest.mark.asyncio

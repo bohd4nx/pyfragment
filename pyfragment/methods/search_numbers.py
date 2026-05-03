@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 async def search_numbers(
-    client: "FragmentClient",
+    client: FragmentClient,
     query: str = "",
     sort: str | None = None,
     filter: str | None = None,
@@ -37,7 +37,7 @@ async def search_numbers(
         FragmentAPIError: If the Fragment API returns an error.
         UnexpectedError: For any other unexpected failure.
     """
-    data: dict[str, Any] = {"method": "searchAuctions", "type": "numbers", "query": query}
+    data: dict[str, Any] = {"type": "numbers", "query": query}
     if sort is not None:
         data["sort"] = sort
     if filter is not None:

@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
 
 
-async def recharge_ads(client: "FragmentClient", account: str, amount: int) -> AdsRechargeResult:
+async def recharge_ads(client: FragmentClient, account: str, amount: int) -> AdsRechargeResult:
     """Add funds to your own Telegram Ads account.
 
     Args:

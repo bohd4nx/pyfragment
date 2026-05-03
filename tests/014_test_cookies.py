@@ -17,7 +17,7 @@ FAKE_JAR = [
 ]
 
 
-def _mock_rookiepy(jar: list[dict] | None = None) -> MagicMock:
+def _mock_rookiepy(jar: list[dict[str, str]] | None = None) -> MagicMock:
     mock = MagicMock()
     mock.chrome.return_value = jar if jar is not None else FAKE_JAR
     return mock
@@ -103,6 +103,21 @@ def test_empty_cookie_value_treated_as_missing() -> None:
     ]
     with patch(PATCH, _mock_rookiepy(jar_with_empty)):
         with pytest.raises(CookieError, match="Fragment cookies not found in chrome"):
+            get_cookies_from_browser("chrome")
+
+
+# expired cookie tests
+
+
+def test_expired_cookie_raises() -> None:
+    expired_jar = [
+        {"name": "stel_ssid", "value": "abc123", "expires": "2020-01-01T00:00:00.000Z"},
+        {"name": "stel_dt", "value": "-120"},
+        {"name": "stel_token", "value": "tok_xyz"},
+        {"name": "stel_ton_token", "value": "ton_xyz"},
+    ]
+    with patch(PATCH, _mock_rookiepy(expired_jar)):
+        with pytest.raises(CookieError, match="expired"):
             get_cookies_from_browser("chrome")
 
 

@@ -1,5 +1,6 @@
 import json
 import os
+from typing import cast
 
 import pytest
 
@@ -14,13 +15,13 @@ from tests.shared import VALID_API_KEY, VALID_COOKIES, VALID_SEED
 
 
 @pytest.fixture
-def cookies():
+def cookies() -> dict[str, str]:
     """Load Fragment cookies from COOKIES_JSON env var; skip if unavailable."""
     raw = os.environ.get("COOKIES_JSON")
     if not raw:
         pytest.skip("COOKIES_JSON env var not set")
     try:
-        return json.loads(raw)
+        return cast(dict[str, str], json.loads(raw))
     except Exception as exc:
         pytest.skip(f"Cookies unavailable — {exc}")
 

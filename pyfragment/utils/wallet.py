@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import random
 import ssl
 from typing import TYPE_CHECKING, Any
 
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
 
 
-async def process_transaction(client: "FragmentClient", transaction_data: dict[str, Any]) -> str:
+async def process_transaction(client: FragmentClient, transaction_data: dict[str, Any]) -> str:
     """Sign and broadcast a Fragment transaction to the TON network.
 
     Validates the payload structure, checks the wallet balance, decodes the
@@ -34,7 +35,7 @@ async def process_transaction(client: "FragmentClient", transaction_data: dict[s
         TransactionError: If the payload is malformed or the broadcast fails.
         WalletError: If the wallet balance is too low or cannot be fetched.
     """
-    if "transaction" not in transaction_data or "messages" not in transaction_data["transaction"]:
+    if "transaction" not in transaction_data or not transaction_data["transaction"].get("messages"):
         raise TransactionError(TransactionError.INVALID_PAYLOAD)
 
     message = transaction_data["transaction"]["messages"][0]
@@ -66,15 +67,15 @@ async def process_transaction(client: "FragmentClient", transaction_data: dict[s
                         amount=int(message["amount"]),  # nanotons, not TON
                         body=payload,
                     )
-                    return result.normalized_hash
+                    return str(result.normalized_hash)
                 except ProviderResponseError as exc:
                     if exc.code == 429 and attempt == 0:
-                        await asyncio.sleep(1)
+                        await asyncio.sleep(1 + random.uniform(0, 0.5))
                         continue
                     if exc.code == 406 and "seqno" in str(exc).lower():
                         # Previous tx seqno not yet confirmed — wallet will re-fetch seqno on retry
                         if attempt < 2:
-                            await asyncio.sleep(2)
+                            await asyncio.sleep(2 + random.uniform(0, 1))
                             continue
                         raise TransactionError(TransactionError.DUPLICATE_SEQNO) from exc
                     raise
@@ -91,7 +92,7 @@ async def process_transaction(client: "FragmentClient", transaction_data: dict[s
     raise TransactionError(TransactionError.BROADCAST_FAILED.format(exc="transfer loop exited without result"))
 
 
-async def get_account_info(client: "FragmentClient") -> dict[str, Any]:
+async def get_account_info(client: FragmentClient) -> dict[str, Any]:
     """Fetch wallet address, public key, and state-init for the Fragment API.
 
     Fragment requires account info to build each transaction payload. The
@@ -122,7 +123,7 @@ async def get_account_info(client: "FragmentClient") -> dict[str, Any]:
             raise WalletError(WalletError.ACCOUNT_INFO_FAILED.format(exc=exc)) from exc
 
 
-async def get_wallet_info(client: "FragmentClient") -> "WalletInfo":
+async def get_wallet_info(client: FragmentClient) -> WalletInfo:
     """Return the address, state and balance of the TON wallet.
 
     Args:

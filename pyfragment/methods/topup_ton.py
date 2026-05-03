@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
 
 
-async def topup_ton(client: "FragmentClient", username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
+async def topup_ton(client: FragmentClient, username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
     """Top up TON to a recipient's Telegram balance.
 
     Args:

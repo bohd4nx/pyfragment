@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import asyncio
+import random
 import re
-from typing import Any
+from typing import Any, cast
 
 import httpx
 
@@ -80,7 +82,7 @@ def parse_json_response(response: httpx.Response, context: str) -> dict[str, Any
         ParseError: If the response body cannot be decoded as JSON.
     """
     try:
-        return response.json()
+        return cast(dict[str, Any], response.json())
     except Exception as exc:
         raise ParseError(ParseError.UNPARSEABLE.format(context=context, exc=exc)) from exc
 
@@ -106,12 +108,21 @@ async def fragment_request(
     Returns:
         Parsed API response as a dict.
     """
-    resp = await session.post(
-        f"{FRAGMENT_BASE_URL}/api?hash={fragment_hash}",
-        headers=headers,
-        data=data,
-    )
-    return parse_json_response(resp, data.get("method", "request"))
+    for attempt in range(3):
+        resp = await session.post(
+            f"{FRAGMENT_BASE_URL}/api?hash={fragment_hash}",
+            headers=headers,
+            data=data,
+        )
+        if resp.status_code == 429 and attempt < 2:
+            await asyncio.sleep(1 + attempt + random.uniform(0, 0.5))
+            continue
+        if resp.status_code != 200:
+            raise FragmentPageError(
+                FragmentPageError.BAD_STATUS.format(status=resp.status_code, url=f"{FRAGMENT_BASE_URL}/api")
+            )
+        return parse_json_response(resp, data.get("method", "request"))
+    raise FragmentPageError(FragmentPageError.BAD_STATUS.format(status=429, url=f"{FRAGMENT_BASE_URL}/api"))
 
 
 async def execute_transaction_request(

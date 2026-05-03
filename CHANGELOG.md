@@ -7,6 +7,21 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ---
 
+## [2026.2.1] — 2026-05-03
+
+### Fixed
+
+- Fragment API 429 responses are now retried automatically (up to 3 attempts) with exponential backoff and jitter in `fragment_request`
+- Retry delays in TON transaction broadcasting now include jitter to reduce contention under concurrent calls
+- Improved handling of non-200 HTTP responses in `get_fragment_hash`
+- Removed unnecessary `method` key leaking into certain API request payloads
+
+### Changed
+
+- Type hints refined across the codebase for better clarity and `mypy` strict compliance
+
+---
+
 ## [2026.2.0] — 2026-04-14
 
 ### Added
@@ -104,6 +119,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - `py.typed` marker — full PEP 561 typing support for type-checkers
 - `__repr__` on all result types for readable debug output
 
+[2026.2.1]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.2.1
 [2026.2.0]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.2.0
 [2026.1.0]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.1.0
 [2026.0.2]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.0.2

@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
 
 
-async def purchase_premium(client: "FragmentClient", username: str, months: int, show_sender: bool = True) -> PremiumResult:
+async def purchase_premium(client: FragmentClient, username: str, months: int, show_sender: bool = True) -> PremiumResult:
     """Gift Telegram Premium to a user.
 
     Args:

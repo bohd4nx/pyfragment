@@ -16,7 +16,7 @@ class ConfigurationError(ClientError):
     UNSUPPORTED_VERSION = "Unsupported wallet_version '{version}'. Must be one of: {supported}."
     INVALID_MNEMONIC = "Invalid mnemonic: expected 12, 18, or 24 words, got {count}."
     INVALID_API_KEY = (
-        "Invalid Tonapi API key: expected at least 68 characters, got {length}. " "Generate a key at https://tonconsole.com."
+        "Invalid Tonapi API key: expected at least 68 characters, got {length}. Generate a key at https://tonconsole.com."
     )
     INVALID_MONTHS = "Invalid Premium duration: choose 3, 6, or 12 months."
     INVALID_STARS_AMOUNT = "Invalid Stars amount: must be an integer between 50 and 1 000 000."
@@ -40,12 +40,13 @@ class CookieError(ClientError):
     )
     UNSUPPORTED_BROWSER = "Unsupported browser: '{browser}'. Supported: {supported}."
     BROWSER_READ_FAILED = (
-        "Failed to read {browser} cookies: {exc}. " "Make sure {browser} is installed and you are logged in to {url}."
+        "Failed to read {browser} cookies: {exc}. Make sure {browser} is installed and you are logged in to {url}."
     )
     MISSING_BROWSER_KEYS = (
         "Fragment cookies not found in {browser}: {keys}. "
         "Make sure you are logged in to {url} and have connected your TON wallet in {browser}."
     )
+    EXPIRED = "Fragment session cookie expired at {expires}. Log in to fragment.com in your browser and extract fresh cookies."
 
 
 class FragmentAPIError(FragmentError):
@@ -74,7 +75,7 @@ class UserNotFoundError(FragmentAPIError):
     """Raised when the target Telegram user is not found on Fragment."""
 
     NOT_FOUND = (
-        "Telegram user '{username}' was not found on Fragment. " "Double-check the username and make sure the account exists."
+        "Telegram user '{username}' was not found on Fragment. Double-check the username and make sure the account exists."
     )
 
 
@@ -89,7 +90,7 @@ class TransactionError(FragmentAPIError):
     """Raised when a TON transaction fails to build or broadcast."""
 
     INVALID_PAYLOAD = (
-        "Fragment returned an invalid transaction payload — " "'transaction.messages' is missing or empty in the API response."
+        "Fragment returned an invalid transaction payload — 'transaction.messages' is missing or empty in the API response."
     )
     BROADCAST_FAILED = "Transaction broadcast failed: {exc}"
     BROADCAST_FAILED_SSL = (
