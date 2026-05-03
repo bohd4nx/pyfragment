@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pyfragment"
-version = "2026.2.0"
+version = "2026.2.1"
 description = "Async Python client for the Fragment API — a unified toolkit to manage Telegram assets: purchase Stars and Premium, top up TON and Ads balances, run giveaways, manage anonymous numbers, and explore the marketplace for usernames, numbers, and gifts."
 readme = "README.md"
 license = { text = "MIT" }

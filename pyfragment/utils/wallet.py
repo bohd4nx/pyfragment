@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import random
 import ssl
 from typing import TYPE_CHECKING, Any
 
@@ -69,12 +70,12 @@ async def process_transaction(client: FragmentClient, transaction_data: dict[str
                     return str(result.normalized_hash)
                 except ProviderResponseError as exc:
                     if exc.code == 429 and attempt == 0:
-                        await asyncio.sleep(1)
+                        await asyncio.sleep(1 + random.uniform(0, 0.5))
                         continue
                     if exc.code == 406 and "seqno" in str(exc).lower():
                         # Previous tx seqno not yet confirmed — wallet will re-fetch seqno on retry
                         if attempt < 2:
-                            await asyncio.sleep(2)
+                            await asyncio.sleep(2 + random.uniform(0, 1))
                             continue
                         raise TransactionError(TransactionError.DUPLICATE_SEQNO) from exc
                     raise
