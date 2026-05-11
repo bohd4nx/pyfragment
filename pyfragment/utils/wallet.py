@@ -49,13 +49,8 @@ async def _check_ton_payment_balance(
     balance_ton: float,
     amount_ton: float,
     required_payment_amount: float | None,
-    ton: Any,
-    wallet_address: str,
 ) -> None:
     """Validate balance requirements for TON payment method."""
-    del ton
-    del wallet_address
-
     tx_price_ton = amount_ton
     if required_payment_amount is not None and required_payment_amount > 0:
         tx_price_ton = max(tx_price_ton, required_payment_amount)
@@ -72,14 +67,11 @@ async def _check_ton_payment_balance(
 
 async def _check_usdt_payment_balance(
     balance_ton: float,
-    amount_ton: float,
     required_payment_amount: float | None,
     ton: Any,
     wallet_address: str,
 ) -> None:
     """Validate balance requirements for USDT payment method."""
-    del amount_ton
-
     # USDT payment still needs TON for network fees.
     if balance_ton < MIN_TON_BALANCE:
         raise WalletError(
@@ -134,18 +126,19 @@ async def process_transaction(
             await wallet.refresh()
             balance_ton = wallet.balance / 1_000_000_000
             wallet_address = wallet.address.to_str(False, False)
-            checkers = {
-                "ton": _check_ton_payment_balance,
-                "usdt_ton": _check_usdt_payment_balance,
-            }
-            checker = checkers[payment_method]
-            await checker(
-                balance_ton,
-                amount_ton,
-                required_payment_amount,
-                ton,
-                wallet_address,
-            )
+            if payment_method == "ton":
+                await _check_ton_payment_balance(
+                    balance_ton,
+                    amount_ton,
+                    required_payment_amount,
+                )
+            else:
+                await _check_usdt_payment_balance(
+                    balance_ton,
+                    required_payment_amount,
+                    ton,
+                    wallet_address,
+                )
         except WalletError:
             raise
         except Exception as exc:

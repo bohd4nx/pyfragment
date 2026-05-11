@@ -2,7 +2,7 @@
 Example: recharge your own Telegram Ads account with TON.
 
 Amount must be an integer between 1 and 1 000 000 000 TON.
-Your wallet must hold at least the recharge amount + ~0.056 TON for gas.
+Your wallet must satisfy the current minimum TON threshold and transaction cost.
 """
 
 import asyncio

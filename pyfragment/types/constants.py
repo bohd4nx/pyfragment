@@ -16,8 +16,8 @@ SUPPORTED_WALLET_VERSIONS: frozenset[str] = frozenset(get_args(WalletVersion))
 # Wallet class map — used to resolve the correct contract from WALLET_VERSION
 WALLET_CLASSES: dict[str, Any] = {"V4R2": WalletV4R2, "V5R1": WalletV5R1}
 
-# Minimum minimum TON balance required for payments (transaction amount + gas reserve).
-MIN_TON_BALANCE: float = 0.33  # 0.3 TON for transaction + 0.03 TON gas reserve
+# Minimum TON balance threshold required for payment flows.
+MIN_TON_BALANCE: float = 0.33
 
 # USDT (TON) jetton metadata used for payment-method balance checks.
 USDT_TON_MASTER_ADDRESS: str = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"

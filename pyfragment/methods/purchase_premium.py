@@ -71,7 +71,7 @@ async def purchase_premium(
             {"recipient": recipient, "months": months, "payment_method": payment_method},
             page_url=PREMIUM_PAGE,
         )
-        required_payment_amount = parse_required_payment_amount(result, payment_method)
+        required_payment_amount = parse_required_payment_amount(result)
         req_id = result.get("req_id")
         if not req_id:
             raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="Premium purchase"))

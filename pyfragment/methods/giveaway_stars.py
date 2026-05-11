@@ -73,7 +73,7 @@ async def giveaway_stars(
             },
             page_url=STARS_GIVEAWAY_PAGE,
         )
-        required_payment_amount = parse_required_payment_amount(result, payment_method)
+        required_payment_amount = parse_required_payment_amount(result)
         req_id = result.get("req_id")
         if not req_id:
             raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="Stars giveaway"))

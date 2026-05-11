@@ -24,6 +24,9 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
   - `@username` / `username` / `https://t.me/username`
 - `get_wallet()` now returns balances as separate fields: `ton_balance` and `usdt_balance`
 - Wallet/system test output now prints TON and USDT balances on separate lines
+- Balance checks are now method-aware with explicit thresholds:
+  - `ton`: minimum TON balance threshold via `MIN_TON_BALANCE` (based on current 50 Stars purchase amount)
+  - `usdt_ton`: minimum USDT balance threshold via `MIN_USDT_BALANCE` (based on current 50 Stars purchase amount)
 
 ### Tests
 
