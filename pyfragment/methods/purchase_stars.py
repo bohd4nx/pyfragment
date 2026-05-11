@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import time
 from typing import TYPE_CHECKING
 
 from pyfragment.types import (
@@ -12,14 +13,16 @@ from pyfragment.types import (
     UserNotFoundError,
     VerificationError,
 )
-from pyfragment.types.constants import DEVICE, STARS_PAGE
+from pyfragment.types.constants import DEVICE, STARS_PAGE, SUPPORTED_PAYMENT_METHODS, PaymentMethod
 from pyfragment.utils import get_account_info, process_transaction
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
 
 
-async def purchase_stars(client: FragmentClient, username: str, amount: int, show_sender: bool = True) -> StarsResult:
+async def purchase_stars(
+    client: FragmentClient, username: str, amount: int, show_sender: bool = True, payment_method: PaymentMethod = "ton"
+) -> StarsResult:
     """Send Telegram Stars to a user.
 
     Args:
@@ -27,6 +30,7 @@ async def purchase_stars(client: FragmentClient, username: str, amount: int, sho
         username: Recipient's Telegram username (with or without ``@``).
         amount: Number of Stars to send — integer from ``50`` to ``1 000 000``.
         show_sender: Show your name as the gift sender. Defaults to ``True``.
+        payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.
 
     Returns:
         :class:`StarsResult` with ``transaction_id``, ``username``, and ``amount``.
@@ -39,6 +43,13 @@ async def purchase_stars(client: FragmentClient, username: str, amount: int, sho
     """
     if not isinstance(amount, int) or not (50 <= amount <= 1_000_000):
         raise ConfigurationError(ConfigurationError.INVALID_STARS_AMOUNT)
+    if payment_method not in SUPPORTED_PAYMENT_METHODS:
+        raise ConfigurationError(
+            ConfigurationError.INVALID_PAYMENT_METHOD.format(
+                method=payment_method,
+                supported=", ".join(sorted(SUPPORTED_PAYMENT_METHODS)),
+            )
+        )
 
     try:
         result = await client.call("searchStarsRecipient", {"query": username, "quantity": ""}, page_url=STARS_PAGE)
@@ -46,7 +57,16 @@ async def purchase_stars(client: FragmentClient, username: str, amount: int, sho
         if not recipient:
             raise UserNotFoundError(UserNotFoundError.NOT_FOUND.format(username=username))
 
-        result = await client.call("initBuyStarsRequest", {"recipient": recipient, "quantity": amount}, page_url=STARS_PAGE)
+        await client.call(
+            "updateStarsBuyState",
+            {"mode": "new", "lv": "false", "dh": str(int(time.time()))},
+            page_url=STARS_PAGE,
+        )
+        result = await client.call(
+            "initBuyStarsRequest",
+            {"recipient": recipient, "quantity": amount, "payment_method": payment_method},
+            page_url=STARS_PAGE,
+        )
         req_id = result.get("req_id")
         if not req_id:
             raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="Stars purchase"))

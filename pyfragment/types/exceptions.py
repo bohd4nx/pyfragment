@@ -28,6 +28,7 @@ class ConfigurationError(ClientError):
     INVALID_WINNERS_STARS = "Invalid winners count: must be an integer between 1 and 5."
     INVALID_WINNERS_PREMIUM = "Invalid winners count: must be an integer between 1 and 24 000."
     INVALID_STARS_PER_WINNER = "Invalid Stars per winner: must be an integer between 500 and 1 000 000."
+    INVALID_PAYMENT_METHOD = "Invalid payment method '{method}'. Supported values: {supported}."
 
 
 class CookieError(ClientError):

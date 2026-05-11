@@ -5,6 +5,10 @@ from typing import Any, Literal, get_args
 
 from tonutils.contracts.wallet import WalletV4R2, WalletV5R1
 
+# Payment methods
+PaymentMethod = Literal["ton", "usdt_ton"]
+SUPPORTED_PAYMENT_METHODS: frozenset[str] = frozenset(get_args(PaymentMethod))
+
 # Single source of truth for supported wallet versions
 WalletVersion = Literal["V4R2", "V5R1"]
 SUPPORTED_WALLET_VERSIONS: frozenset[str] = frozenset(get_args(WalletVersion))
@@ -74,12 +78,15 @@ BASE_HEADERS: dict[str, str] = {
     "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
     "origin": FRAGMENT_BASE_URL,
     "priority": "u=1, i",
+    "sec-ch-ua": '"Google Chrome";v="147", "Not.A/Brand";v="8", "Chromium";v="147"',
+    "sec-ch-ua-mobile": "?1",
+    "sec-ch-ua-platform": '"Android"',
     "sec-fetch-dest": "empty",
     "sec-fetch-mode": "cors",
     "sec-fetch-site": "same-origin",
     "user-agent": (
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) "
-        "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+        "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36"
     ),
     "x-requested-with": "XMLHttpRequest",
 }

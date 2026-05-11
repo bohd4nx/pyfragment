@@ -1,3 +1,4 @@
+from pyfragment.types.constants import PaymentMethod
 from pyfragment.types.exceptions import (
     AnonymousNumberError,
     ClientError,
@@ -61,4 +62,6 @@ __all__ = [
     "TerminateSessionsResult",
     "UsernamesResult",
     "WalletInfo",
+    # literal types
+    "PaymentMethod",
 ]

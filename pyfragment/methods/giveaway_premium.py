@@ -12,7 +12,7 @@ from pyfragment.types import (
     UserNotFoundError,
     VerificationError,
 )
-from pyfragment.types.constants import DEVICE, PREMIUM_GIVEAWAY_PAGE
+from pyfragment.types.constants import DEVICE, PREMIUM_GIVEAWAY_PAGE, SUPPORTED_PAYMENT_METHODS, PaymentMethod
 from pyfragment.utils import get_account_info, process_transaction
 
 if TYPE_CHECKING:
@@ -24,6 +24,7 @@ async def giveaway_premium(
     channel: str,
     winners: int,
     months: int = 3,
+    payment_method: PaymentMethod = "ton",
 ) -> PremiumGiveawayResult:
     """Run a Telegram Premium giveaway for a channel.
 
@@ -32,6 +33,7 @@ async def giveaway_premium(
         channel: Channel username (with or without ``@``).
         winners: Number of winners — integer from ``1`` to ``24 000``.
         months: Premium duration per winner — ``3``, ``6``, or ``12``. Defaults to ``3``.
+        payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.
 
     Returns:
         :class:`PremiumGiveawayResult` with ``transaction_id``, ``channel``,
@@ -47,6 +49,13 @@ async def giveaway_premium(
         raise ConfigurationError(ConfigurationError.INVALID_WINNERS_PREMIUM)
     if months not in (3, 6, 12):
         raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
+    if payment_method not in SUPPORTED_PAYMENT_METHODS:
+        raise ConfigurationError(
+            ConfigurationError.INVALID_PAYMENT_METHOD.format(
+                method=payment_method,
+                supported=", ".join(sorted(SUPPORTED_PAYMENT_METHODS)),
+            )
+        )
 
     try:
         result = await client.call(
@@ -60,7 +69,12 @@ async def giveaway_premium(
 
         result = await client.call(
             "initGiveawayPremiumRequest",
-            {"recipient": recipient, "quantity": str(winners), "months": str(months)},
+            {
+                "recipient": recipient,
+                "quantity": str(winners),
+                "months": str(months),
+                "payment_method": payment_method,
+            },
             page_url=PREMIUM_GIVEAWAY_PAGE,
         )
         req_id = result.get("req_id")

@@ -13,14 +13,20 @@ from pyfragment.types import (
     UserNotFoundError,
     VerificationError,
 )
-from pyfragment.types.constants import DEVICE, PREMIUM_PAGE
+from pyfragment.types.constants import DEVICE, PREMIUM_PAGE, SUPPORTED_PAYMENT_METHODS, PaymentMethod
 from pyfragment.utils import get_account_info, process_transaction
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
 
 
-async def purchase_premium(client: FragmentClient, username: str, months: int, show_sender: bool = True) -> PremiumResult:
+async def purchase_premium(
+    client: FragmentClient,
+    username: str,
+    months: int,
+    show_sender: bool = True,
+    payment_method: PaymentMethod = "ton",
+) -> PremiumResult:
     """Gift Telegram Premium to a user.
 
     Args:
@@ -28,6 +34,7 @@ async def purchase_premium(client: FragmentClient, username: str, months: int, s
         username: Recipient's Telegram username (with or without ``@``).
         months: Premium duration — ``3``, ``6``, or ``12``.
         show_sender: Show your name as the gift sender. Defaults to ``True``.
+        payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.
 
     Returns:
         :class:`PremiumResult` with ``transaction_id``, ``username``, and ``amount``.
@@ -40,6 +47,13 @@ async def purchase_premium(client: FragmentClient, username: str, months: int, s
     """
     if months not in (3, 6, 12):
         raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
+    if payment_method not in SUPPORTED_PAYMENT_METHODS:
+        raise ConfigurationError(
+            ConfigurationError.INVALID_PAYMENT_METHOD.format(
+                method=payment_method,
+                supported=", ".join(sorted(SUPPORTED_PAYMENT_METHODS)),
+            )
+        )
 
     try:
         result = await client.call("searchPremiumGiftRecipient", {"query": username, "months": months}, page_url=PREMIUM_PAGE)
@@ -52,7 +66,11 @@ async def purchase_premium(client: FragmentClient, username: str, months: int, s
             {"mode": "new", "lv": "false", "dh": str(int(time.time()))},
             page_url=PREMIUM_PAGE,
         )
-        result = await client.call("initGiftPremiumRequest", {"recipient": recipient, "months": months}, page_url=PREMIUM_PAGE)
+        result = await client.call(
+            "initGiftPremiumRequest",
+            {"recipient": recipient, "months": months, "payment_method": payment_method},
+            page_url=PREMIUM_PAGE,
+        )
         req_id = result.get("req_id")
         if not req_id:
             raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="Premium purchase"))
