@@ -8,11 +8,7 @@ from typing import Any, cast
 import httpx
 
 from pyfragment.types import FragmentPageError, ParseError, VerificationError
-from pyfragment.types.constants import BASE_HEADERS, DEFAULT_TIMEOUT, FRAGMENT_BASE_URL
-
-
-def make_headers(page_url: str = FRAGMENT_BASE_URL) -> dict[str, str]:
-    return {**BASE_HEADERS, "referer": page_url, "x-aj-referer": page_url}
+from pyfragment.types.constants import DEFAULT_TIMEOUT, FRAGMENT_BASE_URL
 
 
 async def get_fragment_hash(

@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Literal, get_args
+from typing import Any, Literal
 
 from tonutils.contracts.wallet import WalletV4R2, WalletV5R1
 
 # Payment methods
 PaymentMethod = Literal["ton", "usdt_ton"]
-SUPPORTED_PAYMENT_METHODS: frozenset[str] = frozenset(get_args(PaymentMethod))
 
 # Single source of truth for supported wallet versions
 WalletVersion = Literal["V4R2", "V5R1"]
-SUPPORTED_WALLET_VERSIONS: frozenset[str] = frozenset(get_args(WalletVersion))
 
 # Wallet class map — used to resolve the correct contract from WALLET_VERSION
 WALLET_CLASSES: dict[str, Any] = {"V4R2": WalletV4R2, "V5R1": WalletV5R1}

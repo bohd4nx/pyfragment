@@ -1,20 +1,24 @@
 from __future__ import annotations
 
 import json
-from typing import Any, cast
+from typing import Any, cast, get_args
 
 import httpx
 
-from pyfragment.methods.anonymous_number import get_login_code, terminate_sessions, toggle_login_codes
-from pyfragment.methods.giveaway_premium import giveaway_premium
-from pyfragment.methods.giveaway_stars import giveaway_stars
-from pyfragment.methods.purchase_premium import purchase_premium
-from pyfragment.methods.purchase_stars import purchase_stars
-from pyfragment.methods.recharge_ads import recharge_ads
-from pyfragment.methods.search_gifts import search_gifts
-from pyfragment.methods.search_numbers import search_numbers
-from pyfragment.methods.search_usernames import search_usernames
-from pyfragment.methods.topup_ton import topup_ton
+from pyfragment.methods import (
+    get_login_code,
+    giveaway_premium,
+    giveaway_stars,
+    purchase_premium,
+    purchase_stars,
+    recharge_ads,
+    search_gifts,
+    search_numbers,
+    search_usernames,
+    terminate_sessions,
+    toggle_login_codes,
+    topup_ton,
+)
 from pyfragment.types import (
     AdsRechargeResult,
     AdsTopupResult,
@@ -32,14 +36,14 @@ from pyfragment.types import (
     WalletInfo,
 )
 from pyfragment.types.constants import (
+    BASE_HEADERS,
     DEFAULT_TIMEOUT,
     FRAGMENT_BASE_URL,
     REQUIRED_COOKIE_KEYS,
-    SUPPORTED_WALLET_VERSIONS,
     PaymentMethod,
     WalletVersion,
 )
-from pyfragment.utils.http import fragment_request, get_fragment_hash, make_headers
+from pyfragment.utils.api import fragment_request, get_fragment_hash
 from pyfragment.utils.wallet import get_wallet_info
 
 
@@ -104,10 +108,10 @@ class FragmentClient:
             raise CookieError(CookieError.MISSING_KEYS.format(keys=", ".join(missing_keys)))
 
         version = wallet_version.strip().upper()
-        if version not in SUPPORTED_WALLET_VERSIONS:
+        if version not in get_args(WalletVersion):
             raise ConfigurationError(
                 ConfigurationError.UNSUPPORTED_VERSION.format(
-                    version=version, supported=", ".join(sorted(SUPPORTED_WALLET_VERSIONS))
+                    version=version, supported=", ".join(sorted(get_args(WalletVersion)))
                 )
             )
 
@@ -386,7 +390,7 @@ class FragmentClient:
                 page_url="https://fragment.com/premium/gift",
             )
         """
-        headers = make_headers(page_url)
+        headers = {**BASE_HEADERS, "referer": page_url, "x-aj-referer": page_url}
         async with httpx.AsyncClient(cookies=self.cookies, timeout=self.timeout) as session:
             fragment_hash = await get_fragment_hash(self.cookies, headers, page_url, self.timeout)
             return await fragment_request(session, fragment_hash, headers, {"method": method, **(data or {})})

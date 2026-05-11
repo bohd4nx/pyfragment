@@ -27,6 +27,8 @@ from pyfragment.types.results import (
     StarsGiveawayResult,
     StarsResult,
     TerminateSessionsResult,
+    TonTransferResult,
+    UsdtTransferResult,
     UsernamesResult,
     WalletInfo,
 )
@@ -60,6 +62,8 @@ __all__ = [
     "StarsGiveawayResult",
     "StarsResult",
     "TerminateSessionsResult",
+    "TonTransferResult",
+    "UsdtTransferResult",
     "UsernamesResult",
     "WalletInfo",
     # literal types

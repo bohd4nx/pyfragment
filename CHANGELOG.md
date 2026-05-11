@@ -7,6 +7,20 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ---
 
+## [2026.2.3] — 2026-05-12
+
+### Fixed
+
+- Fixed USDT payment flow: the USDT balance check now correctly targets the wallet linked to the Fragment account (`transaction["from"]`), not the signing seed wallet. These are two distinct addresses — the seed wallet only signs the transaction and covers TON gas fees, while USDT is withdrawn from the Fragment-linked wallet.
+- Fixed `clean_decode()` incorrectly treating binary TON cell payloads (e.g. jetton transfer messages with non-zero op codes) as text comments. Only cells with op code `0x00000000` are now decoded as snake-encoded UTF-8 strings; all other op codes return the raw `Cell` as-is.
+- Restored and correctly wired USDT balance validation so `WalletError` is raised before broadcasting when the Fragment-linked wallet has insufficient USDT.
+
+### Note
+
+- USDT (`usdt_ton`) payments require USDT to be held in the TON wallet that is linked to your Fragment account profile. The seed wallet configured in `FragmentClient` is only used to sign transactions and pay TON network fees.
+
+---
+
 ## [2026.2.2] — 2026-05-11
 
 ### Added
@@ -163,6 +177,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - `py.typed` marker — full PEP 561 typing support for type-checkers
 - `__repr__` on all result types for readable debug output
 
+[2026.2.3]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.2.3
 [2026.2.2]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.2.2
 [2026.2.1]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.2.1
 [2026.2.0]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.2.0
