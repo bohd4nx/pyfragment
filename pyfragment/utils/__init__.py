@@ -1,6 +1,6 @@
 from pyfragment.utils.cookies import CookieResult, get_cookies_from_browser
 from pyfragment.utils.decoder import clean_decode
-from pyfragment.utils.html import parse_auction_rows, parse_gift_items, parse_login_code
+from pyfragment.utils.html import parse_auction_rows, parse_gift_items, parse_login_code, parse_required_payment_amount
 from pyfragment.utils.http import (
     execute_transaction_request,
     fragment_request,
@@ -17,6 +17,7 @@ __all__ = [
     "parse_auction_rows",
     "parse_gift_items",
     "parse_login_code",
+    "parse_required_payment_amount",
     "execute_transaction_request",
     "fragment_request",
     "get_account_info",

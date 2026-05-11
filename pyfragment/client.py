@@ -36,6 +36,7 @@ from pyfragment.types.constants import (
     FRAGMENT_BASE_URL,
     REQUIRED_COOKIE_KEYS,
     SUPPORTED_WALLET_VERSIONS,
+    PaymentMethod,
     WalletVersion,
 )
 from pyfragment.utils.http import fragment_request, get_fragment_hash, make_headers
@@ -125,31 +126,45 @@ class FragmentClient:
     def __repr__(self) -> str:
         return f"FragmentClient(wallet_version='{self.wallet_version}', cookies={len(self.cookies)} keys)"
 
-    async def purchase_premium(self, username: str, months: int, show_sender: bool = True) -> PremiumResult:
+    async def purchase_premium(
+        self,
+        username: str,
+        months: int,
+        show_sender: bool = True,
+        payment_method: PaymentMethod = "ton",
+    ) -> PremiumResult:
         """Gift Telegram Premium to a user.
 
         Args:
-            username: Recipient's Telegram username (with or without ``@``).
+            username: Recipient identifier — ``@username``, ``username``, or ``https://t.me/username``.
             months: Duration — ``3``, ``6``, or ``12``.
             show_sender: Show your name as the sender. Defaults to ``True``.
+            payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.
 
         Returns:
             :class:`PremiumResult` with ``transaction_id``, ``username``, and ``amount``.
         """
-        return await purchase_premium(self, username, months, show_sender)
+        return await purchase_premium(self, username, months, show_sender, payment_method)
 
-    async def purchase_stars(self, username: str, amount: int, show_sender: bool = True) -> StarsResult:
+    async def purchase_stars(
+        self,
+        username: str,
+        amount: int,
+        show_sender: bool = True,
+        payment_method: PaymentMethod = "ton",
+    ) -> StarsResult:
         """Send Telegram Stars to a user.
 
         Args:
-            username: Recipient's Telegram username (with or without ``@``).
+            username: Recipient identifier — ``@username``, ``username``, or ``https://t.me/username``.
             amount: Number of stars — integer from ``50`` to ``1 000 000``.
             show_sender: Show your name as the gift sender. Defaults to ``True``.
+            payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.
 
         Returns:
             :class:`StarsResult` with ``transaction_id``, ``username``, and ``amount``.
         """
-        return await purchase_stars(self, username, amount, show_sender)
+        return await purchase_stars(self, username, amount, show_sender, payment_method)
 
     async def topup_ton(self, username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
         """Top up TON to a recipient's Telegram balance.
@@ -178,11 +193,12 @@ class FragmentClient:
         return await recharge_ads(self, account, amount)
 
     async def get_wallet(self) -> WalletInfo:
-        """Return the address, state and balance of the TON wallet.
+        """Return the address, state, and balances of the wallet.
 
         Returns:
             :class:`WalletInfo` with ``address`` (``"UQ..."``), ``state``
-            (``"active"``, ``"uninit"``, ``"nonexist"``, or ``"frozen"``), and ``balance`` in TON.
+            (``"active"``, ``"uninit"``, ``"nonexist"``, or ``"frozen"``),
+            ``ton_balance`` in TON, and ``usdt_balance`` in USDT.
         """
         return await get_wallet_info(self)
 
@@ -191,38 +207,42 @@ class FragmentClient:
         channel: str,
         winners: int,
         amount: int,
+        payment_method: PaymentMethod = "ton",
     ) -> StarsGiveawayResult:
         """Run a Telegram Stars giveaway for a channel.
 
         Args:
-            channel: Channel username (with or without ``@``).
+            channel: Channel identifier — ``@channel``, ``channel``, or ``https://t.me/channel``.
             winners: Number of winners — integer from ``1`` to ``5``.
             amount: Stars each winner receives — integer from ``500`` to ``1 000 000``.
+            payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.
 
         Returns:
             :class:`StarsGiveawayResult` with ``transaction_id``, ``channel``,
             ``winners``, and ``amount``.
         """
-        return await giveaway_stars(self, channel, winners, amount)
+        return await giveaway_stars(self, channel, winners, amount, payment_method)
 
     async def giveaway_premium(
         self,
         channel: str,
         winners: int,
         months: int = 3,
+        payment_method: PaymentMethod = "ton",
     ) -> PremiumGiveawayResult:
         """Run a Telegram Premium giveaway for a channel.
 
         Args:
-            channel: Channel username (with or without ``@``).
+            channel: Channel identifier — ``@channel``, ``channel``, or ``https://t.me/channel``.
             winners: Number of winners — positive integer.
             months: Premium duration per winner — ``3``, ``6``, or ``12``. Defaults to ``3``.
+            payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.
 
         Returns:
             :class:`PremiumGiveawayResult` with ``transaction_id``, ``channel``,
             ``winners``, and ``amount``.
         """
-        return await giveaway_premium(self, channel, winners, months)
+        return await giveaway_premium(self, channel, winners, months, payment_method)
 
     async def get_login_code(self, number: str) -> LoginCodeResult:
         """Fetch the current pending login code for an anonymous number.

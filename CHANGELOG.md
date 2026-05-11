@@ -7,6 +7,39 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ---
 
+## [2026.2.2] — 2026-05-11
+
+### Added
+
+- `payment_method` option (`"ton"` / `"usdt_ton"`) for:
+  - `purchase_stars()`
+  - `purchase_premium()`
+  - `giveaway_stars()`
+  - `giveaway_premium()`
+
+### Changed
+
+- Added runtime validation for `payment_method` via `SUPPORTED_PAYMENT_METHODS` and `ConfigurationError.INVALID_PAYMENT_METHOD`
+- Updated method docstrings to explicitly document recipient/channel formats:
+  - `@username` / `username` / `https://t.me/username`
+- `get_wallet()` now returns balances as separate fields: `ton_balance` and `usdt_balance`
+- Wallet/system test output now prints TON and USDT balances on separate lines
+- Balance checks are now method-aware with explicit thresholds:
+  - `ton`: minimum TON balance threshold via `MIN_TON_BALANCE` (based on current 50 Stars purchase amount)
+  - `usdt_ton`: minimum USDT balance threshold via `MIN_USDT_BALANCE` (based on current 50 Stars purchase amount)
+
+### Tests
+
+- Extended stars and premium test suites to cover:
+  - invalid payment method
+  - payment method propagation to `init*Request` payloads
+  - accepted query formats (`@`, plain username, `t.me` link)
+- Extended wallet tests to verify separate TON/USDT balance values in `WalletInfo`
+
+### Documentation
+
+- Simplified `README` usage example
+
 ## [2026.2.1] — 2026-05-03
 
 ### Fixed
@@ -48,37 +81,44 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 ### Added
 
 **Giveaways**
+
 - `giveaway_stars(channel, winners, amount)` — Stars giveaway; 1–5 winners, 500–1 000 000 stars each
 - `giveaway_premium(channel, winners, months)` — Premium giveaway; 1–24 000 winners, 3/6/12 months each
 - `StarsGiveawayResult`, `PremiumGiveawayResult` result types
 
 **Telegram Ads**
+
 - `recharge_ads(account, amount)` — top up a Telegram Ads account; 1–1 000 000 000 TON
 - `AdsRechargeResult` result type
 
 **Marketplace**
+
 - `search_usernames(query?, sort?, filter?, offset_id?)` — search Fragment usernames; `sort`: `price_desc / price_asc / listed / ending`, `filter`: `auction / sale / sold`
 - `search_numbers(query?, sort?, filter?, offset_id?)` — search Fragment anonymous numbers; same `sort` / `filter` / pagination semantics
 - `search_gifts(query?, collection?, sort?, filter?, view?, attr?, offset?)` — search Fragment gifts; `attr` accepts `{"Model": ["Foosball"], "Backdrop": ["Celtic Blue"]}`
 - `UsernamesResult`, `NumbersResult`, `GiftsResult` result types
 
 **Anonymous numbers**
+
 - `get_login_code(number)` — fetch the current pending login code
 - `toggle_login_codes(number, can_receive)` — enable or disable login code delivery
 - `terminate_sessions(number)` — terminate all active Telegram sessions (two-step flow handled internally)
 - `LoginCodeResult`, `TerminateSessionsResult` result types; `AnonymousNumberError` exception
 
 **Raw API**
+
 - `FragmentClient.call(method, data, *, page_url)` — raw request to any Fragment API method
 - `FRAGMENT_BASE_URL` constant — base URL shared across all page constants and headers
 
 **Examples**
+
 - `examples/client/` — `wallet_info.py` (wallet info), `raw_api_call.py` (raw API call)
 - `examples/numbers/` — `manage_number.py` (login code fetch, session termination)
 - `examples/auctions/` — `search_usernames.py`, `search_numbers.py`, `search_gifts.py` (marketplace search with pagination)
 - `examples/purchase/` — `send_stars.py`, `send_premium.py`, `topup_ton_balance.py`, `run_stars_giveaway.py`, `run_premium_giveaway.py`, `recharge_ads_balance.py`
 
 ### Changed
+
 - All result types now expose a unified `amount` field (`months` and `stars` removed)
 - `__repr__` includes the unit — `3 months`, `500 stars`, etc.
 - `timestamp` removed from all result dataclasses
@@ -91,15 +131,18 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 ## [2026.0.2] — 2026-03-20
 
 ### Added
+
 - `timeout` parameter on `FragmentClient` (default `30.0` s) — passed through to every HTTP request
 
 ### Changed
+
 - Cookie validation: narrowed type internally so no `# type: ignore` is needed in `FragmentClient.__init__`
 - `WALLET_CLASSES` typed as `dict[str, Any]` so mypy resolves `from_mnemonic` correctly
 - All four `examples/` files updated to `async with FragmentClient`, f-strings, and aligned error messages
 - README usage section rewritten with a single comprehensive `async with` example
 
 ### Fixed
+
 - mypy: missing return path in `process_transaction` after retry loop
 - mypy: `cookies` union-attr error in `FragmentClient.__init__`
 
@@ -108,6 +151,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 ## [2026.0.1] — 2026-03-16
 
 ### Added
+
 - Initial stable release of `pyfragment`
 - `FragmentClient` — async client for the Fragment.com API with context manager support (`async with`)
 - `purchase_premium(username, months)` — purchase Telegram Premium for any user (3, 6, or 12 months)
@@ -119,6 +163,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - `py.typed` marker — full PEP 561 typing support for type-checkers
 - `__repr__` on all result types for readable debug output
 
+[2026.2.2]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.2.2
 [2026.2.1]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.2.1
 [2026.2.0]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.2.0
 [2026.1.0]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.1.0

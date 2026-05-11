@@ -26,6 +26,12 @@ async def test_purchase_premium_months_zero(client: FragmentClient) -> None:
         await client.purchase_premium("@user", months=0)
 
 
+@pytest.mark.asyncio
+async def test_purchase_premium_invalid_payment_method(client: FragmentClient) -> None:
+    with pytest.raises(ConfigurationError, match="Invalid payment method"):
+        await client.purchase_premium("@user", months=3, payment_method="btc")  # type: ignore[arg-type]
+
+
 # Premium purchase mocked tests
 
 
@@ -53,6 +59,44 @@ async def test_purchase_premium_success(client: FragmentClient) -> None:
     assert result.transaction_id == FAKE_TX_HASH
     assert result.username == "@user"
     assert result.amount == 3
+
+
+@pytest.mark.asyncio
+async def test_purchase_premium_passes_payment_method(client: FragmentClient) -> None:
+    call_mock = AsyncMock(
+        side_effect=[
+            {"found": {"recipient": FAKE_RECIPIENT}},
+            {},  # updatePremiumState
+            {"req_id": FAKE_REQ_ID},
+            FAKE_TRANSACTION,
+        ]
+    )
+    proc_mock = AsyncMock(return_value=FAKE_TX_HASH)
+    with (
+        patch.object(client, "call", call_mock),
+        patch.object(_purchase_premium_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_purchase_premium_mod, "process_transaction", proc_mock),
+    ):
+        await client.purchase_premium("@user", months=6, payment_method="usdt_ton")
+
+    init_call = call_mock.await_args_list[2]
+    assert init_call.args[0] == "initGiftPremiumRequest"
+    assert init_call.args[1]["payment_method"] == "usdt_ton"
+    assert proc_mock.await_args is not None
+    assert proc_mock.await_args.kwargs["payment_method"] == "usdt_ton"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("query", ["@user", "monk", "https://t.me/monk"])
+async def test_purchase_premium_accepts_query_formats(client: FragmentClient, query: str) -> None:
+    call_mock = AsyncMock(return_value={"found": {}})
+    with patch.object(client, "call", call_mock):
+        with pytest.raises(UserNotFoundError):
+            await client.purchase_premium(query, months=6)
+
+    search_call = call_mock.await_args_list[0]
+    assert search_call.args[0] == "searchPremiumGiftRecipient"
+    assert search_call.args[1]["query"] == query
 
 
 @pytest.mark.asyncio
@@ -89,6 +133,12 @@ async def test_giveaway_premium_invalid_months(client: FragmentClient) -> None:
         await client.giveaway_premium("@channel", winners=10, months=5)
 
 
+@pytest.mark.asyncio
+async def test_giveaway_premium_invalid_payment_method(client: FragmentClient) -> None:
+    with pytest.raises(ConfigurationError, match="Invalid payment method"):
+        await client.giveaway_premium("@channel", winners=10, months=3, payment_method="btc")  # type: ignore[arg-type]
+
+
 # Premium giveaway mocked tests
 
 
@@ -116,6 +166,43 @@ async def test_giveaway_premium_success(client: FragmentClient) -> None:
     assert result.channel == "@channel"
     assert result.winners == 10
     assert result.amount == 3
+
+
+@pytest.mark.asyncio
+async def test_giveaway_premium_passes_payment_method(client: FragmentClient) -> None:
+    call_mock = AsyncMock(
+        side_effect=[
+            {"found": {"recipient": FAKE_RECIPIENT}},
+            {"req_id": FAKE_REQ_ID},
+            FAKE_TRANSACTION,
+        ]
+    )
+    proc_mock = AsyncMock(return_value=FAKE_TX_HASH)
+    with (
+        patch.object(client, "call", call_mock),
+        patch.object(_giveaway_premium_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_giveaway_premium_mod, "process_transaction", proc_mock),
+    ):
+        await client.giveaway_premium("@channel", winners=10, months=6, payment_method="usdt_ton")
+
+    init_call = call_mock.await_args_list[1]
+    assert init_call.args[0] == "initGiveawayPremiumRequest"
+    assert init_call.args[1]["payment_method"] == "usdt_ton"
+    assert proc_mock.await_args is not None
+    assert proc_mock.await_args.kwargs["payment_method"] == "usdt_ton"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("query", ["@channel", "monk", "https://t.me/id2757542991"])
+async def test_giveaway_premium_accepts_query_formats(client: FragmentClient, query: str) -> None:
+    call_mock = AsyncMock(return_value={"found": {}})
+    with patch.object(client, "call", call_mock):
+        with pytest.raises(UserNotFoundError):
+            await client.giveaway_premium(query, winners=10, months=3)
+
+    search_call = call_mock.await_args_list[0]
+    assert search_call.args[0] == "searchPremiumGiveawayRecipient"
+    assert search_call.args[1]["query"] == query
 
 
 @pytest.mark.asyncio

@@ -3,6 +3,8 @@ Example: purchase Telegram Stars for a user.
 
 Amount must be an integer between 50 and 1 000 000.
 Set show_sender=False to send anonymously.
+payment_method can be "ton" or "usdt_ton".
+Username can be "@username", "username", or "https://t.me/username".
 """
 
 import asyncio
@@ -24,14 +26,20 @@ COOKIES = {
     "stel_ton_token": "YOUR_STEL_TON_TOKEN",
 }
 
-USERNAME = "@username"
+USERNAME = "https://t.me/username"
 AMOUNT = 500  # 50–1 000 000 stars
+PAYMENT_METHOD = "usdt_ton"  # "ton" or "usdt_ton"
 
 
 async def main() -> None:
     async with FragmentClient(seed=SEED, api_key=API_KEY, cookies=COOKIES) as client:
         try:
-            result = await client.purchase_stars(USERNAME, amount=AMOUNT, show_sender=True)
+            result = await client.purchase_stars(
+                USERNAME,
+                amount=AMOUNT,
+                show_sender=True,
+                payment_method=PAYMENT_METHOD,
+            )
         except UserNotFoundError:
             print(f"User {USERNAME} was not found on fragment.com — check the username and try again.")
             return

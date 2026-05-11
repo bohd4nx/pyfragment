@@ -4,7 +4,7 @@ Example: top up TON to a recipient's Telegram balance.
 For adding TON to a Telegram Ads account, use recharge_ads() instead.
 
 Amount must be an integer between 1 and 1 000 000 000 TON.
-Your wallet must hold at least the top-up amount + ~0.056 TON for gas.
+Your wallet must satisfy the current minimum TON threshold and transaction cost.
 """
 
 import asyncio

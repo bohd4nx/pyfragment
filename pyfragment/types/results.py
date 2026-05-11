@@ -27,10 +27,14 @@ class WalletInfo:
 
     address: str
     state: str
-    balance: float
+    ton_balance: float
+    usdt_balance: float
 
     def __repr__(self) -> str:
-        return f"WalletInfo(address='{self.address}', state='{self.state}', balance={self.balance} TON)"
+        return (
+            f"WalletInfo(address='{self.address}', state='{self.state}', "
+            f"ton_balance={self.ton_balance} TON, usdt_balance={self.usdt_balance} USDT)"
+        )
 
 
 @dataclass

@@ -8,17 +8,91 @@ from typing import TYPE_CHECKING, Any
 
 from ton_core import NetworkGlobalID
 from tonutils.clients import TonapiClient
+from tonutils.contracts.jetton import get_wallet_address_get_method, get_wallet_data_get_method
 from tonutils.exceptions import ProviderResponseError
 
 from pyfragment.types import TransactionError, WalletError, WalletInfo
-from pyfragment.types.constants import MIN_TON_BALANCE, WALLET_CLASSES
+from pyfragment.types.constants import (
+    MIN_TON_BALANCE,
+    MIN_USDT_BALANCE,
+    USDT_TON_MASTER_ADDRESS,
+    WALLET_CLASSES,
+    PaymentMethod,
+)
 from pyfragment.utils.decoder import clean_decode
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
 
 
-async def process_transaction(client: FragmentClient, transaction_data: dict[str, Any]) -> str:
+async def _get_usdt_balance(ton: Any, wallet_address: str) -> float:
+    """Return wallet USDT balance via tonutils jetton get-methods."""
+    try:
+        jetton_wallet_address = await get_wallet_address_get_method(
+            client=ton,
+            address=USDT_TON_MASTER_ADDRESS,
+            owner_address=wallet_address,
+        )
+        wallet_data = await get_wallet_data_get_method(client=ton, address=jetton_wallet_address)
+        raw_balance = int(wallet_data[0]) if wallet_data else 0
+        return float(raw_balance) / 1_000_000.0
+    except ProviderResponseError as exc:
+        # No jetton wallet deployed yet -> effectively zero USDT balance.
+        if exc.code == 404:
+            return 0.0
+        raise WalletError(WalletError.USDT_BALANCE_CHECK_FAILED.format(exc=exc)) from exc
+    except Exception as exc:
+        raise WalletError(WalletError.USDT_BALANCE_CHECK_FAILED.format(exc=exc)) from exc
+
+
+async def _check_ton_payment_balance(
+    balance_ton: float,
+    amount_ton: float,
+    required_payment_amount: float | None,
+) -> None:
+    """Validate balance requirements for TON payment method."""
+    tx_price_ton = amount_ton
+    if required_payment_amount is not None and required_payment_amount > 0:
+        tx_price_ton = max(tx_price_ton, required_payment_amount)
+
+    required_ton = max(tx_price_ton, MIN_TON_BALANCE)
+    if balance_ton < required_ton:
+        raise WalletError(
+            WalletError.LOW_TON_BALANCE.format(
+                balance=balance_ton,
+                required=required_ton,
+            )
+        )
+
+
+async def _check_usdt_payment_balance(
+    balance_ton: float,
+    required_payment_amount: float | None,
+    ton: Any,
+    wallet_address: str,
+) -> None:
+    """Validate balance requirements for USDT payment method."""
+    # USDT payment still needs TON for network fees.
+    if balance_ton < MIN_TON_BALANCE:
+        raise WalletError(
+            WalletError.LOW_TON_BALANCE.format(
+                balance=balance_ton,
+                required=MIN_TON_BALANCE,
+            )
+        )
+
+    usdt_balance = await _get_usdt_balance(ton, wallet_address)
+    required_usdt = required_payment_amount if required_payment_amount is not None else MIN_USDT_BALANCE
+    if usdt_balance < required_usdt:
+        raise WalletError(WalletError.LOW_USDT_BALANCE.format(balance=usdt_balance, required=required_usdt))
+
+
+async def process_transaction(
+    client: FragmentClient,
+    transaction_data: dict[str, Any],
+    payment_method: PaymentMethod = "ton",
+    required_payment_amount: float | None = None,
+) -> str:
     """Sign and broadcast a Fragment transaction to the TON network.
 
     Validates the payload structure, checks the wallet balance, decodes the
@@ -27,6 +101,8 @@ async def process_transaction(client: FragmentClient, transaction_data: dict[str
     Args:
         client: Authenticated :class:`FragmentClient` instance.
         transaction_data: Raw transaction dict from ``execute_transaction_request``.
+        payment_method: Payment currency — ``"ton"`` or ``"usdt_ton"``.
+        required_payment_amount: Optional price from init*Request response.
 
     Returns:
         Normalised transaction hash string.
@@ -45,20 +121,32 @@ async def process_transaction(client: FragmentClient, transaction_data: dict[str
         wallet_cls = WALLET_CLASSES[client.wallet_version]
         wallet, _, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)
 
-        # Check balance covers transaction amount + gas reserve
+        # Check balance covers selected payment flow requirements.
         try:
             await wallet.refresh()
             balance_ton = wallet.balance / 1_000_000_000
-            required = amount_ton + MIN_TON_BALANCE
-            if balance_ton < required:
-                raise WalletError(WalletError.LOW_BALANCE.format(balance=balance_ton, required=required, gas=MIN_TON_BALANCE))
+            wallet_address = wallet.address.to_str(False, False)
+            if payment_method == "ton":
+                await _check_ton_payment_balance(
+                    balance_ton,
+                    amount_ton,
+                    required_payment_amount,
+                )
+            else:
+                await _check_usdt_payment_balance(
+                    balance_ton,
+                    required_payment_amount,
+                    ton,
+                    wallet_address,
+                )
         except WalletError:
             raise
         except Exception as exc:
-            raise WalletError(WalletError.BALANCE_CHECK_FAILED.format(exc=exc)) from exc
+            raise WalletError(WalletError.TON_BALANCE_CHECK_FAILED.format(exc=exc)) from exc
 
         try:
-            payload = clean_decode(message["payload"])
+            raw_payload = str(message.get("payload", ""))
+            payload = clean_decode(raw_payload)
 
             for attempt in range(3):
                 try:
@@ -130,7 +218,8 @@ async def get_wallet_info(client: FragmentClient) -> WalletInfo:
         client: Authenticated :class:`FragmentClient` instance.
 
     Returns:
-        :class:`WalletInfo` with ``address``, ``state``, and ``balance`` in TON.
+        :class:`WalletInfo` with ``address``, ``state``, ``balance`` in TON,
+        and ``usdt_balance`` in USDT.
 
     Raises:
         WalletError: If the wallet state cannot be fetched.
@@ -140,10 +229,13 @@ async def get_wallet_info(client: FragmentClient) -> WalletInfo:
             wallet_cls = WALLET_CLASSES[client.wallet_version]
             wallet, _, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)
             await wallet.refresh()
+            wallet_address = wallet.address.to_str(False, False)
+            usdt_balance = await _get_usdt_balance(ton, wallet_address)
             return WalletInfo(
                 address=wallet.address.to_str(is_user_friendly=True, is_bounceable=False),
                 state=wallet.state.value,
-                balance=round(wallet.balance / 1_000_000_000, 4),
+                ton_balance=round(wallet.balance / 1_000_000_000, 4),
+                usdt_balance=round(usdt_balance, 4),
             )
         except Exception as exc:
             raise WalletError(WalletError.WALLET_INFO_FAILED.format(exc=exc)) from exc

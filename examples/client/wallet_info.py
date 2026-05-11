@@ -1,5 +1,5 @@
 """
-Example: fetch wallet address, state, and balance.
+Example: fetch wallet address, state, and separate TON/USDT balances.
 
 Cookies can be passed as a dict or as a JSON string.
 wallet_version defaults to "V5R1" — change to "V4R2" for older wallets.
@@ -35,7 +35,8 @@ async def main() -> None:
         wallet = await client.get_wallet()
         print(f"Address: {wallet.address}")
         print(f"State:   {wallet.state}")
-        print(f"Balance: {wallet.balance} TON")
+        print(f"Balance: {wallet.ton_balance} TON")
+        print(f"Balance: {wallet.usdt_balance} USDT")
 
 
 if __name__ == "__main__":

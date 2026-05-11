@@ -12,8 +12,8 @@ from pyfragment.types import (
     UserNotFoundError,
     VerificationError,
 )
-from pyfragment.types.constants import DEVICE, STARS_GIVEAWAY_PAGE
-from pyfragment.utils import get_account_info, process_transaction
+from pyfragment.types.constants import DEVICE, STARS_GIVEAWAY_PAGE, SUPPORTED_PAYMENT_METHODS, PaymentMethod
+from pyfragment.utils import get_account_info, parse_required_payment_amount, process_transaction
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
@@ -24,14 +24,16 @@ async def giveaway_stars(
     channel: str,
     winners: int,
     amount: int,
+    payment_method: PaymentMethod = "ton",
 ) -> StarsGiveawayResult:
     """Run a Telegram Stars giveaway for a channel.
 
     Args:
         client: Authenticated :class:`FragmentClient` instance.
-        channel: Channel username (with or without ``@``).
+        channel: Channel identifier — ``@channel``, ``channel``, or ``https://t.me/channel``.
         winners: Number of winners — integer from ``1`` to ``5``.
         amount: Stars each winner receives — integer from ``500`` to ``1 000 000``.
+        payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.
 
     Returns:
         :class:`StarsGiveawayResult` with ``transaction_id``, ``channel``,
@@ -47,6 +49,13 @@ async def giveaway_stars(
         raise ConfigurationError(ConfigurationError.INVALID_WINNERS_STARS)
     if not isinstance(amount, int) or not (500 <= amount <= 1_000_000):
         raise ConfigurationError(ConfigurationError.INVALID_STARS_PER_WINNER)
+    if payment_method not in SUPPORTED_PAYMENT_METHODS:
+        raise ConfigurationError(
+            ConfigurationError.INVALID_PAYMENT_METHOD.format(
+                method=payment_method,
+                supported=", ".join(sorted(SUPPORTED_PAYMENT_METHODS)),
+            )
+        )
 
     try:
         result = await client.call("searchStarsGiveawayRecipient", {"query": channel}, page_url=STARS_GIVEAWAY_PAGE)
@@ -56,9 +65,15 @@ async def giveaway_stars(
 
         result = await client.call(
             "initGiveawayStarsRequest",
-            {"recipient": recipient, "quantity": str(winners), "stars": str(amount)},
+            {
+                "recipient": recipient,
+                "quantity": str(winners),
+                "stars": str(amount),
+                "payment_method": payment_method,
+            },
             page_url=STARS_GIVEAWAY_PAGE,
         )
+        required_payment_amount = parse_required_payment_amount(result)
         req_id = result.get("req_id")
         if not req_id:
             raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="Stars giveaway"))
@@ -77,7 +92,12 @@ async def giveaway_stars(
         if transaction.get("need_verify"):
             raise VerificationError(VerificationError.KYC_REQUIRED)
 
-        tx_hash = await process_transaction(client, transaction)
+        tx_hash = await process_transaction(
+            client,
+            transaction,
+            payment_method=payment_method,
+            required_payment_amount=required_payment_amount,
+        )
         return StarsGiveawayResult(
             transaction_id=tx_hash,
             channel=channel,
