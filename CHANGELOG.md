@@ -7,7 +7,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ---
 
-## [Unreleased]
+## [2026.2.2] — 2026-05-11
 
 ### Added
 
@@ -163,6 +163,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - `py.typed` marker — full PEP 561 typing support for type-checkers
 - `__repr__` on all result types for readable debug output
 
+[2026.2.2]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.2.2
 [2026.2.1]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.2.1
 [2026.2.0]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.2.0
 [2026.1.0]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.1.0
