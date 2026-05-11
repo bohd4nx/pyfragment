@@ -3,6 +3,8 @@ Example: run a Telegram Stars giveaway for a channel.
 
 winners must be an integer between 1 and 5.
 amount (stars per winner) must be an integer between 500 and 1 000 000.
+payment_method can be "ton" or "usdt_ton".
+Channel can be "@channel", "channel", or "https://t.me/channel".
 """
 
 import asyncio
@@ -24,15 +26,21 @@ COOKIES = {
     "stel_ton_token": "YOUR_STEL_TON_TOKEN",
 }
 
-CHANNEL = "@channel"
+CHANNEL = "https://t.me/channel"
 WINNERS = 3  # 1–5
 AMOUNT = 1000  # 500–1 000 000 stars per winner
+PAYMENT_METHOD = "usdt_ton"  # "ton" or "usdt_ton"
 
 
 async def main() -> None:
     async with FragmentClient(seed=SEED, api_key=API_KEY, cookies=COOKIES) as client:
         try:
-            result = await client.giveaway_stars(CHANNEL, winners=WINNERS, amount=AMOUNT)
+            result = await client.giveaway_stars(
+                CHANNEL,
+                winners=WINNERS,
+                amount=AMOUNT,
+                payment_method=PAYMENT_METHOD,
+            )
         except UserNotFoundError:
             print(f"Channel {CHANNEL} was not found on fragment.com — check the username and try again.")
             return

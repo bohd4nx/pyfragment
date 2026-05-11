@@ -136,7 +136,7 @@ class FragmentClient:
         """Gift Telegram Premium to a user.
 
         Args:
-            username: Recipient's Telegram username (with or without ``@``).
+            username: Recipient identifier — ``@username``, ``username``, or ``https://t.me/username``.
             months: Duration — ``3``, ``6``, or ``12``.
             show_sender: Show your name as the sender. Defaults to ``True``.
             payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.
@@ -156,7 +156,7 @@ class FragmentClient:
         """Send Telegram Stars to a user.
 
         Args:
-            username: Recipient's Telegram username (with or without ``@``).
+            username: Recipient identifier — ``@username``, ``username``, or ``https://t.me/username``.
             amount: Number of stars — integer from ``50`` to ``1 000 000``.
             show_sender: Show your name as the gift sender. Defaults to ``True``.
             payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.
@@ -211,7 +211,7 @@ class FragmentClient:
         """Run a Telegram Stars giveaway for a channel.
 
         Args:
-            channel: Channel username (with or without ``@``).
+            channel: Channel identifier — ``@channel``, ``channel``, or ``https://t.me/channel``.
             winners: Number of winners — integer from ``1`` to ``5``.
             amount: Stars each winner receives — integer from ``500`` to ``1 000 000``.
             payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.
@@ -232,7 +232,7 @@ class FragmentClient:
         """Run a Telegram Premium giveaway for a channel.
 
         Args:
-            channel: Channel username (with or without ``@``).
+            channel: Channel identifier — ``@channel``, ``channel``, or ``https://t.me/channel``.
             winners: Number of winners — positive integer.
             months: Premium duration per winner — ``3``, ``6``, or ``12``. Defaults to ``3``.
             payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.

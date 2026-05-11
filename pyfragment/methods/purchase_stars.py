@@ -27,7 +27,7 @@ async def purchase_stars(
 
     Args:
         client: Authenticated :class:`FragmentClient` instance.
-        username: Recipient's Telegram username (with or without ``@``).
+        username: Recipient identifier — ``@username``, ``username``, or ``https://t.me/username``.
         amount: Number of Stars to send — integer from ``50`` to ``1 000 000``.
         show_sender: Show your name as the gift sender. Defaults to ``True``.
         payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.

@@ -31,7 +31,7 @@ async def purchase_premium(
 
     Args:
         client: Authenticated :class:`FragmentClient` instance.
-        username: Recipient's Telegram username (with or without ``@``).
+        username: Recipient identifier — ``@username``, ``username``, or ``https://t.me/username``.
         months: Premium duration — ``3``, ``6``, or ``12``.
         show_sender: Show your name as the gift sender. Defaults to ``True``.
         payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.

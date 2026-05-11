@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "pyfragment"
 version = "2026.2.1"
-description = "Async Python client for the Fragment API — a unified toolkit to manage Telegram assets: purchase Stars and Premium, top up TON and Ads balances, run giveaways, manage anonymous numbers, and explore the marketplace for usernames, numbers, and gifts."
+description = "Async Python client for the Fragment API. Buy Stars and Premium, top up TON and Ads balances, run giveaways, manage anonymous numbers, and search Fragment listings."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
@@ -14,19 +14,23 @@ keywords = [
     "fragment",
     "fragment-api",
     "telegram",
+    "telegram-api",
     "telegram-stars",
     "telegram-premium",
+    "telegram-giveaway",
+    "telegram-ads",
     "ton",
+    "ton-blockchain",
     "tonkeeper",
     "tonapi",
-    "crypto",
-    "blockchain",
+    "anonymous-numbers",
+    "username-auctions",
+    "gift-marketplace",
+    "crypto-payments",
+    "nft-marketplace",
     "web3",
-    "giveaway",
-    "anonymous-number",
-    "username",
-    "nft",
-    "async",
+    "python-client",
+    "typed",
     "asyncio",
 ]
 classifiers = [

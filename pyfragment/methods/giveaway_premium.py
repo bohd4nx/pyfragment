@@ -30,7 +30,7 @@ async def giveaway_premium(
 
     Args:
         client: Authenticated :class:`FragmentClient` instance.
-        channel: Channel username (with or without ``@``).
+        channel: Channel identifier — ``@channel``, ``channel``, or ``https://t.me/channel``.
         winners: Number of winners — integer from ``1`` to ``24 000``.
         months: Premium duration per winner — ``3``, ``6``, or ``12``. Defaults to ``3``.
         payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.

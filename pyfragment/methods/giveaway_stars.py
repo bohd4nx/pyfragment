@@ -30,7 +30,7 @@ async def giveaway_stars(
 
     Args:
         client: Authenticated :class:`FragmentClient` instance.
-        channel: Channel username (with or without ``@``).
+        channel: Channel identifier — ``@channel``, ``channel``, or ``https://t.me/channel``.
         winners: Number of winners — integer from ``1`` to ``5``.
         amount: Stars each winner receives — integer from ``500`` to ``1 000 000``.
         payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.
