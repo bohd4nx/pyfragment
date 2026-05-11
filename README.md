@@ -106,7 +106,6 @@ asyncio.run(main())
 Full runnable examples:
 
 - https://github.com/bohd4nx/pyfragment/tree/master/examples
-- `examples/`
 
 Payload debug/decode helper (thanks):
 
