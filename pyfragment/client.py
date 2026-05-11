@@ -193,11 +193,12 @@ class FragmentClient:
         return await recharge_ads(self, account, amount)
 
     async def get_wallet(self) -> WalletInfo:
-        """Return the address, state and balance of the TON wallet.
+        """Return the address, state, and balances of the wallet.
 
         Returns:
             :class:`WalletInfo` with ``address`` (``"UQ..."``), ``state``
-            (``"active"``, ``"uninit"``, ``"nonexist"``, or ``"frozen"``), and ``balance`` in TON.
+            (``"active"``, ``"uninit"``, ``"nonexist"``, or ``"frozen"``),
+            ``ton_balance`` in TON, and ``usdt_balance`` in USDT.
         """
         return await get_wallet_info(self)
 

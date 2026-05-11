@@ -62,7 +62,7 @@ def _patch_wallet(wallet: MagicMock) -> Generator[None, None, None]:
 
 @pytest.mark.asyncio
 async def test_sufficient_balance_broadcasts() -> None:
-    wallet = _make_wallet(balance_nanotons=1_000_000_000)  # 1 TON, needs 0.556 TON
+    wallet = _make_wallet(balance_nanotons=1_000_000_000)  # 1 TON, above threshold
     with _patch_wallet(wallet), patch("pyfragment.utils.wallet.clean_decode", return_value="50 Telegram Stars"):
         result = await process_transaction(_make_client(), TRANSACTION_DATA)
     assert result == "abc123"
@@ -71,7 +71,7 @@ async def test_sufficient_balance_broadcasts() -> None:
 
 @pytest.mark.asyncio
 async def test_insufficient_balance_raises() -> None:
-    wallet = _make_wallet(balance_nanotons=100_000_000)  # 0.1 TON, needs 0.556 TON
+    wallet = _make_wallet(balance_nanotons=100_000_000)  # 0.1 TON, below threshold
     with _patch_wallet(wallet):
         with pytest.raises(WalletError, match="required"):
             await process_transaction(_make_client(), TRANSACTION_DATA)
@@ -80,7 +80,7 @@ async def test_insufficient_balance_raises() -> None:
 
 @pytest.mark.asyncio
 async def test_exact_minimum_balance_broadcasts() -> None:
-    wallet = _make_wallet(balance_nanotons=556_000_000)  # exactly 0.5 + 0.056 TON
+    wallet = _make_wallet(balance_nanotons=500_000_000)  # exactly transaction amount threshold
     with _patch_wallet(wallet), patch("pyfragment.utils.wallet.clean_decode", return_value="50 Telegram Stars"):
         result = await process_transaction(_make_client(), TRANSACTION_DATA)
     assert result == "abc123"
@@ -88,7 +88,7 @@ async def test_exact_minimum_balance_broadcasts() -> None:
 
 @pytest.mark.asyncio
 async def test_one_nanoton_below_minimum_raises() -> None:
-    wallet = _make_wallet(balance_nanotons=555_999_999)  # 1 nanoton below threshold
+    wallet = _make_wallet(balance_nanotons=499_999_999)  # 1 nanoton below transaction amount threshold
     with _patch_wallet(wallet):
         with pytest.raises(WalletError, match="required"):
             await process_transaction(_make_client(), TRANSACTION_DATA)
@@ -138,3 +138,41 @@ async def test_duplicate_seqno_raises_after_retries() -> None:
         with pytest.raises(TransactionError, match="seqno"):
             await process_transaction(_make_client(), TRANSACTION_DATA)
     assert wallet.transfer.call_count == 3
+
+
+@pytest.mark.asyncio
+async def test_usdt_payment_requires_min_ton_gas_reserve() -> None:
+    wallet = _make_wallet(balance_nanotons=10_000_000)  # 0.01 TON below MIN_TON_BALANCE
+    with _patch_wallet(wallet), patch("pyfragment.utils.wallet._get_usdt_balance", AsyncMock(return_value=100.0)):
+        with pytest.raises(WalletError, match="Insufficient TON balance"):
+            await process_transaction(_make_client(), TRANSACTION_DATA, payment_method="usdt_ton")
+
+
+@pytest.mark.asyncio
+async def test_usdt_payment_checks_usdt_balance() -> None:
+    wallet = _make_wallet(balance_nanotons=1_000_000_000)
+    transaction = {
+        "transaction": {
+            "messages": [
+                {
+                    "address": "0:852443f8599fe6a5da34fe43049ac4e0beb3071bb2bfb56635ea9421287c283a",
+                    "amount": "50000000",
+                    "payload": "",
+                }
+            ]
+        },
+        "required_usdt": 12.5,
+    }
+
+    with (
+        _patch_wallet(wallet),
+        patch("pyfragment.utils.wallet.clean_decode", return_value=""),
+        patch("pyfragment.utils.wallet._get_usdt_balance", AsyncMock(return_value=5.0)),
+    ):
+        with pytest.raises(WalletError, match="Insufficient USDT balance"):
+            await process_transaction(
+                _make_client(),
+                transaction,
+                payment_method="usdt_ton",
+                required_payment_amount=12.5,
+            )

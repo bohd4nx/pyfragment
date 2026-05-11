@@ -161,3 +161,18 @@ def parse_gift_items(html: str) -> tuple[list[dict[str, Any]], int | None]:
     next_offset = int(next_offset_m.group(1)) if next_offset_m else None
 
     return items, next_offset
+
+
+def parse_required_payment_amount(init_response: dict[str, Any], payment_method: str) -> float | None:
+    """Extract required payment amount from init*Request response.
+
+    Fragment includes ``amount`` for both ``ton`` and ``usdt_ton`` init flows,
+    so this helper always reads ``amount``.
+    """
+    del payment_method
+
+    raw_amount = init_response.get("amount")
+    try:
+        return float(str(raw_amount))
+    except (TypeError, ValueError):
+        return None

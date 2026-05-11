@@ -22,6 +22,8 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - Added runtime validation for `payment_method` via `SUPPORTED_PAYMENT_METHODS` and `ConfigurationError.INVALID_PAYMENT_METHOD`
 - Updated method docstrings to explicitly document recipient/channel formats:
   - `@username` / `username` / `https://t.me/username`
+- `get_wallet()` now returns balances as separate fields: `ton_balance` and `usdt_balance`
+- Wallet/system test output now prints TON and USDT balances on separate lines
 
 ### Tests
 
@@ -29,6 +31,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
   - invalid payment method
   - payment method propagation to `init*Request` payloads
   - accepted query formats (`@`, plain username, `t.me` link)
+- Extended wallet tests to verify separate TON/USDT balance values in `WalletInfo`
 
 ### Documentation
 

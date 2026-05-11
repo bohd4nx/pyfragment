@@ -1,4 +1,4 @@
-"""Unit tests for get_wallet() — wallet address and TON balance lookup."""
+"""Unit tests for get_wallet() — wallet address/state with separate TON and USDT balances."""
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -7,7 +7,7 @@ import pytest
 from pyfragment import FragmentClient, WalletInfo
 from tests.shared import FAKE_ADDRESS, FAKE_BALANCE_NANOTON
 
-# Wallet mocked tests
+# Wallet mocked tests (TON and USDT balances are returned separately)
 
 
 @pytest.mark.asyncio
@@ -21,6 +21,7 @@ async def test_get_wallet_returns_wallet_info(client: FragmentClient) -> None:
     with (
         patch("pyfragment.utils.wallet.TonapiClient") as mock_tonapi,
         patch("pyfragment.utils.wallet.WALLET_CLASSES") as mock_classes,
+        patch("pyfragment.utils.wallet._get_usdt_balance", AsyncMock(return_value=12.3456)),
     ):
         mock_tonapi.return_value.__aenter__ = AsyncMock(return_value=MagicMock())
         mock_tonapi.return_value.__aexit__ = AsyncMock(return_value=False)
@@ -31,7 +32,8 @@ async def test_get_wallet_returns_wallet_info(client: FragmentClient) -> None:
     assert isinstance(result, WalletInfo)
     assert result.address == FAKE_ADDRESS
     assert result.state == "active"
-    assert result.balance == round(FAKE_BALANCE_NANOTON / 1_000_000_000, 4)
+    assert result.ton_balance == round(FAKE_BALANCE_NANOTON / 1_000_000_000, 4)
+    assert result.usdt_balance == 12.3456
 
 
 @pytest.mark.asyncio
@@ -45,6 +47,7 @@ async def test_get_wallet_balance_is_zero(client: FragmentClient) -> None:
     with (
         patch("pyfragment.utils.wallet.TonapiClient") as mock_tonapi,
         patch("pyfragment.utils.wallet.WALLET_CLASSES") as mock_classes,
+        patch("pyfragment.utils.wallet._get_usdt_balance", AsyncMock(return_value=0.0)),
     ):
         mock_tonapi.return_value.__aenter__ = AsyncMock(return_value=MagicMock())
         mock_tonapi.return_value.__aexit__ = AsyncMock(return_value=False)
@@ -52,5 +55,6 @@ async def test_get_wallet_balance_is_zero(client: FragmentClient) -> None:
 
         result = await client.get_wallet()
 
-    assert result.balance == 0.0
+    assert result.ton_balance == 0.0
+    assert result.usdt_balance == 0.0
     assert result.state == "uninit"

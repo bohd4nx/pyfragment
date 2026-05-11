@@ -7,7 +7,7 @@ from ton_core import Cell
 from pyfragment.types import ParseError
 
 
-def clean_decode(payload: str) -> str:
+def clean_decode(payload: str) -> str | Cell:
     """Decode a base64-encoded BOC payload to a plain-text comment string.
 
     Fragment transaction payloads are BOC-serialised TVM cells. This function
@@ -18,7 +18,8 @@ def clean_decode(payload: str) -> str:
         payload: Base64url-encoded BOC string (padding is added automatically).
 
     Returns:
-        Decoded comment string, or ``""`` for an empty payload.
+        Decoded comment string, ``""`` for an empty payload, or raw ``Cell``
+        when payload is a non-UTF8 binary body.
 
     Raises:
         ParseError: If the payload cannot be decoded or parsed.
@@ -28,10 +29,15 @@ def clean_decode(payload: str) -> str:
         return ""
     s += "=" * (-len(s) % 4)
     try:
-        boc = base64.b64decode(s)
+        # Fragment may return URL-safe base64 ("-"/"_") in transaction payloads.
+        boc = base64.b64decode(s, altchars=b"-_", validate=True)
         cell = Cell.one_from_boc(boc)
         sl = cell.begin_parse()
-        sl.load_uint(32)  # op code — always 0 for text comment
-        return sl.load_snake_string().strip()
+        sl.load_uint(32)  # op code
+        try:
+            return sl.load_snake_string().strip()
+        except UnicodeDecodeError:
+            # Some Fragment payloads are binary TVM cells rather than text comments.
+            return cell
     except Exception as exc:
         raise ParseError(ParseError.UNPARSEABLE.format(context="payload decode", exc=exc)) from exc

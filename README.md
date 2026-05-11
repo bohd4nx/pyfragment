@@ -88,6 +88,9 @@ async def main() -> None:
             "stel_ton_token": "...",
         },
     ) as client:
+        wallet = await client.get_wallet()
+        print(f"Wallet: {wallet.address} | TON: {wallet.ton_balance} | USDT: {wallet.usdt_balance}")
+
         recipient = "https://t.me/username"  # also supports: @username, username
 
         stars = await client.purchase_stars(recipient, amount=500, payment_method="usdt_ton")
@@ -104,6 +107,10 @@ Full runnable examples:
 
 - https://github.com/bohd4nx/pyfragment/tree/master/examples
 - `examples/`
+
+Payload debug/decode helper (thanks):
+
+- https://ton-cell-abi-viewer.vercel.app/
 
 ---
 

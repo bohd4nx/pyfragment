@@ -14,7 +14,7 @@ from pyfragment.types import (
     VerificationError,
 )
 from pyfragment.types.constants import DEVICE, STARS_PAGE, SUPPORTED_PAYMENT_METHODS, PaymentMethod
-from pyfragment.utils import get_account_info, process_transaction
+from pyfragment.utils import get_account_info, parse_required_payment_amount, process_transaction
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
@@ -67,6 +67,7 @@ async def purchase_stars(
             {"recipient": recipient, "quantity": amount, "payment_method": payment_method},
             page_url=STARS_PAGE,
         )
+        required_payment_amount = parse_required_payment_amount(result, payment_method)
         req_id = result.get("req_id")
         if not req_id:
             raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="Stars purchase"))
@@ -86,7 +87,12 @@ async def purchase_stars(
         if transaction.get("need_verify"):
             raise VerificationError(VerificationError.KYC_REQUIRED)
 
-        tx_hash = await process_transaction(client, transaction)
+        tx_hash = await process_transaction(
+            client,
+            transaction,
+            payment_method=payment_method,
+            required_payment_amount=required_payment_amount,
+        )
         return StarsResult(transaction_id=tx_hash, username=username, amount=amount)
 
     except FragmentError:

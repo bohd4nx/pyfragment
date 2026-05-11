@@ -131,11 +131,10 @@ class OperationError(FragmentError):
 class WalletError(OperationError):
     """Raised for TON wallet issues (connection, balance, account info)."""
 
-    LOW_BALANCE = (
-        "Insufficient TON balance: {balance:.4f} TON available, {required:.4f} TON required "
-        "(transaction amount + {gas:.3f} TON gas reserve)."
-    )
-    BALANCE_CHECK_FAILED = "Failed to fetch wallet balance: {exc}"
+    LOW_TON_BALANCE = "Insufficient TON balance: {balance:.4f} TON available, {required:.4f} TON required."
+    LOW_USDT_BALANCE = "Insufficient USDT balance: {balance:.4f} USDT available, {required:.4f} USDT required."
+    TON_BALANCE_CHECK_FAILED = "Failed to fetch TON balance: {exc}"
+    USDT_BALANCE_CHECK_FAILED = "Failed to fetch USDT balance: {exc}"
     ACCOUNT_INFO_FAILED = "Failed to retrieve wallet account info from TON network: {exc}"
     WALLET_INFO_FAILED = "Failed to retrieve wallet info from TON network: {exc}"
 
