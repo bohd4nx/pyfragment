@@ -7,7 +7,7 @@ import pytest
 
 from pyfragment import FragmentClient
 from pyfragment.types import FragmentPageError
-from pyfragment.utils.http import fragment_request
+from pyfragment.utils.api import fragment_request
 from tests.shared import FAKE_HASH, FAKE_RESPONSE
 
 # client.call() mocked tests

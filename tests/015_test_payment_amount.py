@@ -1,6 +1,6 @@
 """Unit tests for init payment amount parsing."""
 
-from pyfragment.utils.html import parse_required_payment_amount
+from pyfragment.utils.parser import parse_required_payment_amount
 
 
 def test_parse_required_payment_amount_ton_uses_amount() -> None:

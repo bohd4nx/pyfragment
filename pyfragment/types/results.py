@@ -206,6 +206,30 @@ class GiftsResult:
         return f"GiftsResult(items={len(self.items)}, next_offset={self.next_offset!r})"
 
 
+@dataclass
+class TonTransferResult:
+    """Result of a direct TON transfer via :meth:`FragmentClient.send_ton`."""
+
+    transaction_id: str
+    destination: str
+    amount: int
+
+    def __repr__(self) -> str:
+        return f"TonTransferResult(destination='{self.destination}', amount={self.amount} TON, tx='{self.transaction_id}')"
+
+
+@dataclass
+class UsdtTransferResult:
+    """Result of a direct USDT transfer via :meth:`FragmentClient.send_usdt`."""
+
+    transaction_id: str
+    destination: str
+    amount: int
+
+    def __repr__(self) -> str:
+        return f"UsdtTransferResult(destination='{self.destination}', amount={self.amount} USDT, tx='{self.transaction_id}')"
+
+
 __all__ = [
     "AdsRechargeResult",
     "AdsTopupResult",
@@ -217,6 +241,8 @@ __all__ = [
     "StarsGiveawayResult",
     "StarsResult",
     "TerminateSessionsResult",
+    "TonTransferResult",
+    "UsdtTransferResult",
     "UsernamesResult",
     "WalletInfo",
 ]

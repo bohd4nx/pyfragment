@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, get_args
 
 from pyfragment.types import (
     ConfigurationError,
@@ -13,7 +13,7 @@ from pyfragment.types import (
     UserNotFoundError,
     VerificationError,
 )
-from pyfragment.types.constants import DEVICE, STARS_PAGE, SUPPORTED_PAYMENT_METHODS, PaymentMethod
+from pyfragment.types.constants import DEVICE, STARS_PAGE, PaymentMethod
 from pyfragment.utils import get_account_info, parse_required_payment_amount, process_transaction
 
 if TYPE_CHECKING:
@@ -43,11 +43,11 @@ async def purchase_stars(
     """
     if not isinstance(amount, int) or not (50 <= amount <= 1_000_000):
         raise ConfigurationError(ConfigurationError.INVALID_STARS_AMOUNT)
-    if payment_method not in SUPPORTED_PAYMENT_METHODS:
+    if payment_method not in get_args(PaymentMethod):
         raise ConfigurationError(
             ConfigurationError.INVALID_PAYMENT_METHOD.format(
                 method=payment_method,
-                supported=", ".join(sorted(SUPPORTED_PAYMENT_METHODS)),
+                supported=", ".join(sorted(get_args(PaymentMethod))),
             )
         )
 
