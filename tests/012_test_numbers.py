@@ -1,4 +1,4 @@
-"""Unit tests for search_numbers — Fragment marketplace number search."""
+"""Verify anonymous number search parsing and query forwarding."""
 
 from unittest.mock import AsyncMock, patch
 

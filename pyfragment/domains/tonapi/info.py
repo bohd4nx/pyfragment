@@ -7,7 +7,7 @@ from ton_core import NetworkGlobalID
 from tonutils.clients import TonapiClient
 
 from pyfragment.core.constants import WALLET_CLASSES
-from pyfragment.domains.wallet.balance import get_usdt_balance
+from pyfragment.domains.tonapi.balance import get_usdt_balance
 from pyfragment.exceptions import WalletError
 from pyfragment.models.wallet import WalletInfo
 
@@ -16,20 +16,14 @@ if TYPE_CHECKING:
 
 
 async def get_account_info(client: FragmentClient) -> dict[str, Any]:
-    """Fetch wallet address, public key, and state-init for the Fragment API.
-
-    Fragment requires account info to build each transaction payload. The
-    returned dict is JSON-serialised and passed as the ``account`` field in
-    ``getBuy*Link`` / ``get*Link`` requests.
+    """Build the wallet payload Fragment needs to prepare a transaction.
 
     Args:
-        client: Authenticated :class:`FragmentClient` instance.
+        client: Authenticated `FragmentClient` instance with seed and API key.
 
     Returns:
-        Dict with ``address``, ``publicKey``, ``chain``, ``walletStateInit``.
-
-    Raises:
-        WalletError: If account info cannot be retrieved.
+        A JSON-serialisable dictionary containing address, public key, chain,
+        and wallet state-init bytes.
     """
     async with TonapiClient(network=NetworkGlobalID.MAINNET, api_key=client.api_key) as ton:
         try:
@@ -47,17 +41,14 @@ async def get_account_info(client: FragmentClient) -> dict[str, Any]:
 
 
 async def get_wallet_info(client: FragmentClient) -> WalletInfo:
-    """Return the address, state and balance of the TON wallet.
+    """Fetch the wallet address, chain state, and TON/USDT balances.
 
     Args:
-        client: Authenticated :class:`FragmentClient` instance.
+        client: Authenticated `FragmentClient` instance with seed and API key.
 
     Returns:
-        :class:`WalletInfo` with ``address``, ``state``, ``balance`` in TON,
-        and ``usdt_balance`` in USDT.
-
-    Raises:
-        WalletError: If the wallet state cannot be fetched.
+        `WalletInfo` with the friendly wallet address, current state,
+        TON balance, and USDT balance.
     """
     async with TonapiClient(network=NetworkGlobalID.MAINNET, api_key=client.api_key) as ton:
         try:

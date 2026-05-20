@@ -1,8 +1,3 @@
-# Copyright (c) 2026 bohd4nx
-#
-# This source code is licensed under the MIT License found in the
-# LICENSE file in the root directory of this source tree.
-
 from importlib.metadata import version
 
 from pyfragment.client import FragmentClient

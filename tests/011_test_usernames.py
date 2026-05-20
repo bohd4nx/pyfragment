@@ -1,4 +1,4 @@
-"""Unit tests for search_usernames — Fragment marketplace username search."""
+"""Verify username search parsing and query forwarding."""
 
 from unittest.mock import AsyncMock, patch
 

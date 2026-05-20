@@ -1,4 +1,4 @@
-"""Unit tests for FragmentClient — initialization, validation, and cookie parsing."""
+"""Validate FragmentClient setup, cookie parsing, and wallet version checks."""
 
 import json
 

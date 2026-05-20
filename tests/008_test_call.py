@@ -1,4 +1,4 @@
-"""Unit tests for FragmentClient.call() — raw Fragment API access."""
+"""Check raw Fragment API calls and transport error handling."""
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -25,7 +25,6 @@ async def test_call_returns_api_response(client: FragmentClient) -> None:
 
 @pytest.mark.asyncio
 async def test_call_default_page_url(client: FragmentClient) -> None:
-    """call() works without explicitly passing page_url (defaults to FRAGMENT_BASE_URL)."""
     with (
         patch("pyfragment.client.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
         patch("pyfragment.client.fragment_request", AsyncMock(return_value=FAKE_RESPONSE)),
@@ -37,7 +36,6 @@ async def test_call_default_page_url(client: FragmentClient) -> None:
 
 @pytest.mark.asyncio
 async def test_call_no_data(client: FragmentClient) -> None:
-    """call() with no extra data passes only the method field."""
     mock_request = AsyncMock(return_value={})
 
     with (
@@ -52,7 +50,6 @@ async def test_call_no_data(client: FragmentClient) -> None:
 
 @pytest.mark.asyncio
 async def test_call_merges_extra_data(client: FragmentClient) -> None:
-    """call() merges caller-supplied data with the method field."""
     mock_request = AsyncMock(return_value={})
 
     with (
@@ -70,7 +67,6 @@ async def test_call_merges_extra_data(client: FragmentClient) -> None:
 
 @pytest.mark.asyncio
 async def test_fragment_request_non_200_raises() -> None:
-    """fragment_request raises FragmentPageError on non-200 HTTP responses."""
     response = MagicMock(spec=httpx.Response)
     response.status_code = 429
 

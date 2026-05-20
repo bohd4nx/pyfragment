@@ -1,4 +1,4 @@
-"""Unit tests for Premium methods — purchase_premium and giveaway_premium."""
+"""Cover premium purchase and giveaway flows, including validation and request wiring."""
 
 import importlib
 from unittest.mock import AsyncMock, patch

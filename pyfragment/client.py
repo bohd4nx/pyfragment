@@ -12,8 +12,7 @@ from pyfragment.domains.anonymous_numbers.service import AnonymousNumbersService
 from pyfragment.domains.giveaways.service import GiveawaysService
 from pyfragment.domains.marketplace.service import MarketplaceService
 from pyfragment.domains.purchases.service import PurchasesService
-from pyfragment.domains.wallet.info import get_wallet_info
-from pyfragment.domains.wallet.service import WalletService
+from pyfragment.domains.tonapi.service import TonapiService
 from pyfragment.exceptions import ConfigurationError, CookieError
 from pyfragment.models.anonymous_numbers import LoginCodeResult, TerminateSessionsResult
 from pyfragment.models.enums import PaymentMethod, WalletVersion
@@ -99,7 +98,7 @@ class FragmentClient:
         self.marketplace = MarketplaceService(self)
         self.purchases = PurchasesService(self)
         self.giveaways = GiveawaysService(self)
-        self.wallet = WalletService(self)
+        self.tonapi = TonapiService(self)
         self.anonymous_numbers = AnonymousNumbersService(self)
         self.ads = AdsService(self)
 
@@ -163,7 +162,7 @@ class FragmentClient:
         Returns:
             :class:`AdsTopupResult` with ``transaction_id``, ``username``, and ``amount``.
         """
-        return await self.wallet.topup_ton(username, amount, show_sender=show_sender)
+        return await self.ads.topup_ton(username, amount, show_sender=show_sender)
 
     async def recharge_ads(self, account: str, amount: int) -> AdsRechargeResult:
         """Add funds to your own Telegram Ads account.
@@ -186,7 +185,7 @@ class FragmentClient:
             (``"active"``, ``"uninit"``, ``"nonexist"``, or ``"frozen"``),
             ``ton_balance`` in TON, and ``usdt_balance`` in USDT.
         """
-        return await get_wallet_info(self)
+        return await self.tonapi.get_wallet()
 
     async def giveaway_stars(
         self,

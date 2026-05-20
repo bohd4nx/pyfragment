@@ -1,4 +1,4 @@
-"""Unit tests for init payment amount parsing."""
+"""Parse Fragment init responses to the payment amount the transaction should cover."""
 
 from pyfragment.domains.payments import parse_required_payment_amount
 

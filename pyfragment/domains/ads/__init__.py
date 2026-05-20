@@ -1,1 +1,0 @@
-"""Ads domain services."""

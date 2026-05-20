@@ -4,8 +4,9 @@ import json
 from typing import TYPE_CHECKING
 
 from pyfragment.core.constants import ADS_TOPUP_PAGE, DEVICE
-from pyfragment.domains.wallet.info import get_account_info
-from pyfragment.domains.wallet.transaction import process_transaction
+from pyfragment.domains.payments import parse_required_payment_amount
+from pyfragment.domains.tonapi.info import get_account_info
+from pyfragment.domains.tonapi.transaction import process_transaction
 from pyfragment.exceptions import (
     ConfigurationError,
     FragmentAPIError,
@@ -33,6 +34,7 @@ async def topup_ton(client: FragmentClient, username: str, amount: int, show_sen
             raise UserNotFoundError(UserNotFoundError.NOT_FOUND.format(username=username))
 
         result = await client.call("initAdsTopupRequest", {"recipient": recipient, "amount": amount}, page_url=ADS_TOPUP_PAGE)
+        required_payment_amount = parse_required_payment_amount(result)
         req_id = result.get("req_id")
         if not req_id:
             raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="TON topup"))
@@ -52,7 +54,7 @@ async def topup_ton(client: FragmentClient, username: str, amount: int, show_sen
         if transaction.get("need_verify"):
             raise VerificationError(VerificationError.KYC_REQUIRED)
 
-        tx_hash = await process_transaction(client, transaction)
+        tx_hash = await process_transaction(client, transaction, required_payment_amount=required_payment_amount)
         return AdsTopupResult(transaction_id=tx_hash, username=username, amount=amount)
 
     except FragmentError:

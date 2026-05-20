@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, get_args
 
 from pyfragment.core.constants import DEVICE, PREMIUM_PAGE, STARS_PAGE
 from pyfragment.domains.payments import parse_required_payment_amount
-from pyfragment.domains.wallet.info import get_account_info
-from pyfragment.domains.wallet.transaction import process_transaction
+from pyfragment.domains.tonapi.info import get_account_info
+from pyfragment.domains.tonapi.transaction import process_transaction
 from pyfragment.exceptions import (
     ConfigurationError,
     FragmentAPIError,

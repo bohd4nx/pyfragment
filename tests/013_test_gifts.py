@@ -1,4 +1,4 @@
-"""Unit tests for search_gifts — Fragment gifts marketplace search."""
+"""Verify gift search parsing and pagination handling."""
 
 from unittest.mock import AsyncMock, patch
 

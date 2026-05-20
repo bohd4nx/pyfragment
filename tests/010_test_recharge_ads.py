@@ -1,4 +1,4 @@
-"""Unit tests for recharge_ads — self-service Telegram Ads recharge."""
+"""Cover Telegram Ads recharge flow, including request preparation and KYC handling."""
 
 import importlib
 from unittest.mock import AsyncMock, patch

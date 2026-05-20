@@ -20,19 +20,13 @@ async def send_ton_transfer(
     amount: int,
     body: str | None = None,
 ) -> TonTransferResult:
-    """Send a direct TON transfer on-chain using ToncenterClient.
+    """Send a direct TON transfer from the seeded wallet.
 
     Args:
-        client: Authenticated :class:`FragmentClient` instance (seed and wallet_version used).
-        destination: Recipient TON address (any format, e.g. ``"UQ..."``).
-        amount: Amount in nanotons (1 TON = 1 000 000 000 nanotons).
-        body: Optional on-chain comment attached to the transfer.
-
-    Returns:
-        :class:`TonTransferResult` with ``transaction_id``, ``destination``, and ``amount``.
-
-    Raises:
-        TransactionError: If the transaction fails to broadcast.
+        client: Authenticated `FragmentClient` instance.
+        destination: Recipient address in any TON-compatible format.
+        amount: Amount in nanotons.
+        body: Optional on-chain comment.
     """
     try:
         async with ToncenterClient(network=NetworkGlobalID.MAINNET) as ton:
@@ -63,20 +57,14 @@ async def send_usdt_transfer(
     forward_payload: str | None = None,
     ton_for_gas: int = 50_000_000,
 ) -> UsdtTransferResult:
-    """Send a direct USDT (TON jetton) transfer on-chain using ToncenterClient.
+    """Send a direct USDT transfer from the seeded wallet.
 
     Args:
-        client: Authenticated :class:`FragmentClient` instance (seed and wallet_version used).
-        destination: Recipient TON address (any format, e.g. ``"UQ..."``).
-        usdt_amount: Amount in USDT base units (6 decimals; 1 USDT = 1 000 000).
-        forward_payload: Optional comment forwarded to the recipient with the transfer notification.
-        ton_for_gas: TON attached for gas in nanotons. Defaults to ``50_000_000`` (0.05 TON).
-
-    Returns:
-        :class:`UsdtTransferResult` with ``transaction_id``, ``destination``, and ``amount``.
-
-    Raises:
-        TransactionError: If the transaction fails to broadcast.
+        client: Authenticated `FragmentClient` instance.
+        destination: Recipient address in any TON-compatible format.
+        usdt_amount: Amount in USDT base units (6 decimals).
+        forward_payload: Optional comment passed through to the recipient.
+        ton_for_gas: TON attached for gas in nanotons.
     """
     try:
         async with ToncenterClient(network=NetworkGlobalID.MAINNET) as ton:

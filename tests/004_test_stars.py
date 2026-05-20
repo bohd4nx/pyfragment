@@ -1,4 +1,4 @@
-"""Unit tests for Stars methods — purchase_stars and giveaway_stars."""
+"""Cover stars purchase and giveaway flows, including validation and request wiring."""
 
 import importlib
 from unittest.mock import AsyncMock, patch

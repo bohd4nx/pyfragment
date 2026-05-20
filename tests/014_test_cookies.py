@@ -1,4 +1,4 @@
-"""Unit tests for get_cookies_from_browser() — browser cookie extraction helper."""
+"""Extract Fragment cookies from browser stores and validate required keys."""
 
 from unittest.mock import MagicMock, patch
 

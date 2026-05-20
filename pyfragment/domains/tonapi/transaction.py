@@ -11,7 +11,7 @@ from tonutils.clients import TonapiClient
 from tonutils.exceptions import ProviderResponseError
 
 from pyfragment.core.constants import WALLET_CLASSES
-from pyfragment.domains.wallet.balance import check_ton_payment_balance, check_usdt_payment_balance
+from pyfragment.domains.tonapi.balance import check_ton_payment_balance, check_usdt_payment_balance
 from pyfragment.exceptions import ParseError, TransactionError, WalletError
 from pyfragment.models.enums import PaymentMethod
 
@@ -20,7 +20,12 @@ if TYPE_CHECKING:
 
 
 def clean_decode(payload: str) -> str | Cell:
-    """Decode a base64-encoded BOC payload to a plain-text comment string."""
+    """Decode a base64 BOC comment from Fragment into text when possible.
+
+    Some Fragment payloads are plain text comments, while others are structured
+    TON messages such as jetton transfers. Non-text payloads are returned as a
+    `Cell` so the caller can keep the raw binary structure.
+    """
     s = payload.strip()
     if not s:
         return ""
@@ -31,8 +36,7 @@ def clean_decode(payload: str) -> str | Cell:
         sl = cell.begin_parse()
         op = sl.load_uint(32)
         if op != 0:
-            # Non-zero op code means this is a structured message (e.g. jetton transfer),
-            # not a plain text comment — return the full cell as-is.
+            # Non-zero op code means this is a structured TON message, not a plain text comment.
             return cell
         try:
             return sl.load_snake_string().strip()
@@ -48,23 +52,16 @@ async def process_transaction(
     payment_method: PaymentMethod = "ton",
     required_payment_amount: float | None = None,
 ) -> str:
-    """Sign and broadcast a Fragment transaction to the TON network.
-
-    Validates the payload structure, checks the wallet balance, decodes the
-    on-chain comment, and calls ``wallet.transfer``.
+    """Sign and broadcast a Fragment transaction with the seeded TON wallet.
 
     Args:
-        client: Authenticated :class:`FragmentClient` instance.
-        transaction_data: Raw transaction dict from ``execute_transaction_request``.
-        payment_method: Payment currency — ``"ton"`` or ``"usdt_ton"``.
-        required_payment_amount: Optional price from init*Request response.
+        client: Authenticated `FragmentClient` instance.
+        transaction_data: Raw Fragment transaction payload returned by the API.
+        payment_method: Payment currency to use for the purchase flow.
+        required_payment_amount: Optional amount returned by Fragment's init request.
 
     Returns:
-        Normalised transaction hash string.
-
-    Raises:
-        TransactionError: If the payload is malformed or the broadcast fails.
-        WalletError: If the wallet balance is too low or cannot be fetched.
+        Normalized transaction hash string.
     """
     if "transaction" not in transaction_data or not transaction_data["transaction"].get("messages"):
         raise TransactionError(TransactionError.INVALID_PAYLOAD)
@@ -76,7 +73,7 @@ async def process_transaction(
         wallet_cls = WALLET_CLASSES[client.wallet_version]
         wallet, _, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)
 
-        # Check balance covers selected payment flow requirements.
+        # Check balance first so we fail before trying to broadcast on-chain.
         try:
             await wallet.refresh()
             balance_ton = wallet.balance / 1_000_000_000
@@ -84,8 +81,7 @@ async def process_transaction(
                 wallet.address.to_str(False, False)
                 await check_ton_payment_balance(balance_ton, amount_ton, required_payment_amount)
             else:
-                # USDT is withdrawn from the Fragment-linked wallet (transaction["from"]),
-                # not from the signing seed wallet. Seed wallet only pays TON gas.
+                # USDT is paid from the Fragment-linked wallet, not the signing wallet.
                 fragment_wallet_address = transaction_data["transaction"].get("from", "")
                 await check_usdt_payment_balance(balance_ton, required_payment_amount, ton, fragment_wallet_address)
         except WalletError:
@@ -110,7 +106,6 @@ async def process_transaction(
                         await asyncio.sleep(1 + random.uniform(0, 0.5))
                         continue
                     if exc.code == 406 and "seqno" in str(exc).lower():
-                        # Previous tx seqno not yet confirmed — wallet will re-fetch seqno on retry
                         if attempt < 2:
                             await asyncio.sleep(2 + random.uniform(0, 1))
                             continue
