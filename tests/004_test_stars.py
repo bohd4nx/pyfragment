@@ -5,10 +5,9 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-_purchase_stars_mod = importlib.import_module("pyfragment.methods.purchase_stars")
-_giveaway_stars_mod = importlib.import_module("pyfragment.methods.giveaway_stars")
-from pyfragment import FragmentClient
-from pyfragment.types import ConfigurationError, StarsGiveawayResult, StarsResult, UserNotFoundError
+_purchase_stars_mod = importlib.import_module("pyfragment.domains.purchases.purchase")
+_giveaway_stars_mod = importlib.import_module("pyfragment.domains.giveaways.giveaway")
+from pyfragment import ConfigurationError, FragmentClient, StarsGiveawayResult, StarsResult, UserNotFoundError
 from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
 
 # Stars purchase validation tests

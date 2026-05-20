@@ -1,0 +1,1 @@
+"""Giveaways domain services."""

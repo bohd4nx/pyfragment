@@ -5,9 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
-from pyfragment import FragmentClient
-from pyfragment.types import FragmentPageError
-from pyfragment.utils.api import fragment_request
+from pyfragment import FragmentClient, FragmentPageError
+from pyfragment.core.transport import fragment_request
 from tests.shared import FAKE_HASH, FAKE_RESPONSE
 
 # client.call() mocked tests

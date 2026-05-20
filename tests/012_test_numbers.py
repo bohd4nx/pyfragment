@@ -4,8 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from pyfragment import FragmentClient
-from pyfragment.types import NumbersResult
+from pyfragment import FragmentClient, NumbersResult
 
 FAKE_HTML = """
 <tr class="tm-row-selectable">

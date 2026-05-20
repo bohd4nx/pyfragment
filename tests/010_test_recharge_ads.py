@@ -5,9 +5,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-_recharge_ads_mod = importlib.import_module("pyfragment.methods.recharge_ads")
-from pyfragment import FragmentClient
-from pyfragment.types import AdsRechargeResult, ConfigurationError
+_recharge_ads_mod = importlib.import_module("pyfragment.domains.ads.recharge")
+from pyfragment import AdsRechargeResult, ConfigurationError, FragmentClient
 from tests.shared import FAKE_ACCOUNT, FAKE_ADS_ACCOUNT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
 
 # recharge_ads validation tests

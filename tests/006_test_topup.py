@@ -5,9 +5,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-_topup_ton_mod = importlib.import_module("pyfragment.methods.topup_ton")
-from pyfragment import FragmentClient
-from pyfragment.types import AdsTopupResult, ConfigurationError, UserNotFoundError
+_topup_ton_mod = importlib.import_module("pyfragment.domains.wallet.topup")
+from pyfragment import AdsTopupResult, ConfigurationError, FragmentClient, UserNotFoundError
 from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
 
 # Topup TON validation tests

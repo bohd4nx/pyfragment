@@ -4,8 +4,7 @@ import json
 
 import pytest
 
-from pyfragment import FragmentClient
-from pyfragment.types import ConfigurationError, CookieError
+from pyfragment import ConfigurationError, CookieError, FragmentClient
 from tests.shared import VALID_API_KEY, VALID_COOKIES, VALID_SEED
 
 # Client init tests

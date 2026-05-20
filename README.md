@@ -54,15 +54,19 @@ Requires Python 3.10+.
 **Fragment cookies** — log in to [fragment.com](https://fragment.com) and connect your TON wallet. You can get cookies in two ways:
 
 - **Automatically** (recommended) — install the optional browser extra and use `get_cookies_from_browser()`, which reads them directly from your browser's on-disk store. No extension needed:
+
   ```bash
   pip install "pyfragment[browser]"
   ```
+
   ```python
-  from pyfragment.utils import get_cookies_from_browser
+  from pyfragment import get_cookies_from_browser
+
   result = get_cookies_from_browser("chrome")  # or "firefox", "edge", "brave", ...
   # result.cookies — dict[str, str] to pass to FragmentClient
   # result.expires — ISO 8601 expiry of stel_ssid, or None for session cookies
   ```
+
 - **Manually** — install [Cookie Editor](https://chromewebstore.google.com/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm) and export these four keys: `stel_ssid`, `stel_dt`, `stel_token`, `stel_ton_token`. Pass them as a `dict` or JSON string.
 
 Refresh when you get authentication errors.
