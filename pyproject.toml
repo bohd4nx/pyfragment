@@ -54,10 +54,11 @@ classifiers = [
     "Topic :: Office/Business :: Financial :: Investment",
     "Typing :: Typed",
 ]
-dependencies = ["httpx>=0.25", "rookiepy>=0.5.6", "tonutils>=2.0.1"]
+dependencies = ["httpx>=0.25", "tonutils>=2.0.1"]
 
 [project.optional-dependencies]
 dev = ["pytest", "pytest-asyncio", "pytest-mock", "mypy", "ruff"]
+browser = ["rookiepy>=0.5.6"]
 
 [project.urls]
 Homepage = "https://github.com/bohd4nx/pyfragment"
