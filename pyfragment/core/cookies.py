@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 from datetime import datetime, timezone
 from typing import Any
 
@@ -8,7 +9,7 @@ from pyfragment.exceptions import CookieError
 from pyfragment.models.cookies import CookieResult
 
 try:
-    import rookiepy as rookiepy  # type: ignore[import-not-found,no-redef]
+    import rookiepy  # type: ignore[import-not-found]
 except Exception:
     rookiepy = None
 
@@ -23,9 +24,7 @@ def get_cookies_from_browser(browser: str = "chrome") -> CookieResult:
 
     try:
         if rookiepy is None:
-            import rookiepy as imported_rookiepy  # type: ignore[import-not-found]
-
-            rookiepy = imported_rookiepy
+            rookiepy = importlib.import_module("rookiepy")
 
         jar: list[dict[str, Any]] = getattr(rookiepy, key)([FRAGMENT_DOMAIN])
     except Exception as exc:
