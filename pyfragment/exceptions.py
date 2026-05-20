@@ -2,44 +2,44 @@ from __future__ import annotations
 
 
 class FragmentError(Exception):
-    """Base exception for all pyfragment library errors."""
+    """Base exception for all pyfragment errors."""
 
 
 class ClientError(FragmentError):
-    """Raised for client configuration and setup issues (bad params, invalid cookies)."""
+    """Raised for client configuration and setup issues."""
 
 
 class ConfigurationError(ClientError):
     """Raised when required client parameters are missing or invalid."""
 
     MISSING_VARS = "Missing required parameter(s): {keys}."
-    UNSUPPORTED_VERSION = "Unsupported wallet_version '{version}'. Must be one of: {supported}."
-    INVALID_MNEMONIC = "Invalid mnemonic: expected 12, 18, or 24 words, got {count}."
+    UNSUPPORTED_VERSION = "Unsupported wallet version '{version}'. Supported values: {supported}."
+    INVALID_MNEMONIC = "Invalid mnemonic phrase: expected 12, 18, or 24 words, got {count}."
     INVALID_API_KEY = (
-        "Invalid Tonapi API key: expected at least 68 characters, got {length}. Generate a key at https://tonconsole.com."
+        "Invalid Tonapi API key: expected at least 68 characters, got {length}. Get a key at https://tonconsole.com."
     )
     INVALID_MONTHS = "Invalid Premium duration: choose 3, 6, or 12 months."
-    INVALID_STARS_AMOUNT = "Invalid Stars amount: must be an integer between 50 and 1 000 000."
-    INVALID_TON_AMOUNT = "Invalid TON amount: must be an integer between 1 and 1 000 000 000."
+    INVALID_STARS_AMOUNT = "Invalid Stars amount: must be an integer between 50 and 1,000,000."
+    INVALID_TON_AMOUNT = "Invalid TON amount: must be an integer between 1 and 1,000,000,000."
     INVALID_USERNAME = (
         "Invalid username '{username}'. "
-        "Must be 5–32 characters and contain only letters (A–Z, a–z), digits (0–9), or underscores (_)."
+        "Must be 5-32 characters and contain only letters (A-Z, a-z), digits (0-9), or underscores (_)."
     )
     INVALID_WINNERS_STARS = "Invalid winners count: must be an integer between 1 and 5."
-    INVALID_WINNERS_PREMIUM = "Invalid winners count: must be an integer between 1 and 24 000."
-    INVALID_STARS_PER_WINNER = "Invalid Stars per winner: must be an integer between 500 and 1 000 000."
+    INVALID_WINNERS_PREMIUM = "Invalid winners count: must be an integer between 1 and 24,000."
+    INVALID_STARS_PER_WINNER = "Invalid Stars per winner: must be an integer between 500 and 1,000,000."
     INVALID_PAYMENT_METHOD = "Invalid payment method '{method}'. Supported values: {supported}."
 
 
 class CookieError(ClientError):
     """Raised when cookies are unreadable or missing required fields."""
 
-    READ_FAILED = "Failed to parse cookies — expected a JSON string or a dict, got: {exc}"
+    READ_FAILED = "Failed to parse cookies: expected a JSON string or a dict, got {exc}."
     MISSING_KEYS = (
         "Fragment cookies are missing or empty for key(s): {keys}. "
         "Open fragment.com in your browser, log in, and copy fresh cookies."
     )
-    UNSUPPORTED_BROWSER = "Unsupported browser: '{browser}'. Supported: {supported}."
+    UNSUPPORTED_BROWSER = "Unsupported browser '{browser}'. Supported values: {supported}."
     BROWSER_READ_FAILED = (
         "Failed to read {browser} cookies: {exc}. Make sure {browser} is installed and you are logged in to {url}."
     )
@@ -53,23 +53,14 @@ class CookieError(ClientError):
 class FragmentAPIError(FragmentError):
     """Raised for errors returned by Fragment's API responses."""
 
-    NO_REQUEST_ID = (
-        "Fragment did not return a request ID for '{context}'. "
-        "Your session may have expired — log in to fragment.com and refresh your cookies."
-    )
+    NO_REQUEST_ID = "Fragment did not return a request ID for '{context}'. Your session may have expired. Refresh your cookies and try again."
 
 
 class FragmentPageError(FragmentAPIError):
     """Raised when the Fragment page cannot be fetched or the API hash is not found."""
 
-    BAD_STATUS = (
-        "Fragment returned HTTP {status} when loading {url}. "
-        "Your cookies may be invalid or expired — log in to fragment.com and refresh them."
-    )
-    NOT_FOUND = (
-        "Could not extract the API hash from {url}. "
-        "The page structure may have changed, or you are not logged in — refresh your cookies."
-    )
+    BAD_STATUS = "Fragment returned HTTP {status} when loading {url}. Your cookies may be invalid or expired. Refresh them and try again."
+    NOT_FOUND = "Could not extract the API hash from {url}. The page structure may have changed, or you may not be logged in. Refresh your cookies."
 
 
 class UserNotFoundError(FragmentAPIError):
@@ -83,16 +74,14 @@ class UserNotFoundError(FragmentAPIError):
 class AnonymousNumberError(FragmentAPIError):
     """Raised for Fragment anonymous number API failures."""
 
-    NOT_OWNED = "Number '{number}' is not associated with your Fragment account or has no active sessions to terminate."
+    NOT_OWNED = "Number '{number}' is not linked to your Fragment account, or there are no active sessions to terminate."
     TERMINATE_FAILED = "Failed to terminate sessions for '{number}': {error}"
 
 
 class TransactionError(FragmentAPIError):
     """Raised when a TON transaction fails to build or broadcast."""
 
-    INVALID_PAYLOAD = (
-        "Fragment returned an invalid transaction payload — 'transaction.messages' is missing or empty in the API response."
-    )
+    INVALID_PAYLOAD = "Fragment returned an invalid transaction payload: 'transaction.messages' is missing or empty."
     BROADCAST_FAILED = "Transaction broadcast failed: {exc}"
     BROADCAST_FAILED_SSL = (
         "Transaction broadcast failed due to an SSL certificate error: {exc}\n"
