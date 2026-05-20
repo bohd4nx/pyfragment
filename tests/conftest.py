@@ -10,7 +10,7 @@ import pyfragment.domains.ads.recharge  # noqa: F401
 import pyfragment.domains.ads.tonup  # noqa: F401
 import pyfragment.domains.giveaways.giveaway  # noqa: F401
 import pyfragment.domains.purchases.purchase  # noqa: F401
-import pyfragment.domains.tonapi.info  # noqa: F401
+import pyfragment.domains.tonapi.account  # noqa: F401
 import pyfragment.domains.tonapi.transaction  # noqa: F401
 from pyfragment import FragmentClient
 from tests.shared import VALID_API_KEY, VALID_COOKIES, VALID_SEED

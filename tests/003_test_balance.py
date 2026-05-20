@@ -143,7 +143,7 @@ async def test_duplicate_seqno_raises_after_retries() -> None:
 @pytest.mark.asyncio
 async def test_usdt_payment_requires_min_ton_gas_reserve() -> None:
     wallet = _make_wallet(balance_nanotons=10_000_000)  # 0.01 TON below MIN_TON_BALANCE
-    with _patch_wallet(wallet), patch("pyfragment.domains.tonapi.balance.get_usdt_balance", AsyncMock(return_value=100.0)):
+    with _patch_wallet(wallet), patch("pyfragment.domains.tonapi.account.get_usdt_balance", AsyncMock(return_value=100.0)):
         with pytest.raises(WalletError, match="Insufficient TON balance"):
             await process_transaction(_make_client(), TRANSACTION_DATA, payment_method="usdt_ton")
 
@@ -167,7 +167,7 @@ async def test_usdt_payment_checks_usdt_balance() -> None:
     with (
         _patch_wallet(wallet),
         patch("pyfragment.domains.tonapi.transaction.clean_decode", return_value=""),
-        patch("pyfragment.domains.tonapi.balance.get_usdt_balance", AsyncMock(return_value=5.0)),
+        patch("pyfragment.domains.tonapi.account.get_usdt_balance", AsyncMock(return_value=5.0)),
     ):
         with pytest.raises(WalletError, match="Insufficient USDT balance"):
             await process_transaction(

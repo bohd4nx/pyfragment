@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from pyfragment.core.constants import ADS_TOPUP_PAGE, DEVICE
 from pyfragment.domains.payments import parse_required_payment_amount
-from pyfragment.domains.tonapi.info import get_account_info
+from pyfragment.domains.tonapi.account import get_account_info
 from pyfragment.domains.tonapi.transaction import process_transaction
 from pyfragment.exceptions import (
     ConfigurationError,

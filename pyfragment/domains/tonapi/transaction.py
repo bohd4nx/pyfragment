@@ -11,7 +11,7 @@ from tonutils.clients import TonapiClient
 from tonutils.exceptions import ProviderResponseError
 
 from pyfragment.core.constants import WALLET_CLASSES
-from pyfragment.domains.tonapi.balance import check_ton_payment_balance, check_usdt_payment_balance
+from pyfragment.domains.tonapi.account import check_ton_payment_balance, check_usdt_payment_balance
 from pyfragment.exceptions import ParseError, TransactionError, WalletError
 from pyfragment.models.enums import PaymentMethod
 

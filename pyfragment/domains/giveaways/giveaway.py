@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, get_args
 
 from pyfragment.core.constants import DEVICE, PREMIUM_GIVEAWAY_PAGE, STARS_GIVEAWAY_PAGE
 from pyfragment.domains.payments import parse_required_payment_amount
-from pyfragment.domains.tonapi.info import get_account_info
+from pyfragment.domains.tonapi.account import get_account_info
 from pyfragment.domains.tonapi.transaction import process_transaction
 from pyfragment.exceptions import (
     ConfigurationError,

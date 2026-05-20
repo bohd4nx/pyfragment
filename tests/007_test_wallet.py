@@ -19,9 +19,9 @@ async def test_get_wallet_returns_wallet_info(client: FragmentClient) -> None:
     mock_wallet.address.to_str.return_value = FAKE_ADDRESS
 
     with (
-        patch("pyfragment.domains.tonapi.info.TonapiClient") as mock_tonapi,
-        patch("pyfragment.domains.tonapi.info.WALLET_CLASSES") as mock_classes,
-        patch("pyfragment.domains.tonapi.info.get_usdt_balance", AsyncMock(return_value=12.3456)),
+        patch("pyfragment.domains.tonapi.account.TonapiClient") as mock_tonapi,
+        patch("pyfragment.domains.tonapi.account.WALLET_CLASSES") as mock_classes,
+        patch("pyfragment.domains.tonapi.account.get_usdt_balance", AsyncMock(return_value=12.3456)),
     ):
         mock_tonapi.return_value.__aenter__ = AsyncMock(return_value=MagicMock())
         mock_tonapi.return_value.__aexit__ = AsyncMock(return_value=False)
@@ -45,9 +45,9 @@ async def test_get_wallet_balance_is_zero(client: FragmentClient) -> None:
     mock_wallet.address.to_str.return_value = FAKE_ADDRESS
 
     with (
-        patch("pyfragment.domains.tonapi.info.TonapiClient") as mock_tonapi,
-        patch("pyfragment.domains.tonapi.info.WALLET_CLASSES") as mock_classes,
-        patch("pyfragment.domains.tonapi.info.get_usdt_balance", AsyncMock(return_value=0.0)),
+        patch("pyfragment.domains.tonapi.account.TonapiClient") as mock_tonapi,
+        patch("pyfragment.domains.tonapi.account.WALLET_CLASSES") as mock_classes,
+        patch("pyfragment.domains.tonapi.account.get_usdt_balance", AsyncMock(return_value=0.0)),
     ):
         mock_tonapi.return_value.__aenter__ = AsyncMock(return_value=MagicMock())
         mock_tonapi.return_value.__aexit__ = AsyncMock(return_value=False)
