@@ -8,8 +8,6 @@ Use terminate_sessions() to forcefully end all active Telegram sessions.
 
 import asyncio
 
-from pyfragment.utils import get_cookies_from_browser  # noqa: F401
-
 from pyfragment import AnonymousNumberError, FragmentClient
 
 SEED = "word1 word2 ... word24"

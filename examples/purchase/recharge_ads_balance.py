@@ -7,8 +7,6 @@ Your wallet must satisfy the current minimum TON threshold and transaction cost.
 
 import asyncio
 
-from pyfragment.utils import get_cookies_from_browser  # noqa: F401
-
 from pyfragment import (
     AdsRechargeResult,
     ConfigurationError,

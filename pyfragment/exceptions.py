@@ -74,7 +74,7 @@ class UserNotFoundError(FragmentAPIError):
 class AnonymousNumberError(FragmentAPIError):
     """Raised for Fragment anonymous number API failures."""
 
-    NOT_OWNED = "Number '{number}' is not linked to your Fragment account, or there are no active sessions to terminate."
+    NOT_OWNED = "Number '{number}' is not associated with your Fragment account or has no active sessions to terminate."
     TERMINATE_FAILED = "Failed to terminate sessions for '{number}': {error}"
 
 

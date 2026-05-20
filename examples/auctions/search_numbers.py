@@ -9,8 +9,6 @@ Use next_offset_id for pagination.
 import asyncio
 import json
 
-from pyfragment.utils import get_cookies_from_browser  # noqa: F401
-
 from pyfragment import FragmentClient, NumbersResult
 
 SEED = "word1 word2 ... word24"

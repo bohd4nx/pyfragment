@@ -7,15 +7,25 @@ from pyfragment.core.constants import FRAGMENT_BASE_URL, FRAGMENT_DOMAIN, REQUIR
 from pyfragment.exceptions import CookieError
 from pyfragment.models.cookies import CookieResult
 
+try:
+    import rookiepy as rookiepy  # type: ignore[import-not-found,no-redef]
+except Exception:
+    rookiepy = None
+
 
 def get_cookies_from_browser(browser: str = "chrome") -> CookieResult:
+    global rookiepy
+
     key = browser.lower()
     if key not in SUPPORTED_BROWSERS:
         supported = ", ".join(sorted(SUPPORTED_BROWSERS))
         raise CookieError(CookieError.UNSUPPORTED_BROWSER.format(browser=browser, supported=supported))
 
     try:
-        import rookiepy  # type: ignore[import-not-found]
+        if rookiepy is None:
+            import rookiepy as imported_rookiepy  # type: ignore[import-not-found]
+
+            rookiepy = imported_rookiepy
 
         jar: list[dict[str, Any]] = getattr(rookiepy, key)([FRAGMENT_DOMAIN])
     except Exception as exc:

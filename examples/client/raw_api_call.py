@@ -11,8 +11,6 @@ Defaults to the Fragment base URL.
 
 import asyncio
 
-from pyfragment.utils import get_cookies_from_browser  # noqa: F401
-
 from pyfragment import FragmentClient
 
 SEED = "word1 word2 ... word24"
