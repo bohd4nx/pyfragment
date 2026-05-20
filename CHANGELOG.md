@@ -7,6 +7,21 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ---
 
+## [2026.3.0] — 2026-05-21
+
+### Changed
+
+- Internal architecture reorganized around explicit domain packages:
+  - TON account and balance helpers are now unified under `pyfragment.domains.tonapi.account`
+  - service wrappers and operation modules are aligned by domain (`ads`, `purchases`, `giveaways`, `anonymous_numbers`, `marketplace`, `tonapi`)
+- Package exports were cleaned up for domain and model packages (`__init__.py`) to provide clearer public symbols.
+- Examples and system tests were updated to follow current public import paths and project structure.
+
+### Fixed
+
+- `get_cookies_from_browser()` is now patch-friendly in tests (`pyfragment.core.cookies.rookiepy` can be mocked reliably).
+- Anonymous number `NOT_OWNED` error message wording was adjusted for test and backward-compatibility with existing matchers.
+
 ## [2026.2.3] — 2026-05-12
 
 ### Fixed
@@ -75,7 +90,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 - `get_cookies_from_browser(browser)` — extract Fragment session cookies directly from an installed browser (Chrome, Firefox, Edge, Brave, Arc, Opera, Safari, and more); no browser extension or manual copy-paste required
   ```python
-  from pyfragment.utils import get_cookies_from_browser
+  from pyfragment import get_cookies_from_browser
   result = get_cookies_from_browser("chrome")  # or "firefox", "edge", "brave", ...
   client = FragmentClient(seed="...", api_key="...", cookies=result.cookies)
   print(result.expires)  # ISO 8601 expiry of stel_ssid, or None for session cookies
@@ -177,6 +192,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - `py.typed` marker — full PEP 561 typing support for type-checkers
 - `__repr__` on all result types for readable debug output
 
+[2026.3.0]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.3.0
 [2026.2.3]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.2.3
 [2026.2.2]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.2.2
 [2026.2.1]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.2.1
