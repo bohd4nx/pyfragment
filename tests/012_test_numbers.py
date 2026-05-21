@@ -1,11 +1,10 @@
-"""Unit tests for search_numbers — Fragment marketplace number search."""
+"""Verify anonymous number search parsing and query forwarding."""
 
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from pyfragment import FragmentClient
-from pyfragment.types import NumbersResult
+from pyfragment import FragmentClient, NumbersResult
 
 FAKE_HTML = """
 <tr class="tm-row-selectable">

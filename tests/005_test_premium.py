@@ -1,14 +1,13 @@
-"""Unit tests for Premium methods — purchase_premium and giveaway_premium."""
+"""Cover premium purchase and giveaway flows, including validation and request wiring."""
 
 import importlib
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
-_purchase_premium_mod = importlib.import_module("pyfragment.methods.purchase_premium")
-_giveaway_premium_mod = importlib.import_module("pyfragment.methods.giveaway_premium")
-from pyfragment import FragmentClient
-from pyfragment.types import ConfigurationError, PremiumGiveawayResult, PremiumResult, UserNotFoundError
+_purchase_premium_mod = importlib.import_module("pyfragment.domains.purchases.purchase")
+_giveaway_premium_mod = importlib.import_module("pyfragment.domains.giveaways.giveaway")
+from pyfragment import ConfigurationError, FragmentClient, PremiumGiveawayResult, PremiumResult, UserNotFoundError
 from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
 
 # Premium purchase validation tests

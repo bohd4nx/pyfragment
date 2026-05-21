@@ -13,7 +13,6 @@ from pyfragment import (
     FragmentClient,
     WalletError,
 )
-from pyfragment.utils import get_cookies_from_browser  # noqa: F401
 
 SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_TONAPI_KEY"

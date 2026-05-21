@@ -10,7 +10,6 @@ Channel can be "@channel", "channel", or "https://t.me/channel".
 import asyncio
 
 from pyfragment import ConfigurationError, FragmentClient, UserNotFoundError
-from pyfragment.utils import get_cookies_from_browser  # noqa: F401
 
 SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_TONAPI_KEY"

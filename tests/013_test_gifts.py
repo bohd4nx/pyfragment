@@ -1,11 +1,10 @@
-"""Unit tests for search_gifts — Fragment gifts marketplace search."""
+"""Verify gift search parsing and pagination handling."""
 
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from pyfragment import FragmentClient
-from pyfragment.types import GiftsResult
+from pyfragment import FragmentClient, GiftsResult
 
 FAKE_GIFTS_HTML = """
 <div class="tm-catalog-grid">

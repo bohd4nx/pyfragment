@@ -1,11 +1,10 @@
-"""Unit tests for FragmentClient — initialization, validation, and cookie parsing."""
+"""Validate FragmentClient setup, cookie parsing, and wallet version checks."""
 
 import json
 
 import pytest
 
-from pyfragment import FragmentClient
-from pyfragment.types import ConfigurationError, CookieError
+from pyfragment import ConfigurationError, CookieError, FragmentClient
 from tests.shared import VALID_API_KEY, VALID_COOKIES, VALID_SEED
 
 # Client init tests

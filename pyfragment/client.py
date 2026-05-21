@@ -5,46 +5,21 @@ from typing import Any, cast, get_args
 
 import httpx
 
-from pyfragment.methods import (
-    get_login_code,
-    giveaway_premium,
-    giveaway_stars,
-    purchase_premium,
-    purchase_stars,
-    recharge_ads,
-    search_gifts,
-    search_numbers,
-    search_usernames,
-    terminate_sessions,
-    toggle_login_codes,
-    topup_ton,
-)
-from pyfragment.types import (
-    AdsRechargeResult,
-    AdsTopupResult,
-    ConfigurationError,
-    CookieError,
-    GiftsResult,
-    LoginCodeResult,
-    NumbersResult,
-    PremiumGiveawayResult,
-    PremiumResult,
-    StarsGiveawayResult,
-    StarsResult,
-    TerminateSessionsResult,
-    UsernamesResult,
-    WalletInfo,
-)
-from pyfragment.types.constants import (
-    BASE_HEADERS,
-    DEFAULT_TIMEOUT,
-    FRAGMENT_BASE_URL,
-    REQUIRED_COOKIE_KEYS,
-    PaymentMethod,
-    WalletVersion,
-)
-from pyfragment.utils.api import fragment_request, get_fragment_hash
-from pyfragment.utils.wallet import get_wallet_info
+from pyfragment.core.constants import BASE_HEADERS, DEFAULT_TIMEOUT, FRAGMENT_BASE_URL, REQUIRED_COOKIE_KEYS
+from pyfragment.core.transport import fragment_request, get_fragment_hash
+from pyfragment.domains.ads.service import AdsService
+from pyfragment.domains.anonymous_numbers.service import AnonymousNumbersService
+from pyfragment.domains.giveaways.service import GiveawaysService
+from pyfragment.domains.marketplace.service import MarketplaceService
+from pyfragment.domains.purchases.service import PurchasesService
+from pyfragment.domains.tonapi.service import TonapiService
+from pyfragment.exceptions import ConfigurationError, CookieError
+from pyfragment.models.anonymous_numbers import LoginCodeResult, TerminateSessionsResult
+from pyfragment.models.enums import PaymentMethod, WalletVersion
+from pyfragment.models.giveaways import PremiumGiveawayResult, StarsGiveawayResult
+from pyfragment.models.marketplace import GiftsResult, NumbersResult, UsernamesResult
+from pyfragment.models.payments import AdsRechargeResult, AdsTopupResult, PremiumResult, StarsResult
+from pyfragment.models.wallet import WalletInfo
 
 
 class FragmentClient:
@@ -120,6 +95,12 @@ class FragmentClient:
         self.cookies: dict[str, Any] = cast(dict[str, Any], cookies)
         self.wallet_version: WalletVersion = version  # type: ignore[assignment]
         self.timeout: float = timeout
+        self.marketplace = MarketplaceService(self)
+        self.purchases = PurchasesService(self)
+        self.giveaways = GiveawaysService(self)
+        self.tonapi = TonapiService(self)
+        self.anonymous_numbers = AnonymousNumbersService(self)
+        self.ads = AdsService(self)
 
     async def __aenter__(self) -> FragmentClient:
         return self
@@ -148,7 +129,7 @@ class FragmentClient:
         Returns:
             :class:`PremiumResult` with ``transaction_id``, ``username``, and ``amount``.
         """
-        return await purchase_premium(self, username, months, show_sender, payment_method)
+        return await self.purchases.purchase_premium(username, months, show_sender=show_sender, payment_method=payment_method)
 
     async def purchase_stars(
         self,
@@ -168,7 +149,7 @@ class FragmentClient:
         Returns:
             :class:`StarsResult` with ``transaction_id``, ``username``, and ``amount``.
         """
-        return await purchase_stars(self, username, amount, show_sender, payment_method)
+        return await self.purchases.purchase_stars(username, amount, show_sender=show_sender, payment_method=payment_method)
 
     async def topup_ton(self, username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
         """Top up TON to a recipient's Telegram balance.
@@ -181,7 +162,7 @@ class FragmentClient:
         Returns:
             :class:`AdsTopupResult` with ``transaction_id``, ``username``, and ``amount``.
         """
-        return await topup_ton(self, username, amount, show_sender)
+        return await self.ads.topup_ton(username, amount, show_sender=show_sender)
 
     async def recharge_ads(self, account: str, amount: int) -> AdsRechargeResult:
         """Add funds to your own Telegram Ads account.
@@ -194,7 +175,7 @@ class FragmentClient:
         Returns:
             :class:`AdsRechargeResult` with ``transaction_id`` and ``amount``.
         """
-        return await recharge_ads(self, account, amount)
+        return await self.ads.recharge_ads(account, amount)
 
     async def get_wallet(self) -> WalletInfo:
         """Return the address, state, and balances of the wallet.
@@ -204,7 +185,7 @@ class FragmentClient:
             (``"active"``, ``"uninit"``, ``"nonexist"``, or ``"frozen"``),
             ``ton_balance`` in TON, and ``usdt_balance`` in USDT.
         """
-        return await get_wallet_info(self)
+        return await self.tonapi.get_wallet()
 
     async def giveaway_stars(
         self,
@@ -225,7 +206,7 @@ class FragmentClient:
             :class:`StarsGiveawayResult` with ``transaction_id``, ``channel``,
             ``winners``, and ``amount``.
         """
-        return await giveaway_stars(self, channel, winners, amount, payment_method)
+        return await self.giveaways.giveaway_stars(channel, winners, amount, payment_method=payment_method)
 
     async def giveaway_premium(
         self,
@@ -246,7 +227,7 @@ class FragmentClient:
             :class:`PremiumGiveawayResult` with ``transaction_id``, ``channel``,
             ``winners``, and ``amount``.
         """
-        return await giveaway_premium(self, channel, winners, months, payment_method)
+        return await self.giveaways.giveaway_premium(channel, winners, months, payment_method=payment_method)
 
     async def get_login_code(self, number: str) -> LoginCodeResult:
         """Fetch the current pending login code for an anonymous number.
@@ -258,7 +239,7 @@ class FragmentClient:
             :class:`LoginCodeResult` with ``number``, ``code`` (``None`` if none pending),
             and ``active_sessions`` count.
         """
-        return await get_login_code(self, number)
+        return await self.anonymous_numbers.get_login_code(number)
 
     async def toggle_login_codes(self, number: str, can_receive: bool) -> None:
         """Enable or disable login code delivery for an anonymous number.
@@ -267,7 +248,7 @@ class FragmentClient:
             number: Phone number with or without leading ``+``.
             can_receive: ``True`` to allow receiving codes, ``False`` to block them.
         """
-        return await toggle_login_codes(self, number, can_receive)
+        return await self.anonymous_numbers.toggle_login_codes(number, can_receive)
 
     async def terminate_sessions(self, number: str) -> TerminateSessionsResult:
         """Terminate all active Telegram sessions for an anonymous number.
@@ -281,7 +262,7 @@ class FragmentClient:
         Raises:
             AnonymousNumberError: If the number is not owned by this account or has no active sessions.
         """
-        return await terminate_sessions(self, number)
+        return await self.anonymous_numbers.terminate_sessions(number)
 
     async def search_usernames(
         self,
@@ -305,7 +286,7 @@ class FragmentClient:
             :class:`UsernamesResult` with ``items`` (parsed list of item dicts)
             and ``next_offset_id`` (``None`` on the last page).
         """
-        return await search_usernames(self, query, sort=sort, filter=filter, offset_id=offset_id)
+        return await self.marketplace.search_usernames(query, sort=sort, filter=filter, offset_id=offset_id)
 
     async def search_numbers(
         self,
@@ -329,7 +310,7 @@ class FragmentClient:
             :class:`NumbersResult` with ``items`` (parsed list of item dicts)
             and ``next_offset_id`` (``None`` on the last page).
         """
-        return await search_numbers(self, query, sort=sort, filter=filter, offset_id=offset_id)
+        return await self.marketplace.search_numbers(query, sort=sort, filter=filter, offset_id=offset_id)
 
     async def search_gifts(
         self,
@@ -361,8 +342,8 @@ class FragmentClient:
             :class:`GiftsResult` with ``items`` (parsed list of item dicts)
             and ``next_offset`` (``None`` on the last page).
         """
-        return await search_gifts(
-            self, query, collection=collection, sort=sort, filter=filter, view=view, attr=attr, offset=offset
+        return await self.marketplace.search_gifts(
+            query, collection=collection, sort=sort, filter=filter, view=view, attr=attr, offset=offset
         )
 
     async def call(

@@ -1,11 +1,10 @@
-"""Unit tests for search_usernames — Fragment marketplace username search."""
+"""Verify username search parsing and query forwarding."""
 
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from pyfragment import FragmentClient
-from pyfragment.types import UsernamesResult
+from pyfragment import FragmentClient, UsernamesResult
 
 FAKE_HTML = """
 <tr class="tm-row-selectable">

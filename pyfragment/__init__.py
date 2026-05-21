@@ -1,44 +1,30 @@
-# Copyright (c) 2026 bohd4nx
-#
-# This source code is licensed under the MIT License found in the
-# LICENSE file in the root directory of this source tree.
-
 from importlib.metadata import version
 
 from pyfragment.client import FragmentClient
-from pyfragment.types import (
-    AdsRechargeResult,
-    AdsTopupResult,
+from pyfragment.core.cookies import get_cookies_from_browser
+from pyfragment.exceptions import (
     AnonymousNumberError,
     ClientError,
     ConfigurationError,
     CookieError,
-    CookieResult,
     FragmentAPIError,
-    # exceptions
     FragmentError,
     FragmentPageError,
-    GiftsResult,
-    LoginCodeResult,
-    NumbersResult,
     OperationError,
     ParseError,
-    # literal types
-    PaymentMethod,
-    PremiumGiveawayResult,
-    PremiumResult,
-    StarsGiveawayResult,
-    # results
-    StarsResult,
-    TerminateSessionsResult,
     TransactionError,
     UnexpectedError,
-    UsernamesResult,
     UserNotFoundError,
     VerificationError,
     WalletError,
-    WalletInfo,
 )
+from pyfragment.models.anonymous_numbers import LoginCodeResult, TerminateSessionsResult
+from pyfragment.models.cookies import CookieResult
+from pyfragment.models.enums import PaymentMethod
+from pyfragment.models.giveaways import PremiumGiveawayResult, StarsGiveawayResult
+from pyfragment.models.marketplace import GiftsResult, NumbersResult, UsernamesResult
+from pyfragment.models.payments import AdsRechargeResult, AdsTopupResult, PremiumResult, StarsResult
+from pyfragment.models.wallet import WalletInfo
 
 __version__: str = version("pyfragment")
 
@@ -76,4 +62,5 @@ __all__ = [
     "UnexpectedError",
     # literal types
     "PaymentMethod",
+    "get_cookies_from_browser",
 ]

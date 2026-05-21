@@ -1,12 +1,11 @@
-"""Unit tests for get_cookies_from_browser() — browser cookie extraction helper."""
+"""Extract Fragment cookies from browser stores and validate required keys."""
 
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from pyfragment.types import CookieError
-from pyfragment.types.constants import REQUIRED_COOKIE_KEYS
-from pyfragment.utils import get_cookies_from_browser
+from pyfragment import CookieError, get_cookies_from_browser
+from pyfragment.core.constants import REQUIRED_COOKIE_KEYS
 
 FAKE_JAR = [
     {"name": "stel_ssid", "value": "abc123", "domain": "fragment.com", "expires": "2027-04-03T20:52:16.375Z"},
@@ -23,7 +22,7 @@ def _mock_rookiepy(jar: list[dict[str, str]] | None = None) -> MagicMock:
     return mock
 
 
-PATCH = "pyfragment.utils.cookies.rookiepy"
+PATCH = "pyfragment.core.cookies.rookiepy"
 
 
 # unsupported browser tests

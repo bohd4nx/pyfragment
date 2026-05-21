@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pyfragment"
-version = "2026.2.3"
+version = "2026.3.0"
 description = "Async Python client for the Fragment API. Buy Stars and Premium, top up TON and Ads balances, run giveaways, manage anonymous numbers, and search Fragment listings."
 readme = "README.md"
 license = { text = "MIT" }
@@ -54,14 +54,16 @@ classifiers = [
     "Topic :: Office/Business :: Financial :: Investment",
     "Typing :: Typed",
 ]
-dependencies = ["httpx>=0.25", "rookiepy>=0.5.6", "tonutils>=2.0.1"]
+dependencies = ["httpx>=0.25", "tonutils>=2.0.1"]
 
 [project.optional-dependencies]
 dev = ["pytest", "pytest-asyncio", "pytest-mock", "mypy", "ruff"]
+browser = ["rookiepy>=0.5.6"]
 
 [project.urls]
 Homepage = "https://github.com/bohd4nx/pyfragment"
 Repository = "https://github.com/bohd4nx/pyfragment"
+Documentation = "https://bohd4nx.gitbook.io/pyfragment/"
 Issues = "https://github.com/bohd4nx/pyfragment/issues"
 Changelog = "https://github.com/bohd4nx/pyfragment/blob/master/CHANGELOG.md"
 

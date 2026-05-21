@@ -13,7 +13,7 @@
 [![Tests](https://img.shields.io/github/actions/workflow/status/bohd4nx/pyfragment/ci.yml?style=flat&label=tests&logo=github)](https://github.com/bohd4nx/pyfragment/actions)
 [![License](https://img.shields.io/github/license/bohd4nx/pyfragment?style=flat&color=green)](https://github.com/bohd4nx/pyfragment/blob/master/LICENSE)
 
-[Report Bug](https://github.com/bohd4nx/pyfragment/issues) · [Request Feature](https://github.com/bohd4nx/pyfragment/issues) · [**Donate TON**](https://app.tonkeeper.com/transfer/UQCppfw5DxWgdVHf3zkmZS8k1mt9oAUYxQLwq2fz3nhO8No5)
+[Documentation](https://bohd4nx.gitbook.io/pyfragment/) · [Report Bug](https://github.com/bohd4nx/pyfragment/issues) · [Request Feature](https://github.com/bohd4nx/pyfragment/issues) · [**Donate TON**](https://app.tonkeeper.com/transfer/UQCppfw5DxWgdVHf3zkmZS8k1mt9oAUYxQLwq2fz3nhO8No5)
 
 </div>
 
@@ -53,13 +53,20 @@ Requires Python 3.10+.
 
 **Fragment cookies** — log in to [fragment.com](https://fragment.com) and connect your TON wallet. You can get cookies in two ways:
 
-- **Automatically** (recommended) — use `get_cookies_from_browser()`, which reads them directly from your browser's on-disk store. No extension needed:
+- **Automatically** (recommended) — install the optional browser extra and use `get_cookies_from_browser()`, which reads them directly from your browser's on-disk store. No extension needed:
+
+  ```bash
+  pip install "pyfragment[browser]"
+  ```
+
   ```python
-  from pyfragment.utils import get_cookies_from_browser
+  from pyfragment import get_cookies_from_browser
+
   result = get_cookies_from_browser("chrome")  # or "firefox", "edge", "brave", ...
   # result.cookies — dict[str, str] to pass to FragmentClient
   # result.expires — ISO 8601 expiry of stel_ssid, or None for session cookies
   ```
+
 - **Manually** — install [Cookie Editor](https://chromewebstore.google.com/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm) and export these four keys: `stel_ssid`, `stel_dt`, `stel_token`, `stel_ton_token`. Pass them as a `dict` or JSON string.
 
 Refresh when you get authentication errors.
