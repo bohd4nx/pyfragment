@@ -1,13 +1,11 @@
-# Table of contents
-
 - [Start Here](getting-started/installation.md)
-- Getting Started
+- Setup Guide
   - [Installation](getting-started/installation.md)
   - [Library and Configuration](getting-started/configuration.md)
   - [Credentials and Cookies](getting-started/credentials-and-cookies.md)
   - [Quick Start](getting-started/quickstart.md)
 - [Error Handling](reference/errors.md)
-- Client API
+- API Guides
   - [Overview](client/overview.md)
   - Stars
     - [Purchase](client/stars/purchase.md)
