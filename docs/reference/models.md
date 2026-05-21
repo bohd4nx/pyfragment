@@ -22,10 +22,26 @@ Most high-level methods return one of these dataclasses.
 
 ## Where they are used
 
-- Stars/Premium purchase: `StarsResult`, `PremiumResult`
-- Stars/Premium giveaway: `StarsGiveawayResult`, `PremiumGiveawayResult`
-- Ads: `AdsTopupResult`, `AdsRechargeResult`
-- Wallet and utility: `WalletInfo`, `LoginCodeResult`, `TerminateSessionsResult`
-- Marketplace search: `UsernamesResult`, `NumbersResult`, `GiftsResult`
+- `purchase_stars()`: `StarsResult`
+- `purchase_premium()`: `PremiumResult`
+- `giveaway_stars()`: `StarsGiveawayResult`
+- `giveaway_premium()`: `PremiumGiveawayResult`
+- `topup_ton()`: `AdsTopupResult`
+- `recharge_ads()`: `AdsRechargeResult`
+- `get_wallet()`: `WalletInfo`
+- `get_login_code()`: `LoginCodeResult`
+- `terminate_sessions()`: `TerminateSessionsResult`
+- `search_usernames()`: `UsernamesResult`
+- `search_numbers()`: `NumbersResult`
+- `search_gifts()`: `GiftsResult`
+
+## Methods without dataclass return
+
+- `toggle_login_codes()`: returns `None`
+- `call()`: returns `dict[str, Any]` (raw Fragment API response)
+
+## Cookie helper
+
+`CookieResult` is returned by `get_cookies_from_browser()`, not by `FragmentClient` methods.
 
 **Use these models directly in your app layer and avoid passing raw dictionaries around.**
