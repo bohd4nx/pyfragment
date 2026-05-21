@@ -1,4 +1,4 @@
-# pyfragment Documentation
+# Overview
 
 `pyfragment` is an async Python client for [Fragment](https://fragment.com).
 
@@ -30,8 +30,9 @@ If you are integrating Fragment into a bot or backend, this docs set is meant to
 
 - Stars: [Purchase](client/stars/purchase.md), [Giveaway](client/stars/giveaway.md)
 - Premium: [Purchase](client/premium/purchase.md), [Giveaway](client/premium/giveaway.md)
-- Marketplace: [Overview](client/marketplace/overview.md), Ads: [Ads](client/ads.md)
-- Management: [Anonymous Numbers](client/anonymous-numbers.md)
+- Marketplace: [Overview](client/marketplace/overview.md), Ads: [Overview](client/ads/overview.md)
+- Numbers: [Anonymous Numbers](client/anonymous-numbers/overview.md)
+- Utility operations: [Raw API Calls](client/raw-call.md)
 
 ## Additional references
 

@@ -21,6 +21,16 @@ await client.call(
 ) -> dict[str, Any]
 ```
 
+## Parameters
+
+- `method`: Fragment API method name
+- `data`: optional request payload as dictionary
+- `page_url`: page URL used for referer/hash context (defaults to `https://fragment.com`)
+
+## Return
+
+- `dict[str, Any]`: raw Fragment API response
+
 Use this carefully:
 
 - request/response shape is Fragment-defined,

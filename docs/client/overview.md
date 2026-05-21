@@ -36,7 +36,8 @@ All methods are async and should be used inside `async with FragmentClient(...) 
 
 - Stars: [Purchase](stars/purchase.md), [Giveaway](stars/giveaway.md)
 - Premium: [Purchase](premium/purchase.md), [Giveaway](premium/giveaway.md)
-- Ads: [Ads operations](ads.md)
-- Utility operations: [Anonymous Numbers](anonymous-numbers.md), [Marketplace](marketplace/overview.md), [Raw API Calls](raw-call.md)
+- Marketplace: [Overview](marketplace/overview.md), Ads: [Overview](ads/overview.md)
+- Numbers: [Anonymous Numbers](anonymous-numbers/overview.md)
+- Utility operations: [Raw API Calls](raw-call.md)
 
 **If you are new to the library, start with Stars Purchase or Wallet read (`get_wallet`) first.**

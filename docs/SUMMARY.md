@@ -1,4 +1,4 @@
-- [Start Here](getting-started/installation.md)
+- [Overview](README.md)
 - Setup Guide
   - [Installation](getting-started/installation.md)
   - [Library and Configuration](getting-started/configuration.md)
@@ -13,13 +13,20 @@
   - Premium
     - [Purchase](client/premium/purchase.md)
     - [Giveaway](client/premium/giveaway.md)
-  - [Ads](client/ads.md)
-  - [Anonymous Numbers](client/anonymous-numbers.md)
   - Marketplace
     - [Overview](client/marketplace/overview.md)
     - [Search Usernames](client/marketplace/search-usernames.md)
     - [Search Numbers](client/marketplace/search-numbers.md)
     - [Search Gifts](client/marketplace/search-gifts.md)
+  - Ads
+    - [Overview](client/ads/overview.md)
+    - [Top Up TON](client/ads/topup-ton.md)
+    - [Recharge Ads](client/ads/recharge-ads.md)
+  - Anonymous Numbers
+    - [Overview](client/anonymous-numbers/overview.md)
+    - [Get Login Code](client/anonymous-numbers/get-login-code.md)
+    - [Toggle Login Codes](client/anonymous-numbers/toggle-login-codes.md)
+    - [Terminate Sessions](client/anonymous-numbers/terminate-sessions.md)
   - [Raw API Calls](client/raw-call.md)
 - Reference
   - [Result Models](reference/models.md)

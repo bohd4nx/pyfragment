@@ -29,8 +29,8 @@ If this script returns wallet data, your setup is healthy.
 
 Then move to feature pages:
 
-- Stars: [Purchase](../client/stars/purchase.md), [Giveaway](../client/stars/giveaway.md)
-- Premium: [Purchase](../client/premium/purchase.md), [Giveaway](../client/premium/giveaway.md)
-- [Ads](../client/ads.md)
-- [Anonymous Numbers](../client/anonymous-numbers.md)
-- [Marketplace](../client/marketplace/overview.md)
+- Stars: [Purchase](client/stars/purchase.md), [Giveaway](client/stars/giveaway.md)
+- Premium: [Purchase](client/premium/purchase.md), [Giveaway](client/premium/giveaway.md)
+- Marketplace: [Overview](client/marketplace/overview.md), Ads: [Overview](client/ads/overview.md)
+- Numbers: [Anonymous Numbers](client/anonymous-numbers/overview.md)
+- Utility operations: [Raw API Calls](client/raw-call.md)
