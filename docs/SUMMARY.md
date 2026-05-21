@@ -1,0 +1,31 @@
+# Table of contents
+
+- [Start Here](getting-started/installation.md)
+- Getting Started
+  - [Installation](getting-started/installation.md)
+  - [Library and Configuration](getting-started/configuration.md)
+  - [Credentials and Cookies](getting-started/credentials-and-cookies.md)
+  - [Quick Start](getting-started/quickstart.md)
+- [Error Handling](reference/errors.md)
+- Client API
+  - [Overview](client/overview.md)
+  - Stars
+    - [Purchase](client/stars/purchase.md)
+    - [Giveaway](client/stars/giveaway.md)
+  - Premium
+    - [Purchase](client/premium/purchase.md)
+    - [Giveaway](client/premium/giveaway.md)
+  - [Ads](client/ads.md)
+  - [Anonymous Numbers](client/anonymous-numbers.md)
+  - Marketplace
+    - [Overview](client/marketplace/overview.md)
+    - [Search Usernames](client/marketplace/search-usernames.md)
+    - [Search Numbers](client/marketplace/search-numbers.md)
+    - [Search Gifts](client/marketplace/search-gifts.md)
+  - [Raw API Calls](client/raw-call.md)
+- Reference
+  - [Result Models](reference/models.md)
+  - [Literal Types](reference/literals.md)
+- Advanced
+  - [Cookie Extraction Details](advanced/cookies.md)
+  - [Troubleshooting](advanced/troubleshooting.md)

@@ -1,0 +1,23 @@
+name: Docs Branch Check
+
+on:
+  push:
+    branches: [docs]
+  pull_request:
+    branches: [docs]
+
+jobs:
+  docs-tree:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure docs structure exists
+        run: |
+          test -f docs/README.md
+          test -f docs/SUMMARY.md
+          test -d docs/getting-started
+          test -d docs/client
+          test -d docs/reference
+          test -d docs/advanced
