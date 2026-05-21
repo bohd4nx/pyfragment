@@ -32,3 +32,10 @@ await client.purchase_stars(
 - `UserNotFoundError`: target user not found
 - `WalletError`: insufficient balance or wallet-side issue
 - `VerificationError`: verification/KYC required for operation
+
+## Example
+
+```python
+result: StarsResult = await client.purchase_stars("@username", amount=500, payment_method="ton")
+print(result.amount)
+```

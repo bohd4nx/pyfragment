@@ -21,3 +21,10 @@ await client.recharge_ads(
 ## Return
 
 - `AdsRechargeResult(transaction_id, amount)`
+
+## Example
+
+```python
+result: AdsRechargeResult = await client.recharge_ads("@mychannel", amount=50)
+print(result.transaction_id)
+```

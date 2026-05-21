@@ -32,3 +32,10 @@ await client.purchase_premium(
 - `UserNotFoundError`
 - `WalletError`
 - `VerificationError`
+
+## Example
+
+```python
+result: PremiumResult = await client.purchase_premium("@username", months=6, payment_method="ton")
+print(result.transaction_id)
+```

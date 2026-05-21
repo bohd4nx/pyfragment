@@ -17,3 +17,10 @@ await client.get_login_code(number: str) -> LoginCodeResult
 - `number`
 - `code` (`None` if no pending code)
 - `active_sessions`
+
+## Example
+
+```python
+result: LoginCodeResult = await client.get_login_code("+1234567890")
+print(result.code)
+```

@@ -52,3 +52,10 @@ Common values accepted by Fragment:
 If `next_offset_id` is not `None`, pass it back as `offset_id` to load the next page.
 
 Keep requesting pages until `next_offset_id` becomes `None`.
+
+## Example
+
+```python
+result: NumbersResult = await client.search_numbers("888", sort="price_asc", filter="sale")
+print(len(result.items), result.next_offset_id)
+```

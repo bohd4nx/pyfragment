@@ -16,3 +16,9 @@ await client.toggle_login_codes(number: str, can_receive: bool) -> None
 ## Return
 
 - `None`
+
+## Example
+
+```python
+await client.toggle_login_codes("+1234567890", can_receive=False)
+```

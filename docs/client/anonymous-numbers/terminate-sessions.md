@@ -16,3 +16,10 @@ await client.terminate_sessions(number: str) -> TerminateSessionsResult
 
 - `number`
 - `message`
+
+## Example
+
+```python
+result: TerminateSessionsResult = await client.terminate_sessions("+1234567890")
+print(result.message)
+```

@@ -32,3 +32,10 @@ await client.giveaway_stars(
 - `UserNotFoundError`
 - `WalletError`
 - `VerificationError`
+
+## Example
+
+```python
+result: StarsGiveawayResult = await client.giveaway_stars("@channel", winners=3, amount=1000)
+print(result.transaction_id)
+```

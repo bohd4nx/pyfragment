@@ -40,3 +40,9 @@ If you are integrating Fragment into a bot or backend, this docs set is meant to
 - [Result Models](reference/models.md)
 - [Literal Types](reference/literals.md)
 - [Troubleshooting](advanced/troubleshooting.md)
+
+## Live examples
+
+**Up-to-date runnable examples live in the main repository:**
+
+- https://github.com/bohd4nx/pyfragment/tree/master/examples

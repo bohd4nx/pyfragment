@@ -23,3 +23,10 @@ await client.topup_ton(
 ## Return
 
 - `AdsTopupResult(transaction_id, username, amount)`
+
+## Example
+
+```python
+result: AdsTopupResult = await client.topup_ton("@username", amount=10, show_sender=True)
+print(result.transaction_id)
+```

@@ -73,3 +73,15 @@ In requests, each trait is sent as `attr[trait]` with a list of values.
 ## Pagination
 
 If `next_offset` is not `None`, pass it back as `offset` to load the next page.
+
+## Example
+
+```python
+result: GiftsResult = await client.search_gifts(
+    query="",
+    collection="plushpepe",
+    sort="price_desc",
+    filter="auction",
+)
+print(len(result.items), result.next_offset)
+```

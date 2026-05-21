@@ -52,3 +52,10 @@ Common values accepted by Fragment:
 If `next_offset_id` is not `None`, pass it back as `offset_id` to load the next page.
 
 This is cursor pagination, so do not try to calculate offsets manually.
+
+## Example
+
+```python
+result: UsernamesResult = await client.search_usernames("durov", sort="price_desc", filter="auction")
+print(len(result.items), result.next_offset_id)
+```

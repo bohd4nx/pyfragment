@@ -32,3 +32,10 @@ await client.giveaway_premium(
 - `UserNotFoundError`
 - `WalletError`
 - `VerificationError`
+
+## Example
+
+```python
+result: PremiumGiveawayResult = await client.giveaway_premium("@channel", winners=100, months=3)
+print(result.amount)
+```
