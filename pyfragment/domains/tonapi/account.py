@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import logging
 from typing import TYPE_CHECKING, Any
 
 from ton_core import NetworkGlobalID
@@ -16,6 +17,9 @@ if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
 
 
+logger = logging.getLogger(__name__)
+
+
 async def get_usdt_balance(ton: Any, wallet_address: str) -> float:
     """Return the USDT balance for a Fragment-linked TON wallet."""
     try:
@@ -29,9 +33,12 @@ async def get_usdt_balance(ton: Any, wallet_address: str) -> float:
         return float(raw_balance) / 1_000_000.0
     except ProviderResponseError as exc:
         if exc.code == 404:
+            logger.debug("No USDT jetton wallet found for '%s'; treating balance as 0", wallet_address)
             return 0.0
+        logger.error("Failed to load USDT balance for wallet '%s': %s", wallet_address, exc, exc_info=True)
         raise WalletError(WalletError.USDT_BALANCE_CHECK_FAILED.format(exc=exc)) from exc
     except Exception as exc:
+        logger.exception("Failed to load USDT balance for wallet '%s' due to an unexpected error", wallet_address)
         raise WalletError(WalletError.USDT_BALANCE_CHECK_FAILED.format(exc=exc)) from exc
 
 
@@ -47,6 +54,11 @@ async def check_ton_payment_balance(
 
     required_ton = max(tx_price_ton, MIN_TON_BALANCE)
     if balance_ton < required_ton:
+        logger.error(
+            "Failed TON balance check: balance=%s TON, required=%s TON",
+            round(balance_ton, 6),
+            round(required_ton, 6),
+        )
         raise WalletError(WalletError.LOW_TON_BALANCE.format(balance=balance_ton, required=required_ton))
 
 
@@ -58,11 +70,22 @@ async def check_usdt_payment_balance(
 ) -> None:
     """Validate that the wallet can cover a USDT-denominated payment."""
     if balance_ton < MIN_TON_BALANCE:
+        logger.error(
+            "Failed TON gas reserve check for USDT payment: balance=%s TON, required=%s TON",
+            round(balance_ton, 6),
+            MIN_TON_BALANCE,
+        )
         raise WalletError(WalletError.LOW_TON_BALANCE.format(balance=balance_ton, required=MIN_TON_BALANCE))
 
     usdt_balance = await get_usdt_balance(ton, wallet_address)
     required_usdt = required_payment_amount if required_payment_amount is not None else MIN_USDT_BALANCE
     if usdt_balance < required_usdt:
+        logger.error(
+            "Failed USDT balance check for wallet '%s': balance=%s USDT, required=%s USDT",
+            wallet_address,
+            round(usdt_balance, 6),
+            round(required_usdt, 6),
+        )
         raise WalletError(WalletError.LOW_USDT_BALANCE.format(balance=usdt_balance, required=required_usdt))
 
 
@@ -80,6 +103,7 @@ async def get_account_info(client: FragmentClient) -> dict[str, Any]:
                 "walletStateInit": base64.b64encode(boc).decode(),
             }
         except Exception as exc:
+            logger.exception("Failed to build Fragment account info from the configured wallet")
             raise WalletError(WalletError.ACCOUNT_INFO_FAILED.format(exc=exc)) from exc
 
 
@@ -99,4 +123,5 @@ async def get_wallet_info(client: FragmentClient) -> WalletInfo:
                 usdt_balance=round(usdt_balance, 4),
             )
         except Exception as exc:
+            logger.exception("Failed to fetch wallet info from Tonapi")
             raise WalletError(WalletError.WALLET_INFO_FAILED.format(exc=exc)) from exc

@@ -1,3 +1,4 @@
+import logging
 from importlib.metadata import version
 
 from pyfragment.client import FragmentClient
@@ -20,11 +21,13 @@ from pyfragment.exceptions import (
 )
 from pyfragment.models.anonymous_numbers import LoginCodeResult, TerminateSessionsResult
 from pyfragment.models.cookies import CookieResult
-from pyfragment.models.enums import PaymentMethod
+from pyfragment.models.enums import PaymentMethod, WalletVersion
 from pyfragment.models.giveaways import PremiumGiveawayResult, StarsGiveawayResult
 from pyfragment.models.marketplace import GiftsResult, NumbersResult, UsernamesResult
 from pyfragment.models.payments import AdsRechargeResult, AdsTopupResult, PremiumResult, StarsResult
 from pyfragment.models.wallet import WalletInfo
+
+logging.getLogger("pyfragment").addHandler(logging.NullHandler())
 
 __version__: str = version("pyfragment")
 
@@ -62,5 +65,6 @@ __all__ = [
     "UnexpectedError",
     # literal types
     "PaymentMethod",
+    "WalletVersion",
     "get_cookies_from_browser",
 ]

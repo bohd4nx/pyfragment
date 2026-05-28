@@ -15,8 +15,8 @@ from tests.shared import FAKE_HASH, FAKE_RESPONSE
 @pytest.mark.asyncio
 async def test_call_returns_api_response(client: FragmentClient) -> None:
     with (
-        patch("pyfragment.client.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch("pyfragment.client.fragment_request", AsyncMock(return_value=FAKE_RESPONSE)),
+        patch("pyfragment.domains.base.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
+        patch("pyfragment.domains.base.fragment_request", AsyncMock(return_value=FAKE_RESPONSE)),
     ):
         result = await client.call("anyMethod", {"key": "value"})
 
@@ -26,8 +26,8 @@ async def test_call_returns_api_response(client: FragmentClient) -> None:
 @pytest.mark.asyncio
 async def test_call_default_page_url(client: FragmentClient) -> None:
     with (
-        patch("pyfragment.client.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch("pyfragment.client.fragment_request", AsyncMock(return_value=FAKE_RESPONSE)),
+        patch("pyfragment.domains.base.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
+        patch("pyfragment.domains.base.fragment_request", AsyncMock(return_value=FAKE_RESPONSE)),
     ):
         result = await client.call("anyMethod")
 
@@ -39,8 +39,8 @@ async def test_call_no_data(client: FragmentClient) -> None:
     mock_request = AsyncMock(return_value={})
 
     with (
-        patch("pyfragment.client.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch("pyfragment.client.fragment_request", mock_request),
+        patch("pyfragment.domains.base.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
+        patch("pyfragment.domains.base.fragment_request", mock_request),
     ):
         await client.call("anyMethod")
 
@@ -53,8 +53,8 @@ async def test_call_merges_extra_data(client: FragmentClient) -> None:
     mock_request = AsyncMock(return_value={})
 
     with (
-        patch("pyfragment.client.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch("pyfragment.client.fragment_request", mock_request),
+        patch("pyfragment.domains.base.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
+        patch("pyfragment.domains.base.fragment_request", mock_request),
     ):
         await client.call("anyMethod", {"key": "value", "num": 7})
 

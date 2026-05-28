@@ -1,11 +1,10 @@
 """Cover Telegram Ads recharge flow, including request preparation and KYC handling."""
 
-import importlib
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
-_recharge_ads_mod = importlib.import_module("pyfragment.domains.ads.recharge")
+import pyfragment.domains.ads.recharge as _recharge_ads_mod
 from pyfragment import AdsRechargeResult, ConfigurationError, FragmentClient
 from tests.shared import FAKE_ACCOUNT, FAKE_ADS_ACCOUNT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
 

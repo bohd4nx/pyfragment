@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import TYPE_CHECKING
 
 from pyfragment.core.constants import ADS_TOPUP_PAGE, DEVICE
@@ -19,6 +20,9 @@ from pyfragment.models.payments import AdsTopupResult
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
+
+
+logger = logging.getLogger(__name__)
 
 
 async def topup_ton(client: FragmentClient, username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
@@ -57,7 +61,9 @@ async def topup_ton(client: FragmentClient, username: str, amount: int, show_sen
         tx_hash = await process_transaction(client, transaction, required_payment_amount=required_payment_amount)
         return AdsTopupResult(transaction_id=tx_hash, username=username, amount=amount)
 
-    except FragmentError:
+    except FragmentError as exc:
+        logger.error("Failed to top up TON for user '%s' with %s TON: %s", username, amount, exc, exc_info=True)
         raise
     except Exception as exc:
+        logger.exception("Failed to top up TON for user '%s' with %s TON due to an unexpected error", username, amount)
         raise UnexpectedError(UnexpectedError.UNEXPECTED.format(exc=exc)) from exc

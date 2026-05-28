@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import logging
 import random
 import ssl
 from typing import TYPE_CHECKING, Any
@@ -17,6 +18,9 @@ from pyfragment.models.enums import PaymentMethod
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
+
+
+logger = logging.getLogger(__name__)
 
 
 def clean_decode(payload: str) -> str | Cell:
@@ -43,7 +47,79 @@ def clean_decode(payload: str) -> str | Cell:
         except UnicodeDecodeError:
             return cell
     except Exception as exc:
+        logger.exception("Failed to decode Fragment payload")
         raise ParseError(ParseError.UNPARSEABLE.format(context="payload decode", exc=exc)) from exc
+
+
+def _extract_message(transaction_data: dict[str, Any]) -> dict[str, Any]:
+    """Validate and extract the first message from a Fragment transaction payload."""
+    if "transaction" not in transaction_data or not transaction_data["transaction"].get("messages"):
+        logger.error("Failed to process transaction: missing transaction payload or messages")
+        raise TransactionError(TransactionError.INVALID_PAYLOAD)
+    result: dict[str, Any] = transaction_data["transaction"]["messages"][0]
+    return result
+
+
+async def _check_payment_balances(
+    wallet: Any,
+    payment_method: PaymentMethod,
+    amount_ton: float,
+    required_payment_amount: float | None,
+    transaction_data: dict[str, Any],
+    ton: Any,
+) -> None:
+    """Refresh wallet and verify sufficient balance before broadcasting."""
+    try:
+        await wallet.refresh()
+        balance_ton = wallet.balance / 1_000_000_000
+        if payment_method == "ton":
+            await check_ton_payment_balance(balance_ton, amount_ton, required_payment_amount)
+        else:
+            # USDT is paid from the Fragment-linked wallet, not the signing wallet.
+            fragment_wallet_address = transaction_data["transaction"].get("from", "")
+            await check_usdt_payment_balance(balance_ton, required_payment_amount, ton, fragment_wallet_address)
+    except WalletError:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to validate balances before broadcasting transaction")
+        raise WalletError(WalletError.TON_BALANCE_CHECK_FAILED.format(exc=exc)) from exc
+
+
+async def _broadcast_with_retry(wallet: Any, message: dict[str, Any], payload: str | Cell) -> str:
+    """Attempt to broadcast a transaction up to 3 times, handling rate-limit and seqno errors."""
+    for attempt in range(3):
+        try:
+            result = await wallet.transfer(
+                destination=message["address"],
+                amount=int(message["amount"]),  # nanotons, not TON
+                body=payload,
+            )
+            return str(result.normalized_hash)
+        except ProviderResponseError as exc:
+            if exc.code == 429 and attempt == 0:
+                logger.warning(
+                    "Broadcast rate-limited (429), retrying transaction once: %s",
+                    exc,
+                    exc_info=True,
+                )
+                await asyncio.sleep(1 + random.uniform(0, 0.5))
+                continue
+            if exc.code == 406 and "seqno" in str(exc).lower():
+                if attempt < 2:
+                    logger.warning(
+                        "Broadcast seqno conflict (406), retrying attempt %s: %s",
+                        attempt + 2,
+                        exc,
+                        exc_info=True,
+                    )
+                    await asyncio.sleep(2 + random.uniform(0, 1))
+                    continue
+                logger.error("Failed to broadcast transaction after seqno retries")
+                raise TransactionError(TransactionError.DUPLICATE_SEQNO) from exc
+            raise
+
+    logger.error("Failed to broadcast transaction: transfer loop exited without result")
+    raise TransactionError(TransactionError.BROADCAST_FAILED.format(exc="transfer loop exited without result"))
 
 
 async def process_transaction(
@@ -63,62 +139,32 @@ async def process_transaction(
     Returns:
         Normalized transaction hash string.
     """
-    if "transaction" not in transaction_data or not transaction_data["transaction"].get("messages"):
-        raise TransactionError(TransactionError.INVALID_PAYLOAD)
-
-    message = transaction_data["transaction"]["messages"][0]
+    message = _extract_message(transaction_data)
     amount_ton = int(message["amount"]) / 1_000_000_000
 
     async with TonapiClient(network=NetworkGlobalID.MAINNET, api_key=client.api_key) as ton:
         wallet_cls = WALLET_CLASSES[client.wallet_version]
         wallet, _, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)
 
-        # Check balance first so we fail before trying to broadcast on-chain.
-        try:
-            await wallet.refresh()
-            balance_ton = wallet.balance / 1_000_000_000
-            if payment_method == "ton":
-                wallet.address.to_str(False, False)
-                await check_ton_payment_balance(balance_ton, amount_ton, required_payment_amount)
-            else:
-                # USDT is paid from the Fragment-linked wallet, not the signing wallet.
-                fragment_wallet_address = transaction_data["transaction"].get("from", "")
-                await check_usdt_payment_balance(balance_ton, required_payment_amount, ton, fragment_wallet_address)
-        except WalletError:
-            raise
-        except Exception as exc:
-            raise WalletError(WalletError.TON_BALANCE_CHECK_FAILED.format(exc=exc)) from exc
+        await _check_payment_balances(wallet, payment_method, amount_ton, required_payment_amount, transaction_data, ton)
+
+        payload = clean_decode(str(message.get("payload", "")))
 
         try:
-            raw_payload = str(message.get("payload", ""))
-            payload = clean_decode(raw_payload)
-
-            for attempt in range(3):
-                try:
-                    result = await wallet.transfer(
-                        destination=message["address"],
-                        amount=int(message["amount"]),  # nanotons, not TON
-                        body=payload,
-                    )
-                    return str(result.normalized_hash)
-                except ProviderResponseError as exc:
-                    if exc.code == 429 and attempt == 0:
-                        await asyncio.sleep(1 + random.uniform(0, 0.5))
-                        continue
-                    if exc.code == 406 and "seqno" in str(exc).lower():
-                        if attempt < 2:
-                            await asyncio.sleep(2 + random.uniform(0, 1))
-                            continue
-                        raise TransactionError(TransactionError.DUPLICATE_SEQNO) from exc
-                    raise
+            return await _broadcast_with_retry(wallet, message, payload)
         except (WalletError, TransactionError):
             raise
         except Exception as exc:
             cause: BaseException | None = exc
             while cause is not None:
                 if isinstance(cause, ssl.SSLError):
+                    logger.exception("Failed to broadcast transaction due to SSL error")
                     raise TransactionError(TransactionError.BROADCAST_FAILED_SSL.format(exc=exc)) from exc
                 cause = cause.__cause__ or cause.__context__
+            logger.exception(
+                "Failed to broadcast transaction to '%s' for %s nanotons using payment method '%s'",
+                message["address"],
+                message["amount"],
+                payment_method,
+            )
             raise TransactionError(TransactionError.BROADCAST_FAILED.format(exc=exc)) from exc
-
-    raise TransactionError(TransactionError.BROADCAST_FAILED.format(exc="transfer loop exited without result"))

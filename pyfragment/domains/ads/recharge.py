@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import TYPE_CHECKING
 
 from pyfragment.core.constants import ADS_TOPUP_PAGE, DEVICE
@@ -11,6 +12,9 @@ from pyfragment.models.payments import AdsRechargeResult
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
+
+
+logger = logging.getLogger(__name__)
 
 
 async def recharge_ads(client: FragmentClient, account: str, amount: int) -> AdsRechargeResult:
@@ -42,7 +46,9 @@ async def recharge_ads(client: FragmentClient, account: str, amount: int) -> Ads
         tx_hash = await process_transaction(client, transaction)
         return AdsRechargeResult(transaction_id=tx_hash, amount=amount)
 
-    except FragmentError:
+    except FragmentError as exc:
+        logger.error("Failed to recharge Ads account '%s' for %s TON: %s", account, amount, exc, exc_info=True)
         raise
     except Exception as exc:
+        logger.exception("Failed to recharge Ads account '%s' for %s TON due to an unexpected error", account, amount)
         raise UnexpectedError(UnexpectedError.UNEXPECTED.format(exc=exc)) from exc

@@ -2,17 +2,15 @@ name: Publish
 
 on:
   workflow_run:
-    workflows: [ "CI" ]
-    types: [ completed ]
-    branches: [ master ]
+    workflows: ["CI"]
+    types: [completed]
+    branches: [master]
 
 jobs:
   version-check:
     name: Version Check
     if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     outputs:
       version: ${{ steps.version.outputs.value }}
       is-new: ${{ steps.tag.outputs.is-new }}
@@ -42,8 +40,6 @@ jobs:
     needs: version-check
     if: needs.version-check.outputs.is-new == 'true'
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
     - uses: actions/checkout@v6
@@ -63,10 +59,8 @@ jobs:
 
   publish:
     name: Publish to PyPI
-    needs: [ version-check, build ]
+    needs: [version-check, build]
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     environment:
       name: pypi
       url: https://pypi.org/project/pyfragment/
@@ -83,35 +77,21 @@ jobs:
 
   release:
     name: GitHub Release
-    needs: [ version-check, build ]
+    needs: [version-check, build]
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     permissions:
       contents: write
 
     steps:
-    - uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
-
     - uses: actions/download-artifact@v8
       with:
         name: dist
         path: dist
-
-    - name: Extract latest changelog entry
-      id: changelog
-      run: |
-        body=$(awk '/^## \[/{if(found) exit; found=1; next} found{print}' CHANGELOG.md)
-        echo "body<<EOF" >> $GITHUB_OUTPUT
-        echo "$body" >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
 
     - uses: softprops/action-gh-release@v3
       with:
         tag_name: v${{ needs.version-check.outputs.version }}
         name: v${{ needs.version-check.outputs.version }}
         files: dist/*
-        body: ${{ steps.changelog.outputs.body }}
+        generate_release_notes: true
         make_latest: true

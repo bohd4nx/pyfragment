@@ -7,6 +7,34 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ---
 
+## [2026.3.1] — 2026-05-29
+
+### Added
+
+- Python 3.13 and 3.14 are now officially supported and included in the CI test matrix and PyPI classifiers.
+- `WalletVersion` is now exported from the top-level `pyfragment` package.
+
+### Changed
+
+- `process_transaction` (internal) refactored into focused subfunctions: `_extract_message`, `_check_payment_balances`, `_broadcast_with_retry`.
+- `raw_api_call()` moved from `FragmentClient` into `pyfragment.domains.base` and exposed as a standalone helper.
+- `tonapi` domain internal helpers removed from public `__init__.py` exports; only `TonapiService` is exported.
+- README rewritten with badges, structured sections, and complete usage examples.
+- Added `CONTRIBUTING.md` and `SECURITY.md`.
+
+### Fixed
+
+- CI: `mypy` now runs with `--explicit-package-bases` to avoid false-positive import errors.
+- CI: `pip` dependency cache enabled to speed up workflow runs.
+- CI: `warn_unused_ignores` suppressed for `pyfragment.core.cookies` to handle the optional `rookiepy` dependency correctly across environments where the package may or may not be installed.
+- Publish workflow now uses `generate_release_notes: true` instead of manual changelog extraction.
+
+### Removed
+
+- `tonapi/transfer.py` and associated `TonTransferResult` / `UsdtTransferResult` models (internal, unused).
+
+---
+
 ## [2026.3.0] — 2026-05-21
 
 ### Changed

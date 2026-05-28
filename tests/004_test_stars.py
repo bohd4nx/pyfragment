@@ -1,12 +1,11 @@
 """Cover stars purchase and giveaway flows, including validation and request wiring."""
 
-import importlib
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
-_purchase_stars_mod = importlib.import_module("pyfragment.domains.purchases.purchase")
-_giveaway_stars_mod = importlib.import_module("pyfragment.domains.giveaways.giveaway")
+import pyfragment.domains.giveaways.giveaway as _giveaway_stars_mod
+import pyfragment.domains.purchases.purchase as _purchase_stars_mod
 from pyfragment import ConfigurationError, FragmentClient, StarsGiveawayResult, StarsResult, UserNotFoundError
 from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
 
@@ -165,6 +164,7 @@ async def test_giveaway_stars_success(client: FragmentClient) -> None:
             AsyncMock(
                 side_effect=[
                     {"found": {"recipient": FAKE_RECIPIENT}},
+                    {},
                     {"req_id": FAKE_REQ_ID},
                     FAKE_TRANSACTION,
                 ]
@@ -187,6 +187,7 @@ async def test_giveaway_stars_passes_payment_method(client: FragmentClient) -> N
     call_mock = AsyncMock(
         side_effect=[
             {"found": {"recipient": FAKE_RECIPIENT}},
+            {},
             {"req_id": FAKE_REQ_ID},
             FAKE_TRANSACTION,
         ]
@@ -199,7 +200,7 @@ async def test_giveaway_stars_passes_payment_method(client: FragmentClient) -> N
     ):
         await client.giveaway_stars("@channel", winners=3, amount=1000, payment_method="usdt_ton")
 
-    init_call = call_mock.await_args_list[1]
+    init_call = call_mock.await_args_list[2]
     assert init_call.args[0] == "initGiveawayStarsRequest"
     assert init_call.args[1]["payment_method"] == "usdt_ton"
     assert proc_mock.await_args is not None

@@ -9,9 +9,9 @@ from pyfragment.exceptions import CookieError
 from pyfragment.models.cookies import CookieResult
 
 try:
-    import rookiepy  # type: ignore[import-not-found]
-except Exception:
-    rookiepy = None
+    import rookiepy
+except Exception:  # noqa: BLE001
+    rookiepy = None  # type: ignore[assignment]
 
 
 def get_cookies_from_browser(browser: str = "chrome") -> CookieResult:

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import logging
+import random
 from typing import TYPE_CHECKING, get_args
 
 from pyfragment.core.constants import DEVICE, PREMIUM_GIVEAWAY_PAGE, STARS_GIVEAWAY_PAGE
@@ -20,6 +22,9 @@ from pyfragment.models.giveaways import PremiumGiveawayResult, StarsGiveawayResu
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
+
+
+logger = logging.getLogger(__name__)
 
 
 async def giveaway_stars(
@@ -46,6 +51,12 @@ async def giveaway_stars(
         recipient = result.get("found", {}).get("recipient")
         if not recipient:
             raise UserNotFoundError(UserNotFoundError.NOT_FOUND.format(username=channel))
+
+        await client.call(
+            "updateStarsGiveawayState",
+            {"mode": "new", "lv": "false", "dh": str(random.randint(100_000_000, 999_999_999))},
+            page_url=STARS_GIVEAWAY_PAGE,
+        )
 
         result = await client.call(
             "initGiveawayStarsRequest",
@@ -84,9 +95,25 @@ async def giveaway_stars(
         )
         return StarsGiveawayResult(transaction_id=tx_hash, channel=channel, winners=winners, amount=amount)
 
-    except FragmentError:
+    except FragmentError as exc:
+        logger.error(
+            "Failed to run Stars giveaway for channel '%s' (winners=%s, amount=%s, payment_method='%s'): %s",
+            channel,
+            winners,
+            amount,
+            payment_method,
+            exc,
+            exc_info=True,
+        )
         raise
     except Exception as exc:
+        logger.exception(
+            "Failed to run Stars giveaway for channel '%s' (winners=%s, amount=%s, payment_method='%s') due to an unexpected error",
+            channel,
+            winners,
+            amount,
+            payment_method,
+        )
         raise UnexpectedError(UnexpectedError.UNEXPECTED.format(exc=exc)) from exc
 
 
@@ -118,6 +145,17 @@ async def giveaway_premium(
         recipient = result.get("found", {}).get("recipient")
         if not recipient:
             raise UserNotFoundError(UserNotFoundError.NOT_FOUND.format(username=channel))
+
+        await client.call(
+            "updatePremiumGiveawayState",
+            {
+                "mode": "new",
+                "lv": "false",
+                "dh": str(random.randint(100_000_000, 999_999_999)),
+                "quantity": "",
+            },
+            page_url=PREMIUM_GIVEAWAY_PAGE,
+        )
 
         result = await client.call(
             "initGiveawayPremiumRequest",
@@ -156,7 +194,23 @@ async def giveaway_premium(
         )
         return PremiumGiveawayResult(transaction_id=tx_hash, channel=channel, winners=winners, amount=months)
 
-    except FragmentError:
+    except FragmentError as exc:
+        logger.error(
+            "Failed to run Premium giveaway for channel '%s' (winners=%s, months=%s, payment_method='%s'): %s",
+            channel,
+            winners,
+            months,
+            payment_method,
+            exc,
+            exc_info=True,
+        )
         raise
     except Exception as exc:
+        logger.exception(
+            "Failed to run Premium giveaway for channel '%s' (winners=%s, months=%s, payment_method='%s') due to an unexpected error",
+            channel,
+            winners,
+            months,
+            payment_method,
+        )
         raise UnexpectedError(UnexpectedError.UNEXPECTED.format(exc=exc)) from exc
