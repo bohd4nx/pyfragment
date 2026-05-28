@@ -4,7 +4,7 @@ You can be up and running in under a minute.
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.10 – 3.14
 
 ## Install from PyPI
 

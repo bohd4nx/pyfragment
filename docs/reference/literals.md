@@ -14,7 +14,7 @@ PaymentMethod = Literal["ton", "usdt_ton"]
 WalletVersion = Literal["V4R2", "V5R1"]
 ```
 
-These literals are exported from `pyfragment.models.enums` and `pyfragment.models`.
+These literals are exported from `pyfragment` (top-level), `pyfragment.models`, and `pyfragment.models.enums`.
 
 ## Usage notes
 
