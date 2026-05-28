@@ -21,7 +21,6 @@ keywords = [
     "telegram-ads",
     "ton",
     "ton-blockchain",
-    "tonkeeper",
     "tonapi",
     "anonymous-numbers",
     "username-auctions",
@@ -36,7 +35,6 @@ keywords = [
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
-    "Intended Audience :: Financial and Insurance Industry",
     "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
     "Operating System :: OS Independent",
@@ -50,8 +48,6 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Internet",
     "Topic :: Internet :: WWW/HTTP",
-    "Topic :: Office/Business :: Financial",
-    "Topic :: Office/Business :: Financial :: Investment",
     "Typing :: Typed",
 ]
 dependencies = ["httpx>=0.25", "tonutils>=2.0.1"]
@@ -78,7 +74,7 @@ addopts = "-v --tb=short"
 
 [tool.ruff]
 line-length = 128
-target-version = "py312"
+target-version = "py310"
 
 [tool.ruff.lint]
 # E — pycodestyle errors, F — pyflakes, W — warnings, I — isort, UP — pyupgrade
@@ -89,9 +85,12 @@ ignore = ["E501", "UP017"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["E402"]
-"systests/*" = ["E402"]
 
 [tool.mypy]
 python_version = "3.10"
 strict = true
-exclude = ["^systests/", "^examples/"]
+exclude = ["^examples/"]
+
+[[tool.mypy.overrides]]
+module = "rookiepy"
+ignore_missing_imports = true

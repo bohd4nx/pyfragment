@@ -39,13 +39,13 @@ Requires Python 3.10+.
 
 ## Configuration
 
-| Parameter        | Type          | Default  | Description                                              |
-| ---------------- | ------------- | -------- | -------------------------------------------------------- |
-| `seed`           | `str`         | —        | 24-word TON wallet mnemonic                              |
-| `api_key`        | `str`         | —        | Tonapi key from [tonconsole.com](https://tonconsole.com) |
-| `cookies`        | `dict \| str` | —        | Fragment session cookies                                 |
-| `wallet_version` | `str`         | `"V5R1"` | `"V4R2"` or `"V5R1"`                                     |
-| `timeout`        | `float`       | `30.0`   | HTTP request timeout in seconds                          |
+| Parameter        | Type          | Default  | Description                                                 |
+| ---------------- | ------------- | -------- | ----------------------------------------------------------- |
+| `seed`           | `str`         | —        | 12-, 18-, or 24-word TON wallet mnemonic                    |
+| `api_key`        | `str`         | —        | Tonapi key from [tonconsole.com](https://tonconsole.com)    |
+| `cookies`        | `dict \| str` | —        | Fragment session cookies                                    |
+| `wallet_version` | `str`         | `"V5R1"` | `"V4R2"` or `"V5R1"` (also accepts `WalletVersion` literal) |
+| `timeout`        | `float`       | `30.0`   | HTTP request timeout in seconds                             |
 
 ---
 
@@ -128,9 +128,38 @@ Full runnable examples:
 
 - https://github.com/bohd4nx/pyfragment/tree/master/examples
 
+---
+
+## Error Handling
+
+All exceptions inherit from `FragmentError`. Catch specific ones or the base class:
+
+```python
+from pyfragment import (
+    ConfigurationError,   # invalid arguments (amount, months, payment_method, etc.)
+    UserNotFoundError,    # recipient not found on Fragment
+    WalletError,          # insufficient TON/USDT balance
+    TransactionError,     # broadcast failed, duplicate seqno, invalid payload
+    FragmentAPIError,     # Fragment API returned an error response
+    FragmentPageError,    # page fetch or hash extraction failed
+    AnonymousNumberError, # number not owned, wrong state, login code issues
+    CookieError,          # missing or malformed session cookies
+    ParseError,           # failed to decode Fragment payload
+    VerificationError,    # on-chain verification step failed
+    OperationError,       # generic operation-level failure
+    UnexpectedError,      # unexpected API response structure
+)
+```
+
 Payload debug/decode helper (thanks):
 
 - https://ton-cell-abi-viewer.vercel.app/
+
+---
+
+## Changelog
+
+See [CHANGELOG.md](https://github.com/bohd4nx/pyfragment/blob/master/CHANGELOG.md) for release history.
 
 ---
 
