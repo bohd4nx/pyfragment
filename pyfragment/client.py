@@ -3,12 +3,10 @@ from __future__ import annotations
 import json
 from typing import Any, cast, get_args
 
-import httpx
-
-from pyfragment.core.constants import BASE_HEADERS, DEFAULT_TIMEOUT, FRAGMENT_BASE_URL, REQUIRED_COOKIE_KEYS
-from pyfragment.core.transport import fragment_request, get_fragment_hash
+from pyfragment.core.constants import DEFAULT_TIMEOUT, FRAGMENT_BASE_URL, REQUIRED_COOKIE_KEYS
 from pyfragment.domains.ads.service import AdsService
 from pyfragment.domains.anonymous_numbers.service import AnonymousNumbersService
+from pyfragment.domains.base import raw_api_call
 from pyfragment.domains.giveaways.service import GiveawaysService
 from pyfragment.domains.marketplace.service import MarketplaceService
 from pyfragment.domains.purchases.service import PurchasesService
@@ -31,7 +29,7 @@ class FragmentClient:
         connected with Fragment or Telegram.
 
     Args:
-        seed: 24-word mnemonic phrase for the TON wallet.
+        seed: 12-, 18-, or 24-word mnemonic phrase for the TON wallet.
         api_key: Tonapi API key — get one at https://tonconsole.com.
         cookies: Fragment session cookies as a dict or JSON string.
         wallet_version: Wallet contract version — ``"V4R2"`` or ``"V5R1"`` (default).
@@ -53,14 +51,17 @@ class FragmentClient:
             print(result.transaction_id)
     """
 
-    def __init__(
-        self,
-        seed: str,
-        api_key: str,
-        cookies: dict[str, Any] | str,
-        wallet_version: str = "V5R1",
-        timeout: float = DEFAULT_TIMEOUT,
-    ) -> None:
+    @staticmethod
+    def _parse_cookies(cookies: dict[str, Any] | str) -> dict[str, Any]:
+        if isinstance(cookies, str):
+            try:
+                cookies = json.loads(cookies)
+            except Exception as exc:
+                raise CookieError(CookieError.READ_FAILED.format(exc=exc)) from exc
+        return cast(dict[str, Any], cookies)
+
+    @staticmethod
+    def _validate_required(seed: str, api_key: str) -> None:
         missing = [name for name, val in (("seed", seed), ("api_key", api_key)) if not val or not str(val).strip()]
         if missing:
             raise ConfigurationError(ConfigurationError.MISSING_VARS.format(keys=", ".join(missing)))
@@ -72,16 +73,14 @@ class FragmentClient:
         if len(api_key.strip()) < 68:
             raise ConfigurationError(ConfigurationError.INVALID_API_KEY.format(length=len(api_key.strip())))
 
-        if isinstance(cookies, str):
-            try:
-                cookies = json.loads(cookies)
-            except Exception as exc:
-                raise CookieError(CookieError.READ_FAILED.format(exc=exc)) from exc
-
-        missing_keys = [k for k in REQUIRED_COOKIE_KEYS if not str(cast(dict[str, Any], cookies).get(k, "")).strip()]
+    @staticmethod
+    def _validate_cookie_keys(cookies: dict[str, Any]) -> None:
+        missing_keys = [k for k in REQUIRED_COOKIE_KEYS if not str(cookies.get(k, "")).strip()]
         if missing_keys:
             raise CookieError(CookieError.MISSING_KEYS.format(keys=", ".join(missing_keys)))
 
+    @staticmethod
+    def _normalize_wallet_version(wallet_version: str) -> WalletVersion:
         version = wallet_version.strip().upper()
         if version not in get_args(WalletVersion):
             raise ConfigurationError(
@@ -89,11 +88,25 @@ class FragmentClient:
                     version=version, supported=", ".join(sorted(get_args(WalletVersion)))
                 )
             )
+        return cast(WalletVersion, version)
+
+    def __init__(
+        self,
+        seed: str,
+        api_key: str,
+        cookies: dict[str, Any] | str,
+        wallet_version: str = "V5R1",
+        timeout: float = DEFAULT_TIMEOUT,
+    ) -> None:
+        self._validate_required(seed, api_key)
+        parsed_cookies = self._parse_cookies(cookies)
+        self._validate_cookie_keys(parsed_cookies)
+        version = self._normalize_wallet_version(wallet_version)
 
         self.seed: str = seed.strip()
         self.api_key: str = api_key.strip()
-        self.cookies: dict[str, Any] = cast(dict[str, Any], cookies)
-        self.wallet_version: WalletVersion = version  # type: ignore[assignment]
+        self.cookies: dict[str, Any] = parsed_cookies
+        self.wallet_version: WalletVersion = version
         self.timeout: float = timeout
         self.marketplace = MarketplaceService(self)
         self.purchases = PurchasesService(self)
@@ -371,7 +384,4 @@ class FragmentClient:
                 page_url="https://fragment.com/premium/gift",
             )
         """
-        headers = {**BASE_HEADERS, "referer": page_url, "x-aj-referer": page_url}
-        async with httpx.AsyncClient(cookies=self.cookies, timeout=self.timeout) as session:
-            fragment_hash = await get_fragment_hash(self.cookies, headers, page_url, self.timeout)
-            return await fragment_request(session, fragment_hash, headers, {"method": method, **(data or {})})
+        return await raw_api_call(self.cookies, self.timeout, method, data, page_url)

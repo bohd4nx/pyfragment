@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import logging
 import random
 import ssl
 from typing import TYPE_CHECKING, Any
@@ -17,6 +18,9 @@ from pyfragment.models.enums import PaymentMethod
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
+
+
+logger = logging.getLogger(__name__)
 
 
 def clean_decode(payload: str) -> str | Cell:
@@ -43,6 +47,7 @@ def clean_decode(payload: str) -> str | Cell:
         except UnicodeDecodeError:
             return cell
     except Exception as exc:
+        logger.exception("Failed to decode Fragment payload")
         raise ParseError(ParseError.UNPARSEABLE.format(context="payload decode", exc=exc)) from exc
 
 
@@ -64,6 +69,7 @@ async def process_transaction(
         Normalized transaction hash string.
     """
     if "transaction" not in transaction_data or not transaction_data["transaction"].get("messages"):
+        logger.error("Failed to process transaction: missing transaction payload or messages")
         raise TransactionError(TransactionError.INVALID_PAYLOAD)
 
     message = transaction_data["transaction"]["messages"][0]
@@ -87,6 +93,7 @@ async def process_transaction(
         except WalletError:
             raise
         except Exception as exc:
+            logger.exception("Failed to validate balances before broadcasting transaction")
             raise WalletError(WalletError.TON_BALANCE_CHECK_FAILED.format(exc=exc)) from exc
 
         try:
@@ -103,12 +110,24 @@ async def process_transaction(
                     return str(result.normalized_hash)
                 except ProviderResponseError as exc:
                     if exc.code == 429 and attempt == 0:
+                        logger.warning(
+                            "Broadcast rate-limited (429), retrying transaction once: %s",
+                            exc,
+                            exc_info=True,
+                        )
                         await asyncio.sleep(1 + random.uniform(0, 0.5))
                         continue
                     if exc.code == 406 and "seqno" in str(exc).lower():
                         if attempt < 2:
+                            logger.warning(
+                                "Broadcast seqno conflict (406), retrying attempt %s: %s",
+                                attempt + 2,
+                                exc,
+                                exc_info=True,
+                            )
                             await asyncio.sleep(2 + random.uniform(0, 1))
                             continue
+                        logger.error("Failed to broadcast transaction after seqno retries")
                         raise TransactionError(TransactionError.DUPLICATE_SEQNO) from exc
                     raise
         except (WalletError, TransactionError):
@@ -117,8 +136,16 @@ async def process_transaction(
             cause: BaseException | None = exc
             while cause is not None:
                 if isinstance(cause, ssl.SSLError):
+                    logger.exception("Failed to broadcast transaction due to SSL error")
                     raise TransactionError(TransactionError.BROADCAST_FAILED_SSL.format(exc=exc)) from exc
                 cause = cause.__cause__ or cause.__context__
+            logger.exception(
+                "Failed to broadcast transaction to '%s' for %s nanotons using payment method '%s'",
+                message["address"],
+                message["amount"],
+                payment_method,
+            )
             raise TransactionError(TransactionError.BROADCAST_FAILED.format(exc=exc)) from exc
 
+    logger.error("Failed to broadcast transaction: transfer loop exited without result")
     raise TransactionError(TransactionError.BROADCAST_FAILED.format(exc="transfer loop exited without result"))

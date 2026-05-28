@@ -1,3 +1,4 @@
+import logging
 from importlib.metadata import version
 
 from pyfragment.client import FragmentClient
@@ -25,6 +26,8 @@ from pyfragment.models.giveaways import PremiumGiveawayResult, StarsGiveawayResu
 from pyfragment.models.marketplace import GiftsResult, NumbersResult, UsernamesResult
 from pyfragment.models.payments import AdsRechargeResult, AdsTopupResult, PremiumResult, StarsResult
 from pyfragment.models.wallet import WalletInfo
+
+logging.getLogger("pyfragment").addHandler(logging.NullHandler())
 
 __version__: str = version("pyfragment")
 

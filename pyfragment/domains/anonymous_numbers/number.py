@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import html
+import logging
 from typing import TYPE_CHECKING
 
 from pyfragment.core.constants import NUMBERS_PAGE
@@ -10,6 +11,9 @@ from pyfragment.models.anonymous_numbers import LoginCodeResult, TerminateSessio
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
+
+
+logger = logging.getLogger(__name__)
 
 
 def _strip_plus(number: str) -> str:
@@ -32,9 +36,11 @@ async def get_login_code(client: FragmentClient, number: str) -> LoginCodeResult
 
         return LoginCodeResult(number=number, code=code, active_sessions=active_sessions)
 
-    except FragmentError:
+    except FragmentError as exc:
+        logger.error("Failed to get login code for number '%s': %s", number, exc, exc_info=True)
         raise
     except Exception as exc:
+        logger.exception("Failed to get login code for number '%s' due to an unexpected error", number)
         raise UnexpectedError(UnexpectedError.UNEXPECTED.format(exc=exc)) from exc
 
 
@@ -50,9 +56,21 @@ async def toggle_login_codes(client: FragmentClient, number: str, can_receive: b
         if result.get("error"):
             raise FragmentAPIError(html.unescape(result["error"]))
 
-    except FragmentError:
+    except FragmentError as exc:
+        logger.error(
+            "Failed to toggle login code delivery for number '%s' (can_receive=%s): %s",
+            number,
+            can_receive,
+            exc,
+            exc_info=True,
+        )
         raise
     except Exception as exc:
+        logger.exception(
+            "Failed to toggle login code delivery for number '%s' (can_receive=%s) due to an unexpected error",
+            number,
+            can_receive,
+        )
         raise UnexpectedError(UnexpectedError.UNEXPECTED.format(exc=exc)) from exc
 
 
@@ -88,7 +106,9 @@ async def terminate_sessions(client: FragmentClient, number: str) -> TerminateSe
 
         return TerminateSessionsResult(number=number, message=result.get("msg"))
 
-    except FragmentError:
+    except FragmentError as exc:
+        logger.error("Failed to terminate sessions for number '%s': %s", number, exc, exc_info=True)
         raise
     except Exception as exc:
+        logger.exception("Failed to terminate sessions for number '%s' due to an unexpected error", number)
         raise UnexpectedError(UnexpectedError.UNEXPECTED.format(exc=exc)) from exc

@@ -150,6 +150,7 @@ async def test_giveaway_premium_success(client: FragmentClient) -> None:
             AsyncMock(
                 side_effect=[
                     {"found": {"recipient": FAKE_RECIPIENT}},
+                    {},
                     {"req_id": FAKE_REQ_ID},
                     FAKE_TRANSACTION,
                 ]
@@ -172,6 +173,7 @@ async def test_giveaway_premium_passes_payment_method(client: FragmentClient) ->
     call_mock = AsyncMock(
         side_effect=[
             {"found": {"recipient": FAKE_RECIPIENT}},
+            {},
             {"req_id": FAKE_REQ_ID},
             FAKE_TRANSACTION,
         ]
@@ -184,7 +186,7 @@ async def test_giveaway_premium_passes_payment_method(client: FragmentClient) ->
     ):
         await client.giveaway_premium("@channel", winners=10, months=6, payment_method="usdt_ton")
 
-    init_call = call_mock.await_args_list[1]
+    init_call = call_mock.await_args_list[2]
     assert init_call.args[0] == "initGiveawayPremiumRequest"
     assert init_call.args[1]["payment_method"] == "usdt_ton"
     assert proc_mock.await_args is not None

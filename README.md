@@ -49,6 +49,20 @@ Requires Python 3.10+.
 
 ---
 
+## Logging
+
+`pyfragment` uses standard Python logging under the `pyfragment` namespace and is silent by default.
+To enable logs, configure your app's logging and set the level:
+
+```python
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logging.getLogger("pyfragment").setLevel(logging.DEBUG)  # DEBUG for detailed request logs
+```
+
+---
+
 ## Credentials
 
 **Fragment cookies** — log in to [fragment.com](https://fragment.com) and connect your TON wallet. You can get cookies in two ways:

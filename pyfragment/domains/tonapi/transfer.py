@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 from ton_core import Address, NetworkGlobalID
@@ -12,6 +13,9 @@ from pyfragment.models.wallet import TonTransferResult, UsdtTransferResult
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
+
+
+logger = logging.getLogger(__name__)
 
 
 async def send_ton_transfer(
@@ -47,6 +51,11 @@ async def send_ton_transfer(
     except (TransactionError, WalletError):
         raise
     except Exception as exc:
+        logger.exception(
+            "Failed to send TON transfer to '%s' for %s nanotons",
+            destination,
+            amount,
+        )
         raise TransactionError(TransactionError.BROADCAST_FAILED.format(exc=exc)) from exc
 
 
@@ -88,4 +97,9 @@ async def send_usdt_transfer(
     except (TransactionError, WalletError):
         raise
     except Exception as exc:
+        logger.exception(
+            "Failed to send USDT transfer to '%s' for %s base units",
+            destination,
+            usdt_amount,
+        )
         raise TransactionError(TransactionError.BROADCAST_FAILED.format(exc=exc)) from exc

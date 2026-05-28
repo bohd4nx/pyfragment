@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import time
 from typing import TYPE_CHECKING, get_args
 
@@ -21,6 +22,9 @@ from pyfragment.models.payments import PremiumResult, StarsResult
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
+
+
+logger = logging.getLogger(__name__)
 
 
 async def purchase_stars(
@@ -84,9 +88,23 @@ async def purchase_stars(
         )
         return StarsResult(transaction_id=tx_hash, username=username, amount=amount)
 
-    except FragmentError:
+    except FragmentError as exc:
+        logger.error(
+            "Failed to purchase %s Stars for user '%s' using '%s': %s",
+            amount,
+            username,
+            payment_method,
+            exc,
+            exc_info=True,
+        )
         raise
     except Exception as exc:
+        logger.exception(
+            "Failed to purchase %s Stars for user '%s' using '%s' due to an unexpected error",
+            amount,
+            username,
+            payment_method,
+        )
         raise UnexpectedError(UnexpectedError.UNEXPECTED.format(exc=exc)) from exc
 
 
@@ -151,7 +169,21 @@ async def purchase_premium(
         )
         return PremiumResult(transaction_id=tx_hash, username=username, amount=months)
 
-    except FragmentError:
+    except FragmentError as exc:
+        logger.error(
+            "Failed to purchase %s months of Premium for user '%s' using '%s': %s",
+            months,
+            username,
+            payment_method,
+            exc,
+            exc_info=True,
+        )
         raise
     except Exception as exc:
+        logger.exception(
+            "Failed to purchase %s months of Premium for user '%s' using '%s' due to an unexpected error",
+            months,
+            username,
+            payment_method,
+        )
         raise UnexpectedError(UnexpectedError.UNEXPECTED.format(exc=exc)) from exc
