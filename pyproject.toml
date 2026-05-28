@@ -43,6 +43,8 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Framework :: AsyncIO",
     "Topic :: Software Development :: Libraries",
     "Topic :: Software Development :: Libraries :: Python Modules",
@@ -94,3 +96,9 @@ exclude = ["^examples/"]
 [[tool.mypy.overrides]]
 module = "rookiepy"
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# rookiepy = None assignment is valid when the package is installed (type: ModuleType)
+# but mypy on CI (without rookiepy) sees it as Any and flags the comment as unused.
+module = "pyfragment.core.cookies"
+warn_unused_ignores = false
