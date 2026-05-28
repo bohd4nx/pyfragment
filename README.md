@@ -1,23 +1,23 @@
 <div align="center">
-  <img src="https://www.bohd4n.dev/assets/projects/pyfragment.svg" alt="Fragment Logo" width="120" height="120" style="border-radius: 24px;">
+  <img src="https://www.bohd4n.dev/assets/projects/pyfragment.svg" alt="pyfragment" width="96" height="96" style="border-radius: 20px;"><br><br>
 
-  <h1 style="margin-top: 24px;">Fragment API</h1>
+# pyfragment
 
-  <p style="font-size: 18px; margin-bottom: 24px;">
-    <b>Async Python client for the Fragment API. Buy Stars and Premium, top up TON and Ads balances, run giveaways, manage anonymous numbers, and search Fragment listings.</b>
-  </p>
+[![PyPI](https://img.shields.io/pypi/v/pyfragment?style=flat&color=blue&label=PyPI)](https://pypi.org/project/pyfragment/)
+[![Downloads](https://img.shields.io/pepy/dt/pyfragment?style=flat&color=blue&label=Downloads)](https://pepy.tech/projects/pyfragment)
+[![Python](https://img.shields.io/pypi/pyversions/pyfragment?style=flat&color=blue&label=Python)](https://python.org)
+[![Tests](https://img.shields.io/github/actions/workflow/status/bohd4nx/pyfragment/ci.yml?style=flat&label=Tests&logo=github)](https://github.com/bohd4nx/pyfragment/actions)
+[![License](https://img.shields.io/github/license/bohd4nx/pyfragment?style=flat&color=blue&label=License)](LICENSE)
 
-[![PyPI version](https://img.shields.io/pypi/v/pyfragment?style=flat&color=blue)](https://pypi.org/project/pyfragment/)
-[![PyPI Downloads](https://static.pepy.tech/personalized-badge/pyfragment?period=total&units=INTERNATIONAL_SYSTEM&left_color=GREY&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/pyfragment)
-[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
-[![Tests](https://img.shields.io/github/actions/workflow/status/bohd4nx/pyfragment/ci.yml?style=flat&label=tests&logo=github)](https://github.com/bohd4nx/pyfragment/actions)
-[![License](https://img.shields.io/github/license/bohd4nx/pyfragment?style=flat&color=green)](https://github.com/bohd4nx/pyfragment/blob/master/LICENSE)
+Async Python client for the **[Fragment](https://fragment.com)** marketplace API.
+Buy Stars & Premium, run giveaways, top up TON and Ads balances,
+manage anonymous numbers, and search Fragment listings.
 
-[Documentation](https://bohd4nx.gitbook.io/pyfragment/) · [Report Bug](https://github.com/bohd4nx/pyfragment/issues) · [Request Feature](https://github.com/bohd4nx/pyfragment/issues) · [**Donate TON**](https://app.tonkeeper.com/transfer/UQCppfw5DxWgdVHf3zkmZS8k1mt9oAUYxQLwq2fz3nhO8No5)
+**[Documentation](https://bohd4nx.gitbook.io/pyfragment/)** · **[Examples](https://github.com/bohd4nx/pyfragment/tree/master/examples)** · **[Changelog](CHANGELOG.md)** · **[Donate TON](https://app.tonkeeper.com/transfer/UQCppfw5DxWgdVHf3zkmZS8k1mt9oAUYxQLwq2fz3nhO8No5)**
 
 </div>
 
-> **Disclaimer:** This project is not affiliated with, endorsed by, or in any way officially connected with [Fragment](https://fragment.com) or [Telegram](https://telegram.org).
+> **Disclaimer:** This project is not affiliated with [Fragment](https://fragment.com) or [Telegram](https://telegram.org).
 
 ---
 
@@ -27,71 +27,14 @@
 pip install pyfragment
 ```
 
-To install the latest unreleased changes from the `dev` branch:
-
 ```bash
+# Latest dev build
 pip install git+https://github.com/bohd4nx/pyfragment.git@dev
 ```
 
-Requires Python 3.10+.
-
 ---
 
-## Configuration
-
-| Parameter        | Type          | Default  | Description                                                 |
-| ---------------- | ------------- | -------- | ----------------------------------------------------------- |
-| `seed`           | `str`         | —        | 12-, 18-, or 24-word TON wallet mnemonic                    |
-| `api_key`        | `str`         | —        | Tonapi key from [tonconsole.com](https://tonconsole.com)    |
-| `cookies`        | `dict \| str` | —        | Fragment session cookies                                    |
-| `wallet_version` | `str`         | `"V5R1"` | `"V4R2"` or `"V5R1"` (also accepts `WalletVersion` literal) |
-| `timeout`        | `float`       | `30.0`   | HTTP request timeout in seconds                             |
-
----
-
-## Logging
-
-`pyfragment` uses standard Python logging under the `pyfragment` namespace and is silent by default.
-To enable logs, configure your app's logging and set the level:
-
-```python
-import logging
-
-logging.basicConfig(level=logging.INFO)
-logging.getLogger("pyfragment").setLevel(logging.DEBUG)  # DEBUG for detailed request logs
-```
-
----
-
-## Credentials
-
-**Fragment cookies** — log in to [fragment.com](https://fragment.com) and connect your TON wallet. You can get cookies in two ways:
-
-- **Automatically** (recommended) — install the optional browser extra and use `get_cookies_from_browser()`, which reads them directly from your browser's on-disk store. No extension needed:
-
-  ```bash
-  pip install "pyfragment[browser]"
-  ```
-
-  ```python
-  from pyfragment import get_cookies_from_browser
-
-  result = get_cookies_from_browser("chrome")  # or "firefox", "edge", "brave", ...
-  # result.cookies — dict[str, str] to pass to FragmentClient
-  # result.expires — ISO 8601 expiry of stel_ssid, or None for session cookies
-  ```
-
-- **Manually** — install [Cookie Editor](https://chromewebstore.google.com/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm) and export these four keys: `stel_ssid`, `stel_dt`, `stel_token`, `stel_ton_token`. Pass them as a `dict` or JSON string.
-
-Refresh when you get authentication errors.
-
-**Tonapi key** — generate at [tonconsole.com](https://tonconsole.com).
-
-**Seed phrase** — 24-word mnemonic from your TON wallet (Tonkeeper → Settings → Backup). Never share it.
-
----
-
-## Usage
+## Quick Start
 
 ```python
 import asyncio
@@ -110,35 +53,90 @@ async def main() -> None:
         },
     ) as client:
         wallet = await client.get_wallet()
-        print(f"Wallet: {wallet.address} | TON: {wallet.ton_balance} | USDT: {wallet.usdt_balance}")
+        print(f"TON: {wallet.ton_balance} | USDT: {wallet.usdt_balance}")
 
-        recipient = "https://t.me/username"  # also supports: @username, username
+        recipient = "https://t.me/username"  # also: @username, username
 
         stars = await client.purchase_stars(recipient, amount=500, payment_method="usdt_ton")
-        print(f"Stars sent: {stars.amount} to {stars.username} | tx: {stars.transaction_id}")
+        print(f"Sent {stars.amount} Stars to {stars.username} | tx: {stars.transaction_id}")
 
         premium = await client.purchase_premium(recipient, months=6, payment_method="ton")
-        print(f"Premium sent: {premium.amount} months to {premium.username} | tx: {premium.transaction_id}")
+        print(f"Sent Premium {premium.amount}m to {premium.username} | tx: {premium.transaction_id}")
 
 
 asyncio.run(main())
 ```
 
-Full runnable examples:
+---
 
-- https://github.com/bohd4nx/pyfragment/tree/master/examples
+## Configuration
+
+| Parameter        | Type          | Default  | Description                                                 |
+| ---------------- | ------------- | -------- | ----------------------------------------------------------- |
+| `seed`           | `str`         | —        | 12- or 24-word TON wallet mnemonic                          |
+| `api_key`        | `str`         | —        | Tonapi key from [tonconsole.com](https://tonconsole.com)    |
+| `cookies`        | `dict \| str` | —        | Fragment session cookies                                    |
+| `wallet_version` | `str`         | `"V5R1"` | `"V4R2"` or `"V5R1"` — also accepts `WalletVersion` literal |
+| `timeout`        | `float`       | `30.0`   | HTTP request timeout in seconds                             |
+
+---
+
+## Credentials
+
+### Fragment cookies
+
+Log in to [fragment.com](https://fragment.com) and connect your TON wallet.
+
+**Automatically** (recommended) — reads directly from your browser, no extension needed:
+
+```bash
+pip install "pyfragment[browser]"
+```
+
+```python
+from pyfragment import get_cookies_from_browser
+
+result = get_cookies_from_browser("chrome")  # firefox, edge, brave, ...
+# result.cookies  — dict[str, str] ready to pass to FragmentClient
+# result.expires  — ISO 8601 expiry of stel_ssid, or None for session cookies
+```
+
+**Manually** — use [Cookie Editor](https://chromewebstore.google.com/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm) and export: `stel_ssid`, `stel_dt`, `stel_token`, `stel_ton_token`. Pass as a `dict` or JSON string.
+
+Refresh cookies when you get authentication errors.
+
+### Tonapi key
+
+Generate at [tonconsole.com](https://tonconsole.com).
+
+### Seed phrase
+
+12- or 24-word mnemonic from your TON wallet (**Tonkeeper → Settings → Backup**). Never share it.
+
+---
+
+## Logging
+
+`pyfragment` uses the standard `logging` module under the `pyfragment` namespace and is silent by default:
+
+```python
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logging.getLogger("pyfragment").setLevel(logging.DEBUG)  # for detailed request logs
+```
 
 ---
 
 ## Error Handling
 
-All exceptions inherit from `FragmentError`. Catch specific ones or the base class:
+All exceptions inherit from `FragmentError`:
 
 ```python
 from pyfragment import (
-    ConfigurationError,   # invalid arguments (amount, months, payment_method, etc.)
+    ConfigurationError,   # invalid arguments (amount, months, payment_method…)
     UserNotFoundError,    # recipient not found on Fragment
-    WalletError,          # insufficient TON/USDT balance
+    WalletError,          # insufficient TON or USDT balance
     TransactionError,     # broadcast failed, duplicate seqno, invalid payload
     FragmentAPIError,     # Fragment API returned an error response
     FragmentPageError,    # page fetch or hash extraction failed
@@ -151,22 +149,12 @@ from pyfragment import (
 )
 ```
 
-Payload debug/decode helper (thanks):
-
-- https://ton-cell-abi-viewer.vercel.app/
-
----
-
-## Changelog
-
-See [CHANGELOG.md](https://github.com/bohd4nx/pyfragment/blob/master/CHANGELOG.md) for release history.
-
 ---
 
 <div align="center">
 
-### Made with ❤️ by [@bohd4nx](https://t.me/bohd4nx)
+Made with ❤️ by [@bohd4nx](https://t.me/bohd4nx) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
 
-**Star ⭐ this repo if you found it useful!**
+**Star ⭐ if you found it useful**
 
 </div>

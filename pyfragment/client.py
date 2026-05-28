@@ -29,7 +29,7 @@ class FragmentClient:
         connected with Fragment or Telegram.
 
     Args:
-        seed: 12-, 18-, or 24-word mnemonic phrase for the TON wallet.
+        seed: 12- or 24-word mnemonic phrase for the TON wallet.
         api_key: Tonapi API key — get one at https://tonconsole.com.
         cookies: Fragment session cookies as a dict or JSON string.
         wallet_version: Wallet contract version — ``"V4R2"`` or ``"V5R1"`` (default).
