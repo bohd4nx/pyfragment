@@ -17,24 +17,4 @@ class WalletInfo:
         )
 
 
-@dataclass
-class TonTransferResult:
-    transaction_id: str
-    destination: str
-    amount: int
-
-    def __repr__(self) -> str:
-        return f"TonTransferResult(destination='{self.destination}', amount={self.amount} TON, tx='{self.transaction_id}')"
-
-
-@dataclass
-class UsdtTransferResult:
-    transaction_id: str
-    destination: str
-    amount: int
-
-    def __repr__(self) -> str:
-        return f"UsdtTransferResult(destination='{self.destination}', amount={self.amount} USDT, tx='{self.transaction_id}')"
-
-
-__all__ = ["TonTransferResult", "UsdtTransferResult", "WalletInfo"]
+__all__ = ["WalletInfo"]

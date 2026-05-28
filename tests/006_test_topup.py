@@ -1,11 +1,10 @@
 """Cover TON top-up through Telegram Ads, including recipient lookup and transaction building."""
 
-import importlib
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
-_topup_ton_mod = importlib.import_module("pyfragment.domains.ads.tonup")
+import pyfragment.domains.ads.tonup as _topup_ton_mod
 from pyfragment import AdsTopupResult, ConfigurationError, FragmentClient, UserNotFoundError
 from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
 

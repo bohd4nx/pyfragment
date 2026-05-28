@@ -7,7 +7,6 @@ from pyfragment.domains.tonapi.account import (
 )
 from pyfragment.domains.tonapi.service import TonapiService
 from pyfragment.domains.tonapi.transaction import clean_decode, process_transaction
-from pyfragment.domains.tonapi.transfer import send_ton_transfer, send_usdt_transfer
 
 __all__ = [
     "TonapiService",
@@ -18,6 +17,4 @@ __all__ = [
     "get_usdt_balance",
     "get_wallet_info",
     "process_transaction",
-    "send_ton_transfer",
-    "send_usdt_transfer",
 ]

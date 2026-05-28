@@ -1,12 +1,11 @@
 """Cover stars purchase and giveaway flows, including validation and request wiring."""
 
-import importlib
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
-_purchase_stars_mod = importlib.import_module("pyfragment.domains.purchases.purchase")
-_giveaway_stars_mod = importlib.import_module("pyfragment.domains.giveaways.giveaway")
+import pyfragment.domains.giveaways.giveaway as _giveaway_stars_mod
+import pyfragment.domains.purchases.purchase as _purchase_stars_mod
 from pyfragment import ConfigurationError, FragmentClient, StarsGiveawayResult, StarsResult, UserNotFoundError
 from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
 
