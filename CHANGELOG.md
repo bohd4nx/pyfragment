@@ -7,6 +7,24 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ---
 
+## [2026.3.2] — 2026-05-29
+
+### Added
+
+- New payment methods for purchases and giveaways: `usdt_eth`, `usdt_pol`, `usdc_eth`, `usdc_base`, `usdc_pol`.
+- New `AlreadySubscribedError` exception for Premium purchase flows when Fragment returns: `This account is already subscribed to Telegram Premium.`
+
+### Changed
+
+- Updated purchase and giveaway flow state nonces (`dh`) to use nonce-like dynamic values with a wider integer range.
+- Stars and Premium giveaway flows now include explicit price update steps before init requests:
+  - `updateStarsGiveawayPrices`
+  - `updatePremiumGiveawayPrices`
+- Updated `DEVICE_INFO` fingerprint: Tonkeeper `appVersion` -> `26.05.0`.
+- Updated client docstrings and purchase examples to document all supported payment methods.
+
+---
+
 ## [2026.3.1] — 2026-05-29
 
 ### Added
