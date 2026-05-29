@@ -14,6 +14,8 @@ from pyfragment.core.constants.limits import (
     STARS_PURCHASE_MIN,
     STARS_WINNERS_MAX,
     STARS_WINNERS_MIN,
+    TON_TOPUP_MAX,
+    TON_TOPUP_MIN,
     TONAPI_KEY_MIN_LENGTH,
 )
 from pyfragment.core.constants.ton import DEVICE_INFO, USDT_TON_MASTER_ADDRESS
@@ -56,5 +58,7 @@ __all__ = [
     "STARS_WINNERS_MAX",
     "STARS_WINNERS_MIN",
     "TONAPI_KEY_MIN_LENGTH",
+    "TON_TOPUP_MAX",
+    "TON_TOPUP_MIN",
     "USDT_TON_MASTER_ADDRESS",
 ]

@@ -4,7 +4,7 @@ import json
 import logging
 from typing import TYPE_CHECKING
 
-from pyfragment.core.constants import ADS_TOPUP_PAGE, DEVICE_INFO
+from pyfragment.core.constants import ADS_TOPUP_PAGE, DEVICE_INFO, TON_TOPUP_MAX, TON_TOPUP_MIN
 from pyfragment.domains.tonapi.account import get_account_info
 from pyfragment.domains.tonapi.transaction import process_transaction
 from pyfragment.exceptions import ConfigurationError, FragmentAPIError, FragmentError, UnexpectedError, VerificationError
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 async def recharge_ads(client: FragmentClient, account: str, amount: int) -> AdsRechargeResult:
-    if not isinstance(amount, int) or not (1 <= amount <= 1_000_000_000):
+    if not isinstance(amount, int) or not (TON_TOPUP_MIN <= amount <= TON_TOPUP_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_TON_AMOUNT)
 
     try:

@@ -4,6 +4,7 @@ import json
 from typing import Any, cast
 
 from pyfragment.core.constants import (
+    BASE_HEADERS,
     DEFAULT_TIMEOUT,
     FRAGMENT_BASE_URL,
     MNEMONIC_WORD_COUNTS_VALID,
@@ -40,6 +41,7 @@ class FragmentClient:
         cookies: Fragment session cookies as a dict or JSON string.
         wallet_version: Wallet contract version — ``"V4R2"`` or ``"V5R1"`` (default).
         timeout: HTTP request timeout in seconds. Defaults to ``30.0``.
+        headers: Custom HTTP request headers. If omitted, :data:`BASE_HEADERS` is used.
 
     Raises:
         ConfigurationError: If ``seed``, ``api_key``, or ``wallet_version`` are missing or invalid.
@@ -104,6 +106,7 @@ class FragmentClient:
         cookies: dict[str, Any] | str,
         wallet_version: str = "V5R1",
         timeout: float = DEFAULT_TIMEOUT,
+        headers: dict[str, str] | None = None,
     ) -> None:
         self._validate_required(seed, api_key)
         parsed_cookies = self._parse_cookies(cookies)
@@ -115,6 +118,7 @@ class FragmentClient:
         self.cookies: dict[str, Any] = parsed_cookies
         self.wallet_version: WalletVersion = version
         self.timeout: float = timeout
+        self.headers: dict[str, str] = headers if headers is not None else BASE_HEADERS
         self.marketplace = MarketplaceService(self)
         self.purchases = PurchasesService(self)
         self.giveaways = GiveawaysService(self)
@@ -391,4 +395,4 @@ class FragmentClient:
                 page_url="https://fragment.com/premium/gift",
             )
         """
-        return await raw_api_call(self.cookies, self.timeout, method, data, page_url)
+        return await raw_api_call(self.cookies, self.timeout, method, data, page_url, self.headers)

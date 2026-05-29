@@ -4,7 +4,7 @@ import json
 import logging
 from typing import TYPE_CHECKING
 
-from pyfragment.core.constants import ADS_TOPUP_PAGE, DEVICE_INFO
+from pyfragment.core.constants import ADS_TOPUP_PAGE, DEVICE_INFO, TON_TOPUP_MAX, TON_TOPUP_MIN
 from pyfragment.domains.payments import parse_required_payment_amount
 from pyfragment.domains.tonapi.account import get_account_info
 from pyfragment.domains.tonapi.transaction import process_transaction
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 async def topup_ton(client: FragmentClient, username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
-    if not isinstance(amount, int) or not (1 <= amount <= 1_000_000_000):
+    if not isinstance(amount, int) or not (TON_TOPUP_MIN <= amount <= TON_TOPUP_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_TON_AMOUNT)
 
     try:
