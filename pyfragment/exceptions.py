@@ -94,6 +94,7 @@ class UserNotFoundError(FragmentAPIError):
     NOT_FOUND = (
         "Telegram user '{username}' was not found on Fragment. Double-check the username and make sure the account exists."
     )
+    NOT_A_USER = "'{username}' does not belong to a user account. Make sure the username is assigned to a personal Telegram account, not a channel or bot."
 
 
 class AlreadySubscribedError(FragmentAPIError):

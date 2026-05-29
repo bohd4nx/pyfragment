@@ -59,6 +59,8 @@ async def purchase_stars(
 
     try:
         result = await client.call("searchStarsRecipient", {"query": username, "quantity": ""}, page_url=STARS_PAGE)
+        if "assigned to a user" in str(result.get("error", "")).lower():
+            raise UserNotFoundError(UserNotFoundError.NOT_A_USER.format(username=username))
         recipient = result.get("found", {}).get("recipient")
         if not recipient:
             raise UserNotFoundError(UserNotFoundError.NOT_FOUND.format(username=username))
@@ -140,6 +142,8 @@ async def purchase_premium(
 
     try:
         result = await client.call("searchPremiumGiftRecipient", {"query": username, "months": months}, page_url=PREMIUM_PAGE)
+        if "assigned to a user" in str(result.get("error", "")).lower():
+            raise UserNotFoundError(UserNotFoundError.NOT_A_USER.format(username=username))
         recipient = result.get("found", {}).get("recipient")
         if not recipient:
             raise UserNotFoundError(UserNotFoundError.NOT_FOUND.format(username=username))

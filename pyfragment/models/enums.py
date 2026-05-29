@@ -17,6 +17,8 @@ else:
 class PaymentMethod(StrEnum):
     TON = "ton"
     USDT_TON = "usdt_ton"
+
+    # Not supported yet
     USDT_ETH = "usdt_eth"
     USDT_POL = "usdt_pol"
     USDC_ETH = "usdc_eth"

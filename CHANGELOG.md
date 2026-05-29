@@ -7,12 +7,12 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ---
 
-## [2026.3.2] — 2026-05-29
+## [2026.3.2] — Unreleased
 
 ### Added
 
-- New payment methods for purchases and giveaways: `usdt_eth`, `usdt_pol`, `usdc_eth`, `usdc_base`, `usdc_pol`.
 - New `AlreadySubscribedError` exception for Premium purchase flows when Fragment returns: `This account is already subscribed to Telegram Premium.`
+- New `UserNotFoundError.NOT_A_USER` message for when Fragment returns: `Please enter a username assigned to a user.` (e.g. when the username belongs to a channel or bot).
 
 ### Changed
 
