@@ -1,15 +1,15 @@
 """
 Example: purchase Telegram Stars for a user.
 
-Amount must be an integer between 50 and 1 000 000.
+Amount must be an integer between 50 and 10 000 000.
 Set show_sender=False to send anonymously.
-payment_method can be "ton" or "usdt_ton".
 Username can be "@username", "username", or "https://t.me/username".
 """
 
 import asyncio
 
 from pyfragment import ConfigurationError, FragmentClient, UserNotFoundError
+from pyfragment.models.enums import PaymentMethod
 
 SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_TONAPI_KEY"
@@ -26,8 +26,8 @@ COOKIES = {
 }
 
 USERNAME = "https://t.me/username"
-AMOUNT = 500  # 50–1 000 000 stars
-PAYMENT_METHOD = "usdt_ton"  # "ton" or "usdt_ton"
+AMOUNT = 500  # 50–10 000 000 stars
+PAYMENT_METHOD = PaymentMethod.USDT_TON  # PaymentMethod.TON or PaymentMethod.USDT_TON
 
 
 async def main() -> None:

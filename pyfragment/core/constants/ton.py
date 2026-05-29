@@ -7,7 +7,7 @@ USDT_TON_MASTER_ADDRESS: str = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs
 DEVICE_INFO: dict[str, Any] = {
     "platform": "iphone",
     "appName": "Tonkeeper",
-    "appVersion": "26.04.0",
+    "appVersion": "26.05.0",
     "maxProtocolVersion": 2,
     "features": [
         "SendTransaction",

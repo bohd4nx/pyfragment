@@ -11,6 +11,8 @@ from pyfragment.core.constants.limits import (
     STARS_PURCHASE_MIN,
     STARS_WINNERS_MAX,
     STARS_WINNERS_MIN,
+    TON_TOPUP_MAX,
+    TON_TOPUP_MIN,
     TONAPI_KEY_MIN_LENGTH,
 )
 
@@ -37,7 +39,7 @@ class ConfigurationError(ClientError):
     INVALID_STARS_AMOUNT = (
         f"Invalid Stars amount: must be an integer between {STARS_PURCHASE_MIN:,} and {STARS_PURCHASE_MAX:,}."
     )
-    INVALID_TON_AMOUNT = "Invalid TON amount: must be an integer between 1 and 1,000,000,000."
+    INVALID_TON_AMOUNT = f"Invalid TON amount: must be an integer between {TON_TOPUP_MIN:,} and {TON_TOPUP_MAX:,}."
     INVALID_USERNAME = (
         "Invalid username '{username}'. "
         "Must be 5-32 characters and contain only letters (A-Z, a-z), digits (0-9), or underscores (_)."

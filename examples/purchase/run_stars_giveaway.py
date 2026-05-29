@@ -1,15 +1,15 @@
 """
 Example: run a Telegram Stars giveaway for a channel.
 
-winners must be an integer between 1 and 5.
+winners must be an integer between 1 and 15.
 amount (stars per winner) must be an integer between 500 and 1 000 000.
-payment_method can be "ton" or "usdt_ton".
 Channel can be "@channel", "channel", or "https://t.me/channel".
 """
 
 import asyncio
 
 from pyfragment import ConfigurationError, FragmentClient, UserNotFoundError
+from pyfragment.models.enums import PaymentMethod
 
 SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_TONAPI_KEY"
@@ -26,9 +26,9 @@ COOKIES = {
 }
 
 CHANNEL = "https://t.me/channel"
-WINNERS = 3  # 1–5
+WINNERS = 3  # 1–15
 AMOUNT = 1000  # 500–1 000 000 stars per winner
-PAYMENT_METHOD = "usdt_ton"  # "ton" or "usdt_ton"
+PAYMENT_METHOD = PaymentMethod.USDT_TON  # PaymentMethod.TON or PaymentMethod.USDT_TON
 
 
 async def main() -> None:

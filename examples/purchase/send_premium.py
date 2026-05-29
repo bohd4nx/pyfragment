@@ -3,13 +3,13 @@ Example: purchase Telegram Premium for a user.
 
 Supported durations: 3, 6, or 12 months.
 Set show_sender=False to send anonymously.
-payment_method can be "ton" or "usdt_ton".
 Username can be "@username", "username", or "https://t.me/username".
 """
 
 import asyncio
 
 from pyfragment import ConfigurationError, FragmentClient, UserNotFoundError
+from pyfragment.models.enums import PaymentMethod
 
 SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_TONAPI_KEY"
@@ -27,7 +27,7 @@ COOKIES = {
 
 USERNAME = "https://t.me/username"
 MONTHS = 3  # 3, 6 or 12
-PAYMENT_METHOD = "ton"  # "ton" or "usdt_ton"
+PAYMENT_METHOD = PaymentMethod.TON  # PaymentMethod.TON or PaymentMethod.USDT_TON
 
 
 async def main() -> None:
