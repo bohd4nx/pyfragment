@@ -1,5 +1,19 @@
 from __future__ import annotations
 
+from pyfragment.core.constants.limits import (
+    MNEMONIC_WORD_COUNTS_VALID,
+    PREMIUM_MONTHS_VALID,
+    PREMIUM_WINNERS_MAX,
+    PREMIUM_WINNERS_MIN,
+    STARS_GIVEAWAY_MAX,
+    STARS_GIVEAWAY_MIN,
+    STARS_PURCHASE_MAX,
+    STARS_PURCHASE_MIN,
+    STARS_WINNERS_MAX,
+    STARS_WINNERS_MIN,
+    TONAPI_KEY_MIN_LENGTH,
+)
+
 
 class FragmentError(Exception):
     """Base exception for all pyfragment errors."""
@@ -14,20 +28,29 @@ class ConfigurationError(ClientError):
 
     MISSING_VARS = "Missing required parameter(s): {keys}."
     UNSUPPORTED_VERSION = "Unsupported wallet version '{version}'. Supported values: {supported}."
-    INVALID_MNEMONIC = "Invalid mnemonic phrase: expected 12, 18, or 24 words, got {count}."
+    INVALID_MNEMONIC = f"Invalid mnemonic phrase: expected {', '.join(str(n) for n in sorted(MNEMONIC_WORD_COUNTS_VALID))} words, got {{count}}."
     INVALID_API_KEY = (
-        "Invalid Tonapi API key: expected at least 68 characters, got {length}. Get a key at https://tonconsole.com."
+        f"Invalid Tonapi API key: expected at least {TONAPI_KEY_MIN_LENGTH} characters, got {{length}}. "
+        "Get a key at https://tonconsole.com."
     )
-    INVALID_MONTHS = "Invalid Premium duration: choose 3, 6, or 12 months."
-    INVALID_STARS_AMOUNT = "Invalid Stars amount: must be an integer between 50 and 10,000."
+    INVALID_MONTHS = f"Invalid Premium duration: choose {', '.join(str(m) for m in sorted(PREMIUM_MONTHS_VALID))} months."
+    INVALID_STARS_AMOUNT = (
+        f"Invalid Stars amount: must be an integer between {STARS_PURCHASE_MIN:,} and {STARS_PURCHASE_MAX:,}."
+    )
     INVALID_TON_AMOUNT = "Invalid TON amount: must be an integer between 1 and 1,000,000,000."
     INVALID_USERNAME = (
         "Invalid username '{username}'. "
         "Must be 5-32 characters and contain only letters (A-Z, a-z), digits (0-9), or underscores (_)."
     )
-    INVALID_WINNERS_STARS = "Invalid winners count: must be an integer between 1 and 5."
-    INVALID_WINNERS_PREMIUM = "Invalid winners count: must be an integer between 1 and 24,000."
-    INVALID_STARS_PER_WINNER = "Invalid Stars per winner: must be an integer between 500 and 1,000,000 (max total: 1,000,000)."
+    INVALID_WINNERS_STARS = (
+        f"Invalid winners count: must be an integer between {STARS_WINNERS_MIN:,} and {STARS_WINNERS_MAX:,}."
+    )
+    INVALID_WINNERS_PREMIUM = (
+        f"Invalid winners count: must be an integer between {PREMIUM_WINNERS_MIN:,} and {PREMIUM_WINNERS_MAX:,}."
+    )
+    INVALID_STARS_PER_WINNER = (
+        f"Invalid Stars per winner: must be an integer between {STARS_GIVEAWAY_MIN:,} and {STARS_GIVEAWAY_MAX:,}."
+    )
     INVALID_PAYMENT_METHOD = "Invalid payment method '{method}'. Supported values: {supported}."
 
 

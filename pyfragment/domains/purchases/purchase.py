@@ -5,7 +5,14 @@ import logging
 import time
 from typing import TYPE_CHECKING
 
-from pyfragment.core.constants import DEVICE, PREMIUM_PAGE, STARS_PAGE, STARS_PURCHASE_MIN, STARS_PURCHASE_MAX
+from pyfragment.core.constants import (
+    DEVICE,
+    PREMIUM_MONTHS_VALID,
+    PREMIUM_PAGE,
+    STARS_PAGE,
+    STARS_PURCHASE_MAX,
+    STARS_PURCHASE_MIN,
+)
 from pyfragment.domains.payments import parse_required_payment_amount
 from pyfragment.domains.tonapi.account import get_account_info
 from pyfragment.domains.tonapi.transaction import process_transaction
@@ -115,7 +122,7 @@ async def purchase_premium(
     show_sender: bool = True,
     payment_method: PaymentMethod = "ton",
 ) -> PremiumResult:
-    if months not in (3, 6, 12):
+    if months not in PREMIUM_MONTHS_VALID:
         raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
     if payment_method not in PaymentMethod._value2member_map_:
         raise ConfigurationError(

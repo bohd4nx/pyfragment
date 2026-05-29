@@ -5,7 +5,18 @@ import logging
 import random
 from typing import TYPE_CHECKING
 
-from pyfragment.core.constants import DEVICE, PREMIUM_GIVEAWAY_PAGE, STARS_GIVEAWAY_PAGE, STARS_GIVEAWAY_MIN, STARS_GIVEAWAY_MAX, STARS_WINNERS_MIN, STARS_WINNERS_MAX
+from pyfragment.core.constants import (
+    DEVICE,
+    PREMIUM_GIVEAWAY_PAGE,
+    PREMIUM_MONTHS_VALID,
+    PREMIUM_WINNERS_MAX,
+    PREMIUM_WINNERS_MIN,
+    STARS_GIVEAWAY_MAX,
+    STARS_GIVEAWAY_MIN,
+    STARS_GIVEAWAY_PAGE,
+    STARS_WINNERS_MAX,
+    STARS_WINNERS_MIN,
+)
 from pyfragment.domains.payments import parse_required_payment_amount
 from pyfragment.domains.tonapi.account import get_account_info
 from pyfragment.domains.tonapi.transaction import process_transaction
@@ -124,9 +135,9 @@ async def giveaway_premium(
     months: int = 3,
     payment_method: PaymentMethod = "ton",
 ) -> PremiumGiveawayResult:
-    if not isinstance(winners, int) or not (1 <= winners <= 24_000):
+    if not isinstance(winners, int) or not (PREMIUM_WINNERS_MIN <= winners <= PREMIUM_WINNERS_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_WINNERS_PREMIUM)
-    if months not in (3, 6, 12):
+    if months not in PREMIUM_MONTHS_VALID:
         raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
     if payment_method not in PaymentMethod._value2member_map_:
         raise ConfigurationError(

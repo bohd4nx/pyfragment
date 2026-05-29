@@ -3,7 +3,13 @@ from __future__ import annotations
 import json
 from typing import Any, cast
 
-from pyfragment.core.constants import DEFAULT_TIMEOUT, FRAGMENT_BASE_URL, REQUIRED_COOKIE_KEYS
+from pyfragment.core.constants import (
+    DEFAULT_TIMEOUT,
+    FRAGMENT_BASE_URL,
+    MNEMONIC_WORD_COUNTS_VALID,
+    REQUIRED_COOKIE_KEYS,
+    TONAPI_KEY_MIN_LENGTH,
+)
 from pyfragment.domains.ads.service import AdsService
 from pyfragment.domains.anonymous_numbers.service import AnonymousNumbersService
 from pyfragment.domains.base import raw_api_call
@@ -67,10 +73,10 @@ class FragmentClient:
             raise ConfigurationError(ConfigurationError.MISSING_VARS.format(keys=", ".join(missing)))
 
         word_count = len(seed.split())
-        if word_count not in (12, 18, 24):
+        if word_count not in MNEMONIC_WORD_COUNTS_VALID:
             raise ConfigurationError(ConfigurationError.INVALID_MNEMONIC.format(count=word_count))
 
-        if len(api_key.strip()) < 68:
+        if len(api_key.strip()) < TONAPI_KEY_MIN_LENGTH:
             raise ConfigurationError(ConfigurationError.INVALID_API_KEY.format(length=len(api_key.strip())))
 
     @staticmethod
