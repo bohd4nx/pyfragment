@@ -19,7 +19,7 @@ class ConfigurationError(ClientError):
         "Invalid Tonapi API key: expected at least 68 characters, got {length}. Get a key at https://tonconsole.com."
     )
     INVALID_MONTHS = "Invalid Premium duration: choose 3, 6, or 12 months."
-    INVALID_STARS_AMOUNT = "Invalid Stars amount: must be an integer between 50 and 1,000,000."
+    INVALID_STARS_AMOUNT = "Invalid Stars amount: must be an integer between 50 and 10,000."
     INVALID_TON_AMOUNT = "Invalid TON amount: must be an integer between 1 and 1,000,000,000."
     INVALID_USERNAME = (
         "Invalid username '{username}'. "
@@ -27,7 +27,7 @@ class ConfigurationError(ClientError):
     )
     INVALID_WINNERS_STARS = "Invalid winners count: must be an integer between 1 and 5."
     INVALID_WINNERS_PREMIUM = "Invalid winners count: must be an integer between 1 and 24,000."
-    INVALID_STARS_PER_WINNER = "Invalid Stars per winner: must be an integer between 500 and 1,000,000."
+    INVALID_STARS_PER_WINNER = "Invalid Stars per winner: must be an integer between 500 and 1,000,000 (max total: 1,000,000)."
     INVALID_PAYMENT_METHOD = "Invalid payment method '{method}'. Supported values: {supported}."
 
 

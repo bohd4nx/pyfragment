@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 import logging
 import random
-from typing import TYPE_CHECKING, get_args
+from typing import TYPE_CHECKING
 
-from pyfragment.core.constants import DEVICE, PREMIUM_GIVEAWAY_PAGE, STARS_GIVEAWAY_PAGE
+from pyfragment.core.constants import DEVICE, PREMIUM_GIVEAWAY_PAGE, STARS_GIVEAWAY_PAGE, STARS_GIVEAWAY_MIN, STARS_GIVEAWAY_MAX, STARS_WINNERS_MIN, STARS_WINNERS_MAX
 from pyfragment.domains.payments import parse_required_payment_amount
 from pyfragment.domains.tonapi.account import get_account_info
 from pyfragment.domains.tonapi.transaction import process_transaction
@@ -34,15 +34,15 @@ async def giveaway_stars(
     amount: int,
     payment_method: PaymentMethod = "ton",
 ) -> StarsGiveawayResult:
-    if not isinstance(winners, int) or not (1 <= winners <= 5):
+    if not isinstance(winners, int) or not (STARS_WINNERS_MIN <= winners <= STARS_WINNERS_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_WINNERS_STARS)
-    if not isinstance(amount, int) or not (500 <= amount <= 1_000_000):
+    if not isinstance(amount, int) or not (STARS_GIVEAWAY_MIN <= amount <= STARS_GIVEAWAY_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_STARS_PER_WINNER)
-    if payment_method not in get_args(PaymentMethod):
+    if payment_method not in PaymentMethod._value2member_map_:
         raise ConfigurationError(
             ConfigurationError.INVALID_PAYMENT_METHOD.format(
                 method=payment_method,
-                supported=", ".join(sorted(get_args(PaymentMethod))),
+                supported=", ".join(sorted(m.value for m in PaymentMethod)),
             )
         )
 
@@ -128,11 +128,11 @@ async def giveaway_premium(
         raise ConfigurationError(ConfigurationError.INVALID_WINNERS_PREMIUM)
     if months not in (3, 6, 12):
         raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
-    if payment_method not in get_args(PaymentMethod):
+    if payment_method not in PaymentMethod._value2member_map_:
         raise ConfigurationError(
             ConfigurationError.INVALID_PAYMENT_METHOD.format(
                 method=payment_method,
-                supported=", ".join(sorted(get_args(PaymentMethod))),
+                supported=", ".join(sorted(PaymentMethod._value2member_map_)),
             )
         )
 

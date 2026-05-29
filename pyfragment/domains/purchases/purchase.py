@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 import logging
 import time
-from typing import TYPE_CHECKING, get_args
+from typing import TYPE_CHECKING
 
-from pyfragment.core.constants import DEVICE, PREMIUM_PAGE, STARS_PAGE
+from pyfragment.core.constants import DEVICE, PREMIUM_PAGE, STARS_PAGE, STARS_PURCHASE_MIN, STARS_PURCHASE_MAX
 from pyfragment.domains.payments import parse_required_payment_amount
 from pyfragment.domains.tonapi.account import get_account_info
 from pyfragment.domains.tonapi.transaction import process_transaction
@@ -34,13 +34,13 @@ async def purchase_stars(
     show_sender: bool = True,
     payment_method: PaymentMethod = "ton",
 ) -> StarsResult:
-    if not isinstance(amount, int) or not (50 <= amount <= 1_000_000):
+    if not isinstance(amount, int) or not (STARS_PURCHASE_MIN <= amount <= STARS_PURCHASE_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_STARS_AMOUNT)
-    if payment_method not in get_args(PaymentMethod):
+    if payment_method not in PaymentMethod._value2member_map_:
         raise ConfigurationError(
             ConfigurationError.INVALID_PAYMENT_METHOD.format(
                 method=payment_method,
-                supported=", ".join(sorted(get_args(PaymentMethod))),
+                supported=", ".join(sorted(PaymentMethod._value2member_map_)),
             )
         )
 
@@ -117,11 +117,11 @@ async def purchase_premium(
 ) -> PremiumResult:
     if months not in (3, 6, 12):
         raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
-    if payment_method not in get_args(PaymentMethod):
+    if payment_method not in PaymentMethod._value2member_map_:
         raise ConfigurationError(
             ConfigurationError.INVALID_PAYMENT_METHOD.format(
                 method=payment_method,
-                supported=", ".join(sorted(get_args(PaymentMethod))),
+                supported=", ".join(sorted(PaymentMethod._value2member_map_)),
             )
         )
 

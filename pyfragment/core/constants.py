@@ -7,6 +7,14 @@ from tonutils.contracts.wallet import WalletV4R2, WalletV5R1
 
 WALLET_CLASSES: dict[str, Any] = {"V4R2": WalletV4R2, "V5R1": WalletV5R1}
 
+# Stars limits
+STARS_PURCHASE_MIN: int = 50
+STARS_PURCHASE_MAX: int = 10_000
+STARS_GIVEAWAY_MIN: int = 500
+STARS_GIVEAWAY_MAX: int = 1_000_000
+STARS_WINNERS_MIN: int = 1
+STARS_WINNERS_MAX: int = 5
+
 MIN_TON_BALANCE: float = 0.33
 USDT_TON_MASTER_ADDRESS: str = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"
 MIN_USDT_BALANCE: float = 0.75
@@ -25,23 +33,6 @@ ADS_TOPUP_PAGE: str = f"{FRAGMENT_BASE_URL}/ads/topup"
 NUMBERS_PAGE: str = f"{FRAGMENT_BASE_URL}/numbers"
 GIFTS_PAGE: str = f"{FRAGMENT_BASE_URL}/gifts"
 
-SUPPORTED_BROWSERS: frozenset[str] = frozenset(
-    {
-        "arc",
-        "brave",
-        "chrome",
-        "chromium",
-        "chromium_based",
-        "edge",
-        "firefox",
-        "firefox_based",
-        "librewolf",
-        "opera",
-        "opera_gx",
-        "safari",
-        "vivaldi",
-    }
-)
 
 DEVICE: str = json.dumps(
     {

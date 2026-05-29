@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, cast, get_args
+from typing import Any, cast
 
 from pyfragment.core.constants import DEFAULT_TIMEOUT, FRAGMENT_BASE_URL, REQUIRED_COOKIE_KEYS
 from pyfragment.domains.ads.service import AdsService
@@ -82,13 +82,14 @@ class FragmentClient:
     @staticmethod
     def _normalize_wallet_version(wallet_version: str) -> WalletVersion:
         version = wallet_version.strip().upper()
-        if version not in get_args(WalletVersion):
+        try:
+            return WalletVersion(version)
+        except ValueError:
             raise ConfigurationError(
                 ConfigurationError.UNSUPPORTED_VERSION.format(
-                    version=version, supported=", ".join(sorted(get_args(WalletVersion)))
+                    version=version, supported=", ".join(sorted(m.value for m in WalletVersion))
                 )
             )
-        return cast(WalletVersion, version)
 
     def __init__(
         self,
