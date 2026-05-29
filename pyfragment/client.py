@@ -148,7 +148,9 @@ class FragmentClient:
             username: Recipient identifier — ``@username``, ``username``, or ``https://t.me/username``.
             months: Duration — ``3``, ``6``, or ``12``.
             show_sender: Show your name as the sender. Defaults to ``True``.
-            payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.
+            payment_method: Payment currency — ``"ton"`` (default), ``"usdt_ton"``,
+                ``"usdt_eth"``, ``"usdt_pol"``, ``"usdc_eth"``, ``"usdc_base"``,
+                or ``"usdc_pol"``.
 
         Returns:
             :class:`PremiumResult` with ``transaction_id``, ``username``, and ``amount``.
@@ -168,7 +170,9 @@ class FragmentClient:
             username: Recipient identifier — ``@username``, ``username``, or ``https://t.me/username``.
             amount: Number of stars — integer from ``50`` to ``10 000 000``.
             show_sender: Show your name as the gift sender. Defaults to ``True``.
-            payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.
+            payment_method: Payment currency — ``"ton"`` (default), ``"usdt_ton"``,
+                ``"usdt_eth"``, ``"usdt_pol"``, ``"usdc_eth"``, ``"usdc_base"``,
+                or ``"usdc_pol"``.
 
         Returns:
             :class:`StarsResult` with ``transaction_id``, ``username``, and ``amount``.
@@ -224,7 +228,9 @@ class FragmentClient:
             channel: Channel identifier — ``@channel``, ``channel``, or ``https://t.me/channel``.
             winners: Number of winners — integer from ``1`` to ``15``.
             amount: Stars each winner receives — integer from ``500`` to ``1 000 000``.
-            payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.
+            payment_method: Payment currency — ``"ton"`` (default), ``"usdt_ton"``,
+                ``"usdt_eth"``, ``"usdt_pol"``, ``"usdc_eth"``, ``"usdc_base"``,
+                or ``"usdc_pol"``.
 
         Returns:
             :class:`StarsGiveawayResult` with ``transaction_id``, ``channel``,
@@ -245,7 +251,9 @@ class FragmentClient:
             channel: Channel identifier — ``@channel``, ``channel``, or ``https://t.me/channel``.
             winners: Number of winners — integer from ``1`` to ``24 000``.
             months: Premium duration per winner — ``3``, ``6``, or ``12``. Defaults to ``3``.
-            payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.
+            payment_method: Payment currency — ``"ton"`` (default), ``"usdt_ton"``,
+                ``"usdt_eth"``, ``"usdt_pol"``, ``"usdc_eth"``, ``"usdc_base"``,
+                or ``"usdc_pol"``.
 
         Returns:
             :class:`PremiumGiveawayResult` with ``transaction_id``, ``channel``,

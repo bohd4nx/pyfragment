@@ -38,6 +38,11 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _state_nonce() -> str:
+    # Fragment expects a pseudo-random nonce-like dh value in giveaway state updates.
+    return str(random.randint(100_000_000, 2_147_483_647))
+
+
 async def giveaway_stars(
     client: FragmentClient,
     channel: str,
@@ -65,7 +70,12 @@ async def giveaway_stars(
 
         await client.call(
             "updateStarsGiveawayState",
-            {"mode": "new", "lv": "false", "dh": str(random.randint(100_000_000, 999_999_999))},
+            {"mode": "new", "lv": "false", "dh": _state_nonce()},
+            page_url=STARS_GIVEAWAY_PAGE,
+        )
+        await client.call(
+            "updateStarsGiveawayPrices",
+            {"quantity": winners, "stars": amount},
             page_url=STARS_GIVEAWAY_PAGE,
         )
 
@@ -162,9 +172,14 @@ async def giveaway_premium(
             {
                 "mode": "new",
                 "lv": "false",
-                "dh": str(random.randint(100_000_000, 999_999_999)),
+                "dh": _state_nonce(),
                 "quantity": "",
             },
+            page_url=PREMIUM_GIVEAWAY_PAGE,
+        )
+        await client.call(
+            "updatePremiumGiveawayPrices",
+            {"quantity": winners},
             page_url=PREMIUM_GIVEAWAY_PAGE,
         )
 

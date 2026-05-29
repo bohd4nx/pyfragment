@@ -28,7 +28,7 @@ COOKIES = {
 CHANNEL = "https://t.me/channel"
 WINNERS = 10  # 1–24 000
 MONTHS = 3  # 3, 6 or 12
-PAYMENT_METHOD = PaymentMethod.TON  # PaymentMethod.TON or PaymentMethod.USDT_TON
+PAYMENT_METHOD = PaymentMethod.TON  # TON, USDT_TON, USDT_ETH, USDT_POL, USDC_ETH, USDC_BASE, USDC_POL
 
 
 async def main() -> None:

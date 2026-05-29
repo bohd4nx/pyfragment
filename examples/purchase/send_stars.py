@@ -27,7 +27,7 @@ COOKIES = {
 
 USERNAME = "https://t.me/username"
 AMOUNT = 500  # 50–10 000 000 stars
-PAYMENT_METHOD = PaymentMethod.USDT_TON  # PaymentMethod.TON or PaymentMethod.USDT_TON
+PAYMENT_METHOD = PaymentMethod.USDT_TON  # TON, USDT_TON, USDT_ETH, USDT_POL, USDC_ETH, USDC_BASE, USDC_POL
 
 
 async def main() -> None:

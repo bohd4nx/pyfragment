@@ -4,6 +4,7 @@ from importlib.metadata import version
 from pyfragment.client import FragmentClient
 from pyfragment.core.cookies import get_cookies_from_browser
 from pyfragment.exceptions import (
+    AlreadySubscribedError,
     AnonymousNumberError,
     ClientError,
     ConfigurationError,
@@ -53,6 +54,7 @@ __all__ = [
     "FragmentAPIError",
     "FragmentPageError",
     "ConfigurationError",
+    "AlreadySubscribedError",
     "UserNotFoundError",
     "WalletError",
     "VerificationError",

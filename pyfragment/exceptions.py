@@ -96,6 +96,12 @@ class UserNotFoundError(FragmentAPIError):
     )
 
 
+class AlreadySubscribedError(FragmentAPIError):
+    """Raised when trying to gift Premium to a user who already has an active subscription."""
+
+    PREMIUM_ACTIVE = "This account is already subscribed to Telegram Premium."
+
+
 class AnonymousNumberError(FragmentAPIError):
     """Raised for Fragment anonymous number API failures."""
 
@@ -167,6 +173,7 @@ __all__ = [
     "FragmentAPIError",
     "FragmentPageError",
     "AnonymousNumberError",
+    "AlreadySubscribedError",
     "UserNotFoundError",
     "TransactionError",
     "ParseError",

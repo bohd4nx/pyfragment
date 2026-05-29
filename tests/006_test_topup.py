@@ -6,6 +6,7 @@ import pytest
 
 import pyfragment.domains.ads.tonup as _topup_ton_mod
 from pyfragment import AdsTopupResult, ConfigurationError, FragmentClient, UserNotFoundError
+from pyfragment.core.constants.limits import TON_TOPUP_MAX, TON_TOPUP_MIN
 from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
 
 # Topup TON validation tests
@@ -14,13 +15,13 @@ from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSAC
 @pytest.mark.asyncio
 async def test_topup_ton_amount_zero(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.topup_ton("@user", amount=0)
+        await client.topup_ton("@user", amount=TON_TOPUP_MIN - 1)
 
 
 @pytest.mark.asyncio
 async def test_topup_ton_amount_too_high(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.topup_ton("@user", amount=1_000_000_001)
+        await client.topup_ton("@user", amount=TON_TOPUP_MAX + 1)
 
 
 @pytest.mark.asyncio

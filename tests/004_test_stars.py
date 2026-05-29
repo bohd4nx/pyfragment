@@ -7,6 +7,14 @@ import pytest
 import pyfragment.domains.giveaways.giveaway as _giveaway_stars_mod
 import pyfragment.domains.purchases.purchase as _purchase_stars_mod
 from pyfragment import ConfigurationError, FragmentClient, StarsGiveawayResult, StarsResult, UserNotFoundError
+from pyfragment.core.constants.limits import (
+    STARS_GIVEAWAY_MAX,
+    STARS_GIVEAWAY_MIN,
+    STARS_PURCHASE_MAX,
+    STARS_PURCHASE_MIN,
+    STARS_WINNERS_MAX,
+    STARS_WINNERS_MIN,
+)
 from pyfragment.models.enums import PaymentMethod
 from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
 
@@ -16,13 +24,13 @@ from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSAC
 @pytest.mark.asyncio
 async def test_purchase_stars_amount_too_low(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.purchase_stars("@user", amount=49)
+        await client.purchase_stars("@user", amount=STARS_PURCHASE_MIN - 1)
 
 
 @pytest.mark.asyncio
 async def test_purchase_stars_amount_too_high(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.purchase_stars("@user", amount=1_000_001)
+        await client.purchase_stars("@user", amount=STARS_PURCHASE_MAX + 1)
 
 
 @pytest.mark.asyncio
@@ -114,25 +122,25 @@ async def test_purchase_stars_user_not_found(client: FragmentClient) -> None:
 @pytest.mark.asyncio
 async def test_giveaway_stars_winners_too_low(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.giveaway_stars("@channel", winners=0, amount=500)
+        await client.giveaway_stars("@channel", winners=STARS_WINNERS_MIN - 1, amount=STARS_GIVEAWAY_MIN)
 
 
 @pytest.mark.asyncio
 async def test_giveaway_stars_winners_too_high(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.giveaway_stars("@channel", winners=6, amount=500)
+        await client.giveaway_stars("@channel", winners=STARS_WINNERS_MAX + 1, amount=STARS_GIVEAWAY_MIN)
 
 
 @pytest.mark.asyncio
 async def test_giveaway_stars_amount_too_low(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.giveaway_stars("@channel", winners=1, amount=499)
+        await client.giveaway_stars("@channel", winners=STARS_WINNERS_MIN, amount=STARS_GIVEAWAY_MIN - 1)
 
 
 @pytest.mark.asyncio
 async def test_giveaway_stars_amount_too_high(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.giveaway_stars("@channel", winners=1, amount=1_000_001)
+        await client.giveaway_stars("@channel", winners=STARS_WINNERS_MIN, amount=STARS_GIVEAWAY_MAX + 1)
 
 
 @pytest.mark.asyncio
@@ -166,6 +174,7 @@ async def test_giveaway_stars_success(client: FragmentClient) -> None:
                 side_effect=[
                     {"found": {"recipient": FAKE_RECIPIENT}},
                     {},
+                    {},
                     {"req_id": FAKE_REQ_ID},
                     FAKE_TRANSACTION,
                 ]
@@ -189,6 +198,7 @@ async def test_giveaway_stars_passes_payment_method(client: FragmentClient) -> N
         side_effect=[
             {"found": {"recipient": FAKE_RECIPIENT}},
             {},
+            {},
             {"req_id": FAKE_REQ_ID},
             FAKE_TRANSACTION,
         ]
@@ -201,7 +211,7 @@ async def test_giveaway_stars_passes_payment_method(client: FragmentClient) -> N
     ):
         await client.giveaway_stars("@channel", winners=3, amount=1000, payment_method=PaymentMethod.USDT_TON)
 
-    init_call = call_mock.await_args_list[2]
+    init_call = call_mock.await_args_list[3]
     assert init_call.args[0] == "initGiveawayStarsRequest"
     assert init_call.args[1]["payment_method"] == "usdt_ton"
     assert proc_mock.await_args is not None

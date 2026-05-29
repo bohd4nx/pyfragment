@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-import time
+import random
 from typing import TYPE_CHECKING
 
 from pyfragment.core.constants import (
@@ -17,6 +17,7 @@ from pyfragment.domains.payments import parse_required_payment_amount
 from pyfragment.domains.tonapi.account import get_account_info
 from pyfragment.domains.tonapi.transaction import process_transaction
 from pyfragment.exceptions import (
+    AlreadySubscribedError,
     ConfigurationError,
     FragmentAPIError,
     FragmentError,
@@ -32,6 +33,11 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
+
+
+def _state_nonce() -> str:
+    # Fragment accepts a pseudo-random request nonce in state update methods.
+    return str(random.randint(100_000_000, 2_147_483_647))
 
 
 async def purchase_stars(
@@ -59,7 +65,7 @@ async def purchase_stars(
 
         await client.call(
             "updateStarsBuyState",
-            {"mode": "new", "lv": "false", "dh": str(int(time.time()))},
+            {"mode": "new", "lv": "false", "dh": _state_nonce()},
             page_url=STARS_PAGE,
         )
         result = await client.call(
@@ -140,7 +146,7 @@ async def purchase_premium(
 
         await client.call(
             "updatePremiumState",
-            {"mode": "new", "lv": "false", "dh": str(int(time.time()))},
+            {"mode": "new", "lv": "false", "dh": _state_nonce()},
             page_url=PREMIUM_PAGE,
         )
         result = await client.call(
@@ -148,6 +154,9 @@ async def purchase_premium(
             {"recipient": recipient, "months": months, "payment_method": payment_method},
             page_url=PREMIUM_PAGE,
         )
+        error_text = str(result.get("error", "")).strip().lower()
+        if "already subscribed to telegram premium" in error_text:
+            raise AlreadySubscribedError(AlreadySubscribedError.PREMIUM_ACTIVE)
         required_payment_amount = parse_required_payment_amount(result)
         req_id = result.get("req_id")
         if not req_id:

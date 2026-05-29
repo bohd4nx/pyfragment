@@ -17,6 +17,11 @@ else:
 class PaymentMethod(StrEnum):
     TON = "ton"
     USDT_TON = "usdt_ton"
+    USDT_ETH = "usdt_eth"
+    USDT_POL = "usdt_pol"
+    USDC_ETH = "usdc_eth"
+    USDC_BASE = "usdc_base"
+    USDC_POL = "usdc_pol"
 
 
 class WalletVersion(StrEnum):
