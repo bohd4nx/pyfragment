@@ -1,9 +1,17 @@
 from __future__ import annotations
 
-from enum import StrEnum
+import sys
+from enum import Enum
 from typing import Any
 
 from tonutils.contracts.wallet import WalletV4R2, WalletV5R1
+
+if sys.version_info >= (3, 11):
+    from enum import StrEnum
+else:
+
+    class StrEnum(str, Enum):  # noqa: F811
+        pass
 
 
 class PaymentMethod(StrEnum):

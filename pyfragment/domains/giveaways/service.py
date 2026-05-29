@@ -17,7 +17,7 @@ class GiveawaysService(BaseService):
         channel: str,
         winners: int,
         amount: int,
-        payment_method: PaymentMethod = "ton",
+        payment_method: PaymentMethod = PaymentMethod.TON,
     ) -> StarsGiveawayResult:
         return await giveaway_stars(self._client, channel, winners, amount, payment_method=payment_method)
 
@@ -26,6 +26,6 @@ class GiveawaysService(BaseService):
         channel: str,
         winners: int,
         months: int = 3,
-        payment_method: PaymentMethod = "ton",
+        payment_method: PaymentMethod = PaymentMethod.TON,
     ) -> PremiumGiveawayResult:
         return await giveaway_premium(self._client, channel, winners, months, payment_method=payment_method)

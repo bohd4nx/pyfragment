@@ -4,7 +4,7 @@ import json
 import logging
 from typing import TYPE_CHECKING
 
-from pyfragment.core.constants import ADS_TOPUP_PAGE, DEVICE
+from pyfragment.core.constants import ADS_TOPUP_PAGE, DEVICE_INFO
 from pyfragment.domains.payments import parse_required_payment_amount
 from pyfragment.domains.tonapi.account import get_account_info
 from pyfragment.domains.tonapi.transaction import process_transaction
@@ -48,7 +48,7 @@ async def topup_ton(client: FragmentClient, username: str, amount: int, show_sen
             "getAdsTopupLink",
             {
                 "account": json.dumps(account),
-                "device": DEVICE,
+                "device": json.dumps(DEVICE_INFO),
                 "transaction": 1,
                 "id": req_id,
                 "show_sender": int(show_sender),

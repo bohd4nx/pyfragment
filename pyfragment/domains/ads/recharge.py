@@ -4,7 +4,7 @@ import json
 import logging
 from typing import TYPE_CHECKING
 
-from pyfragment.core.constants import ADS_TOPUP_PAGE, DEVICE
+from pyfragment.core.constants import ADS_TOPUP_PAGE, DEVICE_INFO
 from pyfragment.domains.tonapi.account import get_account_info
 from pyfragment.domains.tonapi.transaction import process_transaction
 from pyfragment.exceptions import ConfigurationError, FragmentAPIError, FragmentError, UnexpectedError, VerificationError
@@ -34,7 +34,7 @@ async def recharge_ads(client: FragmentClient, account: str, amount: int) -> Ads
             "getAdsRechargeLink",
             {
                 "account": json.dumps(account_info),
-                "device": DEVICE,
+                "device": json.dumps(DEVICE_INFO),
                 "transaction": 1,
                 "id": req_id,
             },

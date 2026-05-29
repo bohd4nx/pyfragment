@@ -19,7 +19,7 @@ def get_cookies_from_browser(browser: str = "chrome") -> CookieResult:
     global rookiepy
 
     key = browser.lower()
-    if key not in SupportedBrowser._value2member_map_:
+    if not any(key == m for m in SupportedBrowser):
         supported = ", ".join(sorted(b.value for b in SupportedBrowser))
         raise CookieError(CookieError.UNSUPPORTED_BROWSER.format(browser=browser, supported=supported))
 

@@ -6,7 +6,7 @@ import time
 from typing import TYPE_CHECKING
 
 from pyfragment.core.constants import (
-    DEVICE,
+    DEVICE_INFO,
     PREMIUM_MONTHS_VALID,
     PREMIUM_PAGE,
     STARS_PAGE,
@@ -39,15 +39,15 @@ async def purchase_stars(
     username: str,
     amount: int,
     show_sender: bool = True,
-    payment_method: PaymentMethod = "ton",
+    payment_method: PaymentMethod = PaymentMethod.TON,
 ) -> StarsResult:
     if not isinstance(amount, int) or not (STARS_PURCHASE_MIN <= amount <= STARS_PURCHASE_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_STARS_AMOUNT)
-    if payment_method not in PaymentMethod._value2member_map_:
+    if not any(payment_method == m for m in PaymentMethod):
         raise ConfigurationError(
             ConfigurationError.INVALID_PAYMENT_METHOD.format(
                 method=payment_method,
-                supported=", ".join(sorted(PaymentMethod._value2member_map_)),
+                supported=", ".join(sorted(m.value for m in PaymentMethod)),
             )
         )
 
@@ -77,7 +77,7 @@ async def purchase_stars(
             "getBuyStarsLink",
             {
                 "account": json.dumps(account),
-                "device": DEVICE,
+                "device": json.dumps(DEVICE_INFO),
                 "transaction": 1,
                 "id": req_id,
                 "show_sender": int(show_sender),
@@ -120,15 +120,15 @@ async def purchase_premium(
     username: str,
     months: int,
     show_sender: bool = True,
-    payment_method: PaymentMethod = "ton",
+    payment_method: PaymentMethod = PaymentMethod.TON,
 ) -> PremiumResult:
     if months not in PREMIUM_MONTHS_VALID:
         raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
-    if payment_method not in PaymentMethod._value2member_map_:
+    if not any(payment_method == m for m in PaymentMethod):
         raise ConfigurationError(
             ConfigurationError.INVALID_PAYMENT_METHOD.format(
                 method=payment_method,
-                supported=", ".join(sorted(PaymentMethod._value2member_map_)),
+                supported=", ".join(sorted(m.value for m in PaymentMethod)),
             )
         )
 
@@ -158,7 +158,7 @@ async def purchase_premium(
             "getGiftPremiumLink",
             {
                 "account": json.dumps(account),
-                "device": DEVICE,
+                "device": json.dumps(DEVICE_INFO),
                 "transaction": 1,
                 "id": req_id,
                 "show_sender": int(show_sender),

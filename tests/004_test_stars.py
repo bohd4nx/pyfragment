@@ -7,6 +7,7 @@ import pytest
 import pyfragment.domains.giveaways.giveaway as _giveaway_stars_mod
 import pyfragment.domains.purchases.purchase as _purchase_stars_mod
 from pyfragment import ConfigurationError, FragmentClient, StarsGiveawayResult, StarsResult, UserNotFoundError
+from pyfragment.models.enums import PaymentMethod
 from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
 
 # Stars purchase validation tests
@@ -78,7 +79,7 @@ async def test_purchase_stars_passes_payment_method(client: FragmentClient) -> N
         patch.object(_purchase_stars_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
         patch.object(_purchase_stars_mod, "process_transaction", proc_mock),
     ):
-        await client.purchase_stars("@user", amount=500, payment_method="usdt_ton")
+        await client.purchase_stars("@user", amount=500, payment_method=PaymentMethod.USDT_TON)
 
     init_call = call_mock.await_args_list[2]
     assert init_call.args[0] == "initBuyStarsRequest"
@@ -198,7 +199,7 @@ async def test_giveaway_stars_passes_payment_method(client: FragmentClient) -> N
         patch.object(_giveaway_stars_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
         patch.object(_giveaway_stars_mod, "process_transaction", proc_mock),
     ):
-        await client.giveaway_stars("@channel", winners=3, amount=1000, payment_method="usdt_ton")
+        await client.giveaway_stars("@channel", winners=3, amount=1000, payment_method=PaymentMethod.USDT_TON)
 
     init_call = call_mock.await_args_list[2]
     assert init_call.args[0] == "initGiveawayStarsRequest"

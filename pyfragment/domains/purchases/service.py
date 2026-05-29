@@ -17,7 +17,7 @@ class PurchasesService(BaseService):
         username: str,
         amount: int,
         show_sender: bool = True,
-        payment_method: PaymentMethod = "ton",
+        payment_method: PaymentMethod = PaymentMethod.TON,
     ) -> StarsResult:
         return await purchase_stars(self._client, username, amount, show_sender=show_sender, payment_method=payment_method)
 
@@ -26,6 +26,6 @@ class PurchasesService(BaseService):
         username: str,
         months: int,
         show_sender: bool = True,
-        payment_method: PaymentMethod = "ton",
+        payment_method: PaymentMethod = PaymentMethod.TON,
     ) -> PremiumResult:
         return await purchase_premium(self._client, username, months, show_sender=show_sender, payment_method=payment_method)

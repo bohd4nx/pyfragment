@@ -124,7 +124,7 @@ async def _broadcast_with_retry(wallet: Any, message: dict[str, Any], payload: s
 async def process_transaction(
     client: FragmentClient,
     transaction_data: dict[str, Any],
-    payment_method: PaymentMethod = "ton",
+    payment_method: PaymentMethod = PaymentMethod.TON,
     required_payment_amount: float | None = None,
 ) -> str:
     """Sign and broadcast a Fragment transaction with the seeded TON wallet.

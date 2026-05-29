@@ -136,7 +136,7 @@ class FragmentClient:
         username: str,
         months: int,
         show_sender: bool = True,
-        payment_method: PaymentMethod = "ton",
+        payment_method: PaymentMethod = PaymentMethod.TON,
     ) -> PremiumResult:
         """Gift Telegram Premium to a user.
 
@@ -156,7 +156,7 @@ class FragmentClient:
         username: str,
         amount: int,
         show_sender: bool = True,
-        payment_method: PaymentMethod = "ton",
+        payment_method: PaymentMethod = PaymentMethod.TON,
     ) -> StarsResult:
         """Send Telegram Stars to a user.
 
@@ -212,7 +212,7 @@ class FragmentClient:
         channel: str,
         winners: int,
         amount: int,
-        payment_method: PaymentMethod = "ton",
+        payment_method: PaymentMethod = PaymentMethod.TON,
     ) -> StarsGiveawayResult:
         """Run a Telegram Stars giveaway for a channel.
 
@@ -233,7 +233,7 @@ class FragmentClient:
         channel: str,
         winners: int,
         months: int = 3,
-        payment_method: PaymentMethod = "ton",
+        payment_method: PaymentMethod = PaymentMethod.TON,
     ) -> PremiumGiveawayResult:
         """Run a Telegram Premium giveaway for a channel.
 

@@ -6,7 +6,7 @@ import random
 from typing import TYPE_CHECKING
 
 from pyfragment.core.constants import (
-    DEVICE,
+    DEVICE_INFO,
     PREMIUM_GIVEAWAY_PAGE,
     PREMIUM_MONTHS_VALID,
     PREMIUM_WINNERS_MAX,
@@ -43,13 +43,13 @@ async def giveaway_stars(
     channel: str,
     winners: int,
     amount: int,
-    payment_method: PaymentMethod = "ton",
+    payment_method: PaymentMethod = PaymentMethod.TON,
 ) -> StarsGiveawayResult:
     if not isinstance(winners, int) or not (STARS_WINNERS_MIN <= winners <= STARS_WINNERS_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_WINNERS_STARS)
     if not isinstance(amount, int) or not (STARS_GIVEAWAY_MIN <= amount <= STARS_GIVEAWAY_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_STARS_PER_WINNER)
-    if payment_method not in PaymentMethod._value2member_map_:
+    if not any(payment_method == m for m in PaymentMethod):
         raise ConfigurationError(
             ConfigurationError.INVALID_PAYMENT_METHOD.format(
                 method=payment_method,
@@ -89,7 +89,7 @@ async def giveaway_stars(
             "getGiveawayStarsLink",
             {
                 "account": json.dumps(account),
-                "device": DEVICE,
+                "device": json.dumps(DEVICE_INFO),
                 "transaction": 1,
                 "id": req_id,
             },
@@ -133,17 +133,17 @@ async def giveaway_premium(
     channel: str,
     winners: int,
     months: int = 3,
-    payment_method: PaymentMethod = "ton",
+    payment_method: PaymentMethod = PaymentMethod.TON,
 ) -> PremiumGiveawayResult:
     if not isinstance(winners, int) or not (PREMIUM_WINNERS_MIN <= winners <= PREMIUM_WINNERS_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_WINNERS_PREMIUM)
     if months not in PREMIUM_MONTHS_VALID:
         raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
-    if payment_method not in PaymentMethod._value2member_map_:
+    if not any(payment_method == m for m in PaymentMethod):
         raise ConfigurationError(
             ConfigurationError.INVALID_PAYMENT_METHOD.format(
                 method=payment_method,
-                supported=", ".join(sorted(PaymentMethod._value2member_map_)),
+                supported=", ".join(sorted(m.value for m in PaymentMethod)),
             )
         )
 
@@ -188,7 +188,7 @@ async def giveaway_premium(
             "getGiveawayPremiumLink",
             {
                 "account": json.dumps(account),
-                "device": DEVICE,
+                "device": json.dumps(DEVICE_INFO),
                 "transaction": 1,
                 "id": req_id,
             },
