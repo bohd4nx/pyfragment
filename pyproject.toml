@@ -91,7 +91,7 @@ ignore = ["E501", "UP017"]
 [tool.mypy]
 python_version = "3.10"
 strict = true
-exclude = ["^examples/"]
+exclude = ["^examples/", "^logs/"]
 
 [[tool.mypy.overrides]]
 module = "rookiepy"

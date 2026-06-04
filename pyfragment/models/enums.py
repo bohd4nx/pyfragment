@@ -4,7 +4,7 @@ import sys
 from enum import Enum
 from typing import Any
 
-from tonutils.contracts.wallet import WalletV4R2, WalletV5R1
+from tonutils.contracts.wallet import WalletHighloadV2, WalletHighloadV3R1, WalletV4R2, WalletV5R1
 
 if sys.version_info >= (3, 11):
     from enum import StrEnum
@@ -29,11 +29,15 @@ class PaymentMethod(StrEnum):
 class WalletVersion(StrEnum):
     V4R2 = "V4R2"
     V5R1 = "V5R1"
+    HighloadV2 = "HighloadV2"
+    HighloadV3R1 = "HighloadV3R1"
 
 
 WALLET_CLASSES: dict[WalletVersion, Any] = {
     WalletVersion.V4R2: WalletV4R2,
     WalletVersion.V5R1: WalletV5R1,
+    WalletVersion.HighloadV2: WalletHighloadV2,
+    WalletVersion.HighloadV3R1: WalletHighloadV3R1,
 }
 
 
