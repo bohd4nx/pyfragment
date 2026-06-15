@@ -16,12 +16,12 @@ STARS_WINNERS_MAX: int = 15
 PREMIUM_WINNERS_MIN: int = 1
 PREMIUM_WINNERS_MAX: int = 24_000
 
-# TON topup / Ads recharge amount
-TON_TOPUP_MIN: int = 1
-TON_TOPUP_MAX: int = 1_000_000_000
+# GRAM (ex TON) topup / Ads recharge amount
+GRAM_TOPUP_MIN: int = 1
+GRAM_TOPUP_MAX: int = 1_000_000_000
 
 # Wallet minimum balances
-MIN_TON_BALANCE: float = 0.33
+MIN_GRAM_BALANCE: float = 0.33
 MIN_USDT_BALANCE: float = 0.75
 
 # Premium subscription durations (months)

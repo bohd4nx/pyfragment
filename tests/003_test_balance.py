@@ -1,4 +1,4 @@
-"""Exercise transaction signing, balance checks, and retry behavior for TON and USDT flows."""
+"""Exercise transaction signing, balance checks, and retry behavior for GRAM (ex TON) and USDT flows."""
 
 from collections.abc import Generator
 from contextlib import contextmanager
@@ -22,7 +22,7 @@ TRANSACTION_DATA = {
         "messages": [
             {
                 "address": "0:852443f8599fe6a5da34fe43049ac4e0beb3071bb2bfb56635ea9421287c283a",
-                "amount": "500000000",  # 0.5 TON
+                "amount": "500000000",  # 0.5 GRAM
                 "payload": "",
             }
         ]
@@ -63,7 +63,7 @@ def _patch_wallet(wallet: MagicMock) -> Generator[None, None, None]:
 
 @pytest.mark.asyncio
 async def test_sufficient_balance_broadcasts() -> None:
-    wallet = _make_wallet(balance_nanotons=1_000_000_000)  # 1 TON, above threshold
+    wallet = _make_wallet(balance_nanotons=1_000_000_000)  # 1 GRAM, above threshold
     with _patch_wallet(wallet), patch("pyfragment.domains.tonapi.transaction.clean_decode", return_value="50 Telegram Stars"):
         result = await process_transaction(_make_client(), TRANSACTION_DATA)
     assert result == "abc123"
@@ -72,7 +72,7 @@ async def test_sufficient_balance_broadcasts() -> None:
 
 @pytest.mark.asyncio
 async def test_insufficient_balance_raises() -> None:
-    wallet = _make_wallet(balance_nanotons=100_000_000)  # 0.1 TON, below threshold
+    wallet = _make_wallet(balance_nanotons=100_000_000)  # 0.1 GRAM, below threshold
     with _patch_wallet(wallet):
         with pytest.raises(WalletError, match="required"):
             await process_transaction(_make_client(), TRANSACTION_DATA)
@@ -89,7 +89,7 @@ async def test_exact_minimum_balance_broadcasts() -> None:
 
 @pytest.mark.asyncio
 async def test_one_nanoton_below_minimum_raises() -> None:
-    wallet = _make_wallet(balance_nanotons=499_999_999)  # 1 nanoton below transaction amount threshold
+    wallet = _make_wallet(balance_nanotons=499_999_999)  # 1 nanogram below transaction amount threshold
     with _patch_wallet(wallet):
         with pytest.raises(WalletError, match="required"):
             await process_transaction(_make_client(), TRANSACTION_DATA)
@@ -142,11 +142,11 @@ async def test_duplicate_seqno_raises_after_retries() -> None:
 
 
 @pytest.mark.asyncio
-async def test_usdt_payment_requires_min_ton_gas_reserve() -> None:
-    wallet = _make_wallet(balance_nanotons=10_000_000)  # 0.01 TON below MIN_TON_BALANCE
+async def test_usdt_payment_requires_min_gram_gas_reserve() -> None:
+    wallet = _make_wallet(balance_nanotons=10_000_000)  # 0.01 GRAM below MIN_GRAM_BALANCE
     with _patch_wallet(wallet), patch("pyfragment.domains.tonapi.account.get_usdt_balance", AsyncMock(return_value=100.0)):
-        with pytest.raises(WalletError, match="Insufficient TON balance"):
-            await process_transaction(_make_client(), TRANSACTION_DATA, payment_method=PaymentMethod.USDT_TON)
+        with pytest.raises(WalletError, match="Insufficient GRAM"):
+            await process_transaction(_make_client(), TRANSACTION_DATA, payment_method=PaymentMethod.USDT_GRAM)
 
 
 @pytest.mark.asyncio
@@ -174,6 +174,6 @@ async def test_usdt_payment_checks_usdt_balance() -> None:
             await process_transaction(
                 _make_client(),
                 transaction,
-                payment_method=PaymentMethod.USDT_TON,
+                payment_method=PaymentMethod.USDT_GRAM,
                 required_payment_amount=12.5,
             )

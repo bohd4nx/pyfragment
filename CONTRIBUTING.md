@@ -30,7 +30,7 @@ pyfragment/
   client.py           — FragmentClient (public entry point)
   core/               — transport, cookies, constants
   domains/            — one package per feature domain
-    ads/              — recharge_ads, topup_ton
+    ads/              — recharge_ads, topup_gram
     anonymous_numbers/— buy_number, manage_number
     giveaways/        — giveaway_stars, giveaway_premium
     marketplace/      — search_usernames, search_numbers, search_gifts

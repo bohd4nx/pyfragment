@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-USDT_TON_MASTER_ADDRESS: str = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"
+USDT_GRAM_MASTER_ADDRESS: str = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"
 
 DEVICE_INFO: dict[str, Any] = {
     "platform": "iphone",

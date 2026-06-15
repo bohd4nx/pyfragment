@@ -4,7 +4,7 @@ import json
 import logging
 from typing import TYPE_CHECKING
 
-from pyfragment.core.constants import ADS_TOPUP_PAGE, DEVICE_INFO, TON_TOPUP_MAX, TON_TOPUP_MIN
+from pyfragment.core.constants import ADS_TOPUP_PAGE, DEVICE_INFO, GRAM_TOPUP_MAX, GRAM_TOPUP_MIN
 from pyfragment.domains.payments import parse_required_payment_amount
 from pyfragment.domains.tonapi.account import get_account_info
 from pyfragment.domains.tonapi.transaction import process_transaction
@@ -25,9 +25,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-async def topup_ton(client: FragmentClient, username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
-    if not isinstance(amount, int) or not (TON_TOPUP_MIN <= amount <= TON_TOPUP_MAX):
-        raise ConfigurationError(ConfigurationError.INVALID_TON_AMOUNT)
+async def topup_gram(client: FragmentClient, username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
+    if not isinstance(amount, int) or not (GRAM_TOPUP_MIN <= amount <= GRAM_TOPUP_MAX):
+        raise ConfigurationError(ConfigurationError.INVALID_GRAM_AMOUNT)
 
     try:
         await client.call("updateAdsTopupState", {"mode": "new"}, page_url=ADS_TOPUP_PAGE)
@@ -41,7 +41,7 @@ async def topup_ton(client: FragmentClient, username: str, amount: int, show_sen
         required_payment_amount = parse_required_payment_amount(result)
         req_id = result.get("req_id")
         if not req_id:
-            raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="TON topup"))
+            raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="GRAM (ex TON) topup"))
 
         account = await get_account_info(client)
         transaction = await client.call(
@@ -62,8 +62,12 @@ async def topup_ton(client: FragmentClient, username: str, amount: int, show_sen
         return AdsTopupResult(transaction_id=tx_hash, username=username, amount=amount)
 
     except FragmentError as exc:
-        logger.error("Failed to top up TON for user '%s' with %s TON: %s", username, amount, exc, exc_info=True)
+        logger.error(
+            "Failed to top up GRAM (ex TON) for user '%s' with %s GRAM (ex TON): %s", username, amount, exc, exc_info=True
+        )
         raise
     except Exception as exc:
-        logger.exception("Failed to top up TON for user '%s' with %s TON due to an unexpected error", username, amount)
+        logger.exception(
+            "Failed to top up GRAM (ex TON) for user '%s' with %s GRAM (ex TON) due to an unexpected error", username, amount
+        )
         raise UnexpectedError(UnexpectedError.UNEXPECTED.format(exc=exc)) from exc

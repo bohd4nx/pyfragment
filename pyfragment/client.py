@@ -36,7 +36,7 @@ class FragmentClient:
         connected with Fragment or Telegram.
 
     Args:
-        seed: 12- or 24-word mnemonic phrase for the TON wallet.
+        seed: 12- or 24-word mnemonic phrase for the GRAM (ex TON) wallet.
         api_key: Tonapi API key — get one at https://tonconsole.com.
         cookies: Fragment session cookies as a dict or JSON string.
         wallet_version: Wallet contract version — ``"V4R2"`` or ``"V5R1"`` (default).
@@ -140,7 +140,7 @@ class FragmentClient:
         username: str,
         months: int,
         show_sender: bool = True,
-        payment_method: PaymentMethod = PaymentMethod.TON,
+        payment_method: PaymentMethod = PaymentMethod.GRAM,
     ) -> PremiumResult:
         """Gift Telegram Premium to a user.
 
@@ -148,7 +148,7 @@ class FragmentClient:
             username: Recipient identifier — ``@username``, ``username``, or ``https://t.me/username``.
             months: Duration — ``3``, ``6``, or ``12``.
             show_sender: Show your name as the sender. Defaults to ``True``.
-            payment_method: Payment currency — ``"ton"`` (default), ``"usdt_ton"``,
+            payment_method: Payment currency — ``"ton"`` (GRAM (ex TON), default), ``"usdt_ton"`` (USDT on GRAM (ex TON)),
                 ``"usdt_eth"``, ``"usdt_pol"``, ``"usdc_eth"``, ``"usdc_base"``,
                 or ``"usdc_pol"``.
 
@@ -162,7 +162,7 @@ class FragmentClient:
         username: str,
         amount: int,
         show_sender: bool = True,
-        payment_method: PaymentMethod = PaymentMethod.TON,
+        payment_method: PaymentMethod = PaymentMethod.GRAM,
     ) -> StarsResult:
         """Send Telegram Stars to a user.
 
@@ -170,7 +170,7 @@ class FragmentClient:
             username: Recipient identifier — ``@username``, ``username``, or ``https://t.me/username``.
             amount: Number of stars — integer from ``50`` to ``10 000 000``.
             show_sender: Show your name as the gift sender. Defaults to ``True``.
-            payment_method: Payment currency — ``"ton"`` (default), ``"usdt_ton"``,
+            payment_method: Payment currency — ``"ton"`` (GRAM (ex TON), default), ``"usdt_ton"`` (USDT on GRAM (ex TON)),
                 ``"usdt_eth"``, ``"usdt_pol"``, ``"usdc_eth"``, ``"usdc_base"``,
                 or ``"usdc_pol"``.
 
@@ -179,18 +179,18 @@ class FragmentClient:
         """
         return await self.purchases.purchase_stars(username, amount, show_sender=show_sender, payment_method=payment_method)
 
-    async def topup_ton(self, username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
-        """Top up TON to a recipient's Telegram balance.
+    async def topup_gram(self, username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
+        """Top up GRAM (ex TON) to a recipient's Telegram balance.
 
         Args:
             username: Recipient's Telegram username (with or without ``@``).
-            amount: Amount in TON — integer from ``1`` to ``1 000 000 000``.
+            amount: Amount in GRAM (ex TON) — integer from ``1`` to ``1 000 000 000``.
             show_sender: Show your name as the sender. Defaults to ``True``.
 
         Returns:
             :class:`AdsTopupResult` with ``transaction_id``, ``username``, and ``amount``.
         """
-        return await self.ads.topup_ton(username, amount, show_sender=show_sender)
+        return await self.ads.topup_gram(username, amount, show_sender=show_sender)
 
     async def recharge_ads(self, account: str, amount: int) -> AdsRechargeResult:
         """Add funds to your own Telegram Ads account.
@@ -198,7 +198,7 @@ class FragmentClient:
         Args:
             account: Your Fragment Ads account identifier — the channel or bot username
                 the Ads account is linked to (e.g. ``"@mychannel"``).
-            amount: Amount in TON — integer from ``1`` to ``1 000 000 000``.
+            amount: Amount in GRAM (ex TON) — integer from ``1`` to ``1 000 000 000``.
 
         Returns:
             :class:`AdsRechargeResult` with ``transaction_id`` and ``amount``.
@@ -211,7 +211,7 @@ class FragmentClient:
         Returns:
             :class:`WalletInfo` with ``address`` (``"UQ..."``), ``state``
             (``"active"``, ``"uninit"``, ``"nonexist"``, or ``"frozen"``),
-            ``ton_balance`` in TON, and ``usdt_balance`` in USDT.
+            ``gram_balance`` in GRAM (ex TON), and ``usdt_balance`` in USDT.
         """
         return await self.tonapi.get_wallet()
 
@@ -220,7 +220,7 @@ class FragmentClient:
         channel: str,
         winners: int,
         amount: int,
-        payment_method: PaymentMethod = PaymentMethod.TON,
+        payment_method: PaymentMethod = PaymentMethod.GRAM,
     ) -> StarsGiveawayResult:
         """Run a Telegram Stars giveaway for a channel.
 
@@ -228,7 +228,7 @@ class FragmentClient:
             channel: Channel identifier — ``@channel``, ``channel``, or ``https://t.me/channel``.
             winners: Number of winners — integer from ``1`` to ``15``.
             amount: Stars each winner receives — integer from ``500`` to ``1 000 000``.
-            payment_method: Payment currency — ``"ton"`` (default), ``"usdt_ton"``,
+            payment_method: Payment currency — ``"ton"`` (GRAM (ex TON), default), ``"usdt_ton"`` (USDT on GRAM (ex TON)),
                 ``"usdt_eth"``, ``"usdt_pol"``, ``"usdc_eth"``, ``"usdc_base"``,
                 or ``"usdc_pol"``.
 
@@ -243,7 +243,7 @@ class FragmentClient:
         channel: str,
         winners: int,
         months: int = 3,
-        payment_method: PaymentMethod = PaymentMethod.TON,
+        payment_method: PaymentMethod = PaymentMethod.GRAM,
     ) -> PremiumGiveawayResult:
         """Run a Telegram Premium giveaway for a channel.
 
@@ -251,7 +251,7 @@ class FragmentClient:
             channel: Channel identifier — ``@channel``, ``channel``, or ``https://t.me/channel``.
             winners: Number of winners — integer from ``1`` to ``24 000``.
             months: Premium duration per winner — ``3``, ``6``, or ``12``. Defaults to ``3``.
-            payment_method: Payment currency — ``"ton"`` (default), ``"usdt_ton"``,
+            payment_method: Payment currency — ``"ton"`` (GRAM (ex TON), default), ``"usdt_ton"`` (USDT on GRAM (ex TON)),
                 ``"usdt_eth"``, ``"usdt_pol"``, ``"usdc_eth"``, ``"usdc_base"``,
                 or ``"usdc_pol"``.
 

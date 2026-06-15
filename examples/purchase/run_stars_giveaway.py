@@ -28,7 +28,7 @@ COOKIES = {
 CHANNEL = "https://t.me/channel"
 WINNERS = 3  # 1–15
 AMOUNT = 1000  # 500–1 000 000 stars per winner
-PAYMENT_METHOD = PaymentMethod.USDT_TON  # TON, USDT_TON, USDT_ETH, USDT_POL, USDC_ETH, USDC_BASE, USDC_POL
+PAYMENT_METHOD = PaymentMethod.USDT_GRAM  # GRAM, USDT_GRAM, USDT_ETH, USDT_POL, USDC_ETH, USDC_BASE, USDC_POL
 
 
 async def main() -> None:

@@ -45,7 +45,7 @@ async def purchase_stars(
     username: str,
     amount: int,
     show_sender: bool = True,
-    payment_method: PaymentMethod = PaymentMethod.TON,
+    payment_method: PaymentMethod = PaymentMethod.GRAM,
 ) -> StarsResult:
     if not isinstance(amount, int) or not (STARS_PURCHASE_MIN <= amount <= STARS_PURCHASE_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_STARS_AMOUNT)
@@ -128,7 +128,7 @@ async def purchase_premium(
     username: str,
     months: int,
     show_sender: bool = True,
-    payment_method: PaymentMethod = PaymentMethod.TON,
+    payment_method: PaymentMethod = PaymentMethod.GRAM,
 ) -> PremiumResult:
     if months not in PREMIUM_MONTHS_VALID:
         raise ConfigurationError(ConfigurationError.INVALID_MONTHS)

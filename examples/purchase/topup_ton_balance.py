@@ -1,10 +1,10 @@
 """
-Example: top up TON to a recipient's Telegram balance.
+Example: top up GRAM (ex TON) to a recipient's Telegram balance.
 
-For adding TON to a Telegram Ads account, use recharge_ads() instead.
+For adding GRAM (ex TON) to a Telegram Ads account, use recharge_ads() instead.
 
-Amount must be an integer between 1 and 1 000 000 000 TON.
-Your wallet must satisfy the current minimum TON threshold and transaction cost.
+Amount must be an integer between 1 and 1 000 000 000 GRAM (ex TON).
+Your wallet must satisfy the current minimum GRAM (ex TON) threshold and transaction cost.
 """
 
 import asyncio
@@ -31,13 +31,13 @@ COOKIES = {
 }
 
 USERNAME = "@username"
-AMOUNT = 10  # 1–1 000 000 000 TON
+AMOUNT = 10  # 1–1 000 000 000 GRAM (ex TON)
 
 
 async def main() -> None:
     async with FragmentClient(seed=SEED, api_key=API_KEY, cookies=COOKIES) as client:
         try:
-            result = await client.topup_ton(USERNAME, amount=AMOUNT, show_sender=True)
+            result = await client.topup_gram(USERNAME, amount=AMOUNT, show_sender=True)
         except UserNotFoundError:
             print(f"User {USERNAME} was not found on fragment.com — check the username and try again.")
             return
@@ -48,7 +48,7 @@ async def main() -> None:
             print(f"Invalid argument: {e}")
             return
 
-    print(f"{result.amount} TON successfully topped up for {result.username} | tx: {result.transaction_id}")
+    print(f"{result.amount} GRAM (ex TON) successfully topped up for {result.username} | tx: {result.transaction_id}")
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ import pytest
 
 import pyfragment.domains.ads.recharge as _recharge_ads_mod
 from pyfragment import AdsRechargeResult, ConfigurationError, FragmentClient
-from pyfragment.core.constants.limits import TON_TOPUP_MAX, TON_TOPUP_MIN
+from pyfragment.core.constants.limits import GRAM_TOPUP_MAX, GRAM_TOPUP_MIN
 from tests.shared import FAKE_ACCOUNT, FAKE_ADS_ACCOUNT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
 
 # recharge_ads validation tests
@@ -15,13 +15,13 @@ from tests.shared import FAKE_ACCOUNT, FAKE_ADS_ACCOUNT, FAKE_REQ_ID, FAKE_TRANS
 @pytest.mark.asyncio
 async def test_recharge_ads_amount_zero(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.recharge_ads(FAKE_ADS_ACCOUNT, amount=TON_TOPUP_MIN - 1)
+        await client.recharge_ads(FAKE_ADS_ACCOUNT, amount=GRAM_TOPUP_MIN - 1)
 
 
 @pytest.mark.asyncio
 async def test_recharge_ads_amount_too_high(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.recharge_ads(FAKE_ADS_ACCOUNT, amount=TON_TOPUP_MAX + 1)
+        await client.recharge_ads(FAKE_ADS_ACCOUNT, amount=GRAM_TOPUP_MAX + 1)
 
 
 @pytest.mark.asyncio

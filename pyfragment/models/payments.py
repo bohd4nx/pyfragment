@@ -30,7 +30,7 @@ class AdsTopupResult:
     amount: int
 
     def __repr__(self) -> str:
-        return f"AdsTopupResult(username='{self.username}', amount={self.amount} TON, tx='{self.transaction_id}')"
+        return f"AdsTopupResult(username='{self.username}', amount={self.amount} GRAM (ex TON), tx='{self.transaction_id}')"
 
 
 @dataclass
@@ -39,7 +39,7 @@ class AdsRechargeResult:
     amount: int
 
     def __repr__(self) -> str:
-        return f"AdsRechargeResult(amount={self.amount} TON, tx='{self.transaction_id}')"
+        return f"AdsRechargeResult(amount={self.amount} GRAM (ex TON), tx='{self.transaction_id}')"
 
 
 __all__ = ["AdsRechargeResult", "AdsTopupResult", "PremiumResult", "StarsResult"]

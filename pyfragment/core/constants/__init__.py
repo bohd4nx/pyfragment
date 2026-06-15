@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from pyfragment.core.constants.gram import DEVICE_INFO, USDT_GRAM_MASTER_ADDRESS
 from pyfragment.core.constants.headers import BASE_HEADERS, DEFAULT_TIMEOUT, REQUIRED_COOKIE_KEYS
 from pyfragment.core.constants.limits import (
-    MIN_TON_BALANCE,
+    GRAM_TOPUP_MAX,
+    GRAM_TOPUP_MIN,
+    MIN_GRAM_BALANCE,
     MIN_USDT_BALANCE,
     MNEMONIC_WORD_COUNTS_VALID,
     PREMIUM_MONTHS_VALID,
@@ -14,11 +17,8 @@ from pyfragment.core.constants.limits import (
     STARS_PURCHASE_MIN,
     STARS_WINNERS_MAX,
     STARS_WINNERS_MIN,
-    TON_TOPUP_MAX,
-    TON_TOPUP_MIN,
     TONAPI_KEY_MIN_LENGTH,
 )
-from pyfragment.core.constants.ton import DEVICE_INFO, USDT_TON_MASTER_ADDRESS
 from pyfragment.core.constants.urls import (
     ADS_TOPUP_PAGE,
     FRAGMENT_BASE_URL,
@@ -39,7 +39,9 @@ __all__ = [
     "FRAGMENT_BASE_URL",
     "FRAGMENT_DOMAIN",
     "GIFTS_PAGE",
-    "MIN_TON_BALANCE",
+    "GRAM_TOPUP_MAX",
+    "GRAM_TOPUP_MIN",
+    "MIN_GRAM_BALANCE",
     "MIN_USDT_BALANCE",
     "MNEMONIC_WORD_COUNTS_VALID",
     "NUMBERS_PAGE",
@@ -58,7 +60,5 @@ __all__ = [
     "STARS_WINNERS_MAX",
     "STARS_WINNERS_MIN",
     "TONAPI_KEY_MIN_LENGTH",
-    "TON_TOPUP_MAX",
-    "TON_TOPUP_MIN",
-    "USDT_TON_MASTER_ADDRESS",
+    "USDT_GRAM_MASTER_ADDRESS",
 ]

@@ -48,7 +48,7 @@ async def giveaway_stars(
     channel: str,
     winners: int,
     amount: int,
-    payment_method: PaymentMethod = PaymentMethod.TON,
+    payment_method: PaymentMethod = PaymentMethod.GRAM,
 ) -> StarsGiveawayResult:
     if not isinstance(winners, int) or not (STARS_WINNERS_MIN <= winners <= STARS_WINNERS_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_WINNERS_STARS)
@@ -143,7 +143,7 @@ async def giveaway_premium(
     channel: str,
     winners: int,
     months: int = 3,
-    payment_method: PaymentMethod = PaymentMethod.TON,
+    payment_method: PaymentMethod = PaymentMethod.GRAM,
 ) -> PremiumGiveawayResult:
     if not isinstance(winners, int) or not (PREMIUM_WINNERS_MIN <= winners <= PREMIUM_WINNERS_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_WINNERS_PREMIUM)

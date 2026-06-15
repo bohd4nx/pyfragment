@@ -1,20 +1,20 @@
-"""Verify wallet inspection returns friendly TON and USDT balances from Tonapi."""
+"""Verify wallet inspection returns friendly GRAM (ex TON) and USDT balances from Tonapi."""
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from pyfragment import FragmentClient, WalletInfo
-from tests.shared import FAKE_ADDRESS, FAKE_BALANCE_NANOTON
+from tests.shared import FAKE_ADDRESS, FAKE_BALANCE_NANOGRAM
 
-# Wallet mocked tests (TON and USDT balances are returned separately)
+# Wallet mocked tests (GRAM and USDT balances are returned separately)
 
 
 @pytest.mark.asyncio
 async def test_get_wallet_returns_wallet_info(client: FragmentClient) -> None:
     mock_wallet = MagicMock()
     mock_wallet.refresh = AsyncMock()
-    mock_wallet.balance = FAKE_BALANCE_NANOTON
+    mock_wallet.balance = FAKE_BALANCE_NANOGRAM
     mock_wallet.state = MagicMock(value="active")
     mock_wallet.address.to_str.return_value = FAKE_ADDRESS
 
@@ -32,7 +32,7 @@ async def test_get_wallet_returns_wallet_info(client: FragmentClient) -> None:
     assert isinstance(result, WalletInfo)
     assert result.address == FAKE_ADDRESS
     assert result.state == "active"
-    assert result.ton_balance == round(FAKE_BALANCE_NANOTON / 1_000_000_000, 4)
+    assert result.gram_balance == round(FAKE_BALANCE_NANOGRAM / 1_000_000_000, 4)
     assert result.usdt_balance == 12.3456
 
 
@@ -55,6 +55,6 @@ async def test_get_wallet_balance_is_zero(client: FragmentClient) -> None:
 
         result = await client.get_wallet()
 
-    assert result.ton_balance == 0.0
+    assert result.gram_balance == 0.0
     assert result.usdt_balance == 0.0
     assert result.state == "uninit"

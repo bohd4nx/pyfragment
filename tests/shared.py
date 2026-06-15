@@ -1,7 +1,7 @@
 """Shared test constants for the pyfragment test suite.
 
 pyfragment is an async Python client for the Fragment API — a unified toolkit
-to manage Telegram assets: purchase Stars and Premium, top up TON and Ads balances,
+to manage Telegram assets: purchase Stars and Premium, top up GRAM (ex TON) and Ads balances,
 run giveaways, manage anonymous numbers, and explore the marketplace for usernames,
 numbers, and gifts.
 """
@@ -31,7 +31,7 @@ FAKE_RESPONSE: dict[str, Any] = {"status": "ok", "data": {"value": 42}}
 
 # get_wallet()
 FAKE_ADDRESS: str = "UQCppfw5DxWgdVHf3zkmZS8k1mt9oAUYxQLwq2fz3nhO8No5"
-FAKE_BALANCE_NANOTON: int = 1_500_000_000  # 1.5 TON
+FAKE_BALANCE_NANOGRAM: int = 1_500_000_000  # 1.5 GRAM (ex TON)
 
 # recharge_ads
 FAKE_ADS_ACCOUNT: str = "@mychannel"

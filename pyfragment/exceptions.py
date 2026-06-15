@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from pyfragment.core.constants.limits import (
+    GRAM_TOPUP_MAX,
+    GRAM_TOPUP_MIN,
     MNEMONIC_WORD_COUNTS_VALID,
     PREMIUM_MONTHS_VALID,
     PREMIUM_WINNERS_MAX,
@@ -11,8 +13,6 @@ from pyfragment.core.constants.limits import (
     STARS_PURCHASE_MIN,
     STARS_WINNERS_MAX,
     STARS_WINNERS_MIN,
-    TON_TOPUP_MAX,
-    TON_TOPUP_MIN,
     TONAPI_KEY_MIN_LENGTH,
 )
 
@@ -39,7 +39,7 @@ class ConfigurationError(ClientError):
     INVALID_STARS_AMOUNT = (
         f"Invalid Stars amount: must be an integer between {STARS_PURCHASE_MIN:,} and {STARS_PURCHASE_MAX:,}."
     )
-    INVALID_TON_AMOUNT = f"Invalid TON amount: must be an integer between {TON_TOPUP_MIN:,} and {TON_TOPUP_MAX:,}."
+    INVALID_GRAM_AMOUNT = f"Invalid GRAM (ex TON) amount: must be an integer between {GRAM_TOPUP_MIN:,} and {GRAM_TOPUP_MAX:,}."
     INVALID_USERNAME = (
         "Invalid username '{username}'. "
         "Must be 5-32 characters and contain only letters (A-Z, a-z), digits (0-9), or underscores (_)."
@@ -70,7 +70,7 @@ class CookieError(ClientError):
     )
     MISSING_BROWSER_KEYS = (
         "Fragment cookies not found in {browser}: {keys}. "
-        "Make sure you are logged in to {url} and have connected your TON wallet in {browser}."
+        "Make sure you are logged in to {url} and have connected your GRAM (ex TON) wallet in {browser}."
     )
     EXPIRED = "Fragment session cookie expired at {expires}. Log in to fragment.com in your browser and extract fresh cookies."
 
@@ -111,7 +111,7 @@ class AnonymousNumberError(FragmentAPIError):
 
 
 class TransactionError(FragmentAPIError):
-    """Raised when a TON transaction fails to build or broadcast."""
+    """Raised when a GRAM (ex TON) transaction fails to build or broadcast."""
 
     INVALID_PAYLOAD = "Fragment returned an invalid transaction payload: 'transaction.messages' is missing or empty."
     BROADCAST_FAILED = "Transaction broadcast failed: {exc}"
@@ -123,7 +123,7 @@ class TransactionError(FragmentAPIError):
         "located in your Python installation folder."
     )
     DUPLICATE_SEQNO = (
-        "Transaction broadcast failed: the TON wallet rejected the message "
+        "Transaction broadcast failed: the GRAM (ex TON) wallet rejected the message "
         "because a previous transaction with the same sequence number (seqno) "
         "is still pending confirmation on-chain.\n"
         "Wait a few seconds for the previous transaction to confirm, then retry."
@@ -150,14 +150,16 @@ class OperationError(FragmentError):
 
 
 class WalletError(OperationError):
-    """Raised for TON wallet issues (connection, balance, account info)."""
+    """Raised for GRAM (ex TON) wallet issues (connection, balance, account info)."""
 
-    LOW_TON_BALANCE = "Insufficient TON balance: {balance:.4f} TON available, {required:.4f} TON required."
+    LOW_GRAM_BALANCE = (
+        "Insufficient GRAM (ex TON) balance: {balance:.4f} GRAM (ex TON) available, {required:.4f} GRAM (ex TON) required."
+    )
     LOW_USDT_BALANCE = "Insufficient USDT balance: {balance:.4f} USDT available, {required:.4f} USDT required."
-    TON_BALANCE_CHECK_FAILED = "Failed to fetch TON balance: {exc}"
+    GRAM_BALANCE_CHECK_FAILED = "Failed to fetch GRAM (ex TON) balance: {exc}"
     USDT_BALANCE_CHECK_FAILED = "Failed to fetch USDT balance: {exc}"
-    ACCOUNT_INFO_FAILED = "Failed to retrieve wallet account info from TON network: {exc}"
-    WALLET_INFO_FAILED = "Failed to retrieve wallet info from TON network: {exc}"
+    ACCOUNT_INFO_FAILED = "Failed to retrieve wallet account info from GRAM (ex TON) network: {exc}"
+    WALLET_INFO_FAILED = "Failed to retrieve wallet info from GRAM (ex TON) network: {exc}"
 
 
 class UnexpectedError(OperationError):
