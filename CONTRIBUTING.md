@@ -28,16 +28,18 @@ All three must pass before opening a PR.
 ```
 pyfragment/
   client.py           — FragmentClient (public entry point)
-  core/               — transport, cookies, constants
+  enums.py            — ApiProvider, PaymentMethod, WalletVersion
+  exceptions.py       — exception hierarchy
+  core/               — constants, validation helpers
   domains/            — one package per feature domain
     ads/              — recharge_ads, topup_gram
-    anonymous_numbers/— buy_number, manage_number
+    anonymous_numbers/— get_login_code, toggle_login_codes, terminate_sessions
     giveaways/        — giveaway_stars, giveaway_premium
     marketplace/      — search_usernames, search_numbers, search_gifts
     purchases/        — purchase_stars, purchase_premium
-    tonapi/           — wallet info, transaction signing
-  models/             — result dataclasses and enums
-  exceptions.py       — exception hierarchy
+  services/           — shared infrastructure services
+    cookies/          — browser cookie extraction (models + service)
+    tonapi/           — wallet info, transaction signing (tonapi/toncenter)
 tests/                — unit tests (pytest)
 examples/             — runnable usage examples (excluded from CI)
 ```
@@ -46,7 +48,7 @@ examples/             — runnable usage examples (excluded from CI)
 
 - All public async methods live on `FragmentClient` and delegate to a domain service.
 - Domain functions receive a `FragmentClient` instance, never raw httpx clients.
-- Patch targets in tests use the module where the name is **defined**, e.g. `pyfragment.domains.tonapi.transaction.process_transaction`.
+- Patch targets in tests use the module where the name is **defined**, e.g. `pyfragment.services.tonapi.transaction._make_ton_client`.
 - Versioning follows [CalVer](https://calver.org/): `YYYY.MINOR.MICRO`. Bump in `pyproject.toml`; tag as `vYYYY.MINOR.MICRO`.
 
 ## Pull requests

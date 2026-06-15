@@ -75,14 +75,14 @@ asyncio.run(main())
 
 ## Configuration
 
-| Parameter        | Type          | Default     | Description                                                                    |
-| ---------------- | ------------- | ----------- | ------------------------------------------------------------------------------ |
-| `seed`           | `str`         | —           | 12- or 24-word GRAM (ex TON) wallet mnemonic                                   |
-| `api_key`        | `str`         | —           | API key for the chosen provider (see `api_provider`)                           |
-| `cookies`        | `dict \| str` | —           | Fragment session cookies                                                       |
-| `wallet_version` | `str`         | `"V5R1"`    | `"V4R2"` or `"V5R1"` — also accepts `WalletVersion` literal                   |
-| `api_provider`   | `str`         | `"tonapi"`  | `"tonapi"` ([tonconsole.com](https://tonconsole.com)) or `"toncenter"` ([t.me/toncenter](https://t.me/toncenter)) |
-| `timeout`        | `float`       | `30.0`      | HTTP request timeout in seconds                                                |
+| Parameter        | Type          | Default    | Description                                                                                                       |
+| ---------------- | ------------- | ---------- | ----------------------------------------------------------------------------------------------------------------- |
+| `seed`           | `str`         | —          | 12- or 24-word GRAM (ex TON) wallet mnemonic                                                                      |
+| `api_key`        | `str`         | —          | API key for the chosen provider (see `api_provider`)                                                              |
+| `cookies`        | `dict \| str` | —          | Fragment session cookies                                                                                          |
+| `wallet_version` | `str`         | `"V5R1"`   | `"V4R2"` or `"V5R1"` — also accepts `WalletVersion` literal                                                       |
+| `api_provider`   | `str`         | `"tonapi"` | `"tonapi"` ([tonconsole.com](https://tonconsole.com)) or `"toncenter"` ([t.me/toncenter](https://t.me/toncenter)) |
+| `timeout`        | `float`       | `30.0`     | HTTP request timeout in seconds                                                                                   |
 
 ---
 

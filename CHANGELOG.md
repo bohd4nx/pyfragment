@@ -7,7 +7,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ---
 
-## [2026.3.2] — Unreleased
+## [2026.3.2] — 2026-06-16
 
 ### Added
 
