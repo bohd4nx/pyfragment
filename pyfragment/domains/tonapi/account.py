@@ -11,8 +11,8 @@ from tonutils.exceptions import ProviderResponseError
 
 from pyfragment.core.constants import MIN_GRAM_BALANCE, MIN_USDT_BALANCE, USDT_GRAM_MASTER_ADDRESS
 from pyfragment.exceptions import WalletError
-from pyfragment.models.enums import WALLET_CLASSES
-from pyfragment.models.wallet import WalletInfo
+from pyfragment.enums import WALLET_CLASSES
+from pyfragment.domains.tonapi.models import WalletInfo
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient

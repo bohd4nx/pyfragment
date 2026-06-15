@@ -6,8 +6,8 @@ from typing import Any
 
 from pyfragment.core.constants import FRAGMENT_BASE_URL, FRAGMENT_DOMAIN, REQUIRED_COOKIE_KEYS
 from pyfragment.exceptions import CookieError
-from pyfragment.models.cookies import CookieResult
-from pyfragment.models.enums import SupportedBrowser
+from pyfragment.core.models import CookieResult
+from pyfragment.enums import SupportedBrowser
 
 try:
     import rookiepy

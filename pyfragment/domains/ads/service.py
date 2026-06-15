@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from pyfragment.domains.ads.recharge import recharge_ads
 from pyfragment.domains.ads.tonup import topup_gram
 from pyfragment.domains.base import BaseService
-from pyfragment.models.payments import AdsRechargeResult, AdsTopupResult
+from pyfragment.domains.ads.models import AdsRechargeResult, AdsTopupResult
 
 if TYPE_CHECKING:
     pass

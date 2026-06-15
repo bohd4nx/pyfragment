@@ -19,12 +19,13 @@ from pyfragment.domains.marketplace.service import MarketplaceService
 from pyfragment.domains.purchases.service import PurchasesService
 from pyfragment.domains.tonapi.service import TonapiService
 from pyfragment.exceptions import ConfigurationError, CookieError
-from pyfragment.models.anonymous_numbers import LoginCodeResult, TerminateSessionsResult
-from pyfragment.models.enums import PaymentMethod, WalletVersion
-from pyfragment.models.giveaways import PremiumGiveawayResult, StarsGiveawayResult
-from pyfragment.models.marketplace import GiftsResult, NumbersResult, UsernamesResult
-from pyfragment.models.payments import AdsRechargeResult, AdsTopupResult, PremiumResult, StarsResult
-from pyfragment.models.wallet import WalletInfo
+from pyfragment.domains.anonymous_numbers.models import LoginCodeResult, TerminateSessionsResult
+from pyfragment.enums import PaymentMethod, WalletVersion
+from pyfragment.domains.giveaways.models import PremiumGiveawayResult, StarsGiveawayResult
+from pyfragment.domains.marketplace.models import GiftsResult, NumbersResult, UsernamesResult
+from pyfragment.domains.ads.models import AdsRechargeResult, AdsTopupResult
+from pyfragment.domains.purchases.models import PremiumResult, StarsResult
+from pyfragment.domains.tonapi.models import WalletInfo
 
 
 class FragmentClient:

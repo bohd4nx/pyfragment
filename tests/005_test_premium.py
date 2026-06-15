@@ -9,7 +9,7 @@ import pyfragment.domains.purchases.purchase as _purchase_premium_mod
 from pyfragment import ConfigurationError, FragmentClient, PremiumGiveawayResult, PremiumResult, UserNotFoundError
 from pyfragment.core.constants.limits import PREMIUM_MONTHS_VALID, PREMIUM_WINNERS_MAX, PREMIUM_WINNERS_MIN
 from pyfragment.exceptions import AlreadySubscribedError
-from pyfragment.models.enums import PaymentMethod
+from pyfragment.enums import PaymentMethod
 from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
 
 # Premium purchase validation tests

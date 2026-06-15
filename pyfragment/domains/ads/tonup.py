@@ -16,7 +16,7 @@ from pyfragment.exceptions import (
     UserNotFoundError,
     VerificationError,
 )
-from pyfragment.models.payments import AdsTopupResult
+from pyfragment.domains.ads.models import AdsTopupResult
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient

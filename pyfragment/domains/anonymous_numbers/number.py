@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from pyfragment.core.constants import NUMBERS_PAGE
 from pyfragment.domains.anonymous_numbers.parser import parse_login_code
 from pyfragment.exceptions import AnonymousNumberError, FragmentAPIError, FragmentError, UnexpectedError
-from pyfragment.models.anonymous_numbers import LoginCodeResult, TerminateSessionsResult
+from pyfragment.domains.anonymous_numbers.models import LoginCodeResult, TerminateSessionsResult
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient

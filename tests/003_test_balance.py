@@ -9,7 +9,7 @@ from tonutils.exceptions import ProviderResponseError
 
 from pyfragment import TransactionError, WalletError
 from pyfragment.domains.tonapi.transaction import process_transaction
-from pyfragment.models.enums import PaymentMethod
+from pyfragment.enums import PaymentMethod
 from tests.shared import VALID_SEED
 
 

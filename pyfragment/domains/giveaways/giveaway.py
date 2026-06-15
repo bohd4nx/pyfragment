@@ -28,8 +28,8 @@ from pyfragment.exceptions import (
     UserNotFoundError,
     VerificationError,
 )
-from pyfragment.models.enums import PaymentMethod
-from pyfragment.models.giveaways import PremiumGiveawayResult, StarsGiveawayResult
+from pyfragment.enums import PaymentMethod
+from pyfragment.domains.giveaways.models import PremiumGiveawayResult, StarsGiveawayResult
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient

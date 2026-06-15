@@ -15,7 +15,7 @@ from pyfragment.core.constants.limits import (
     STARS_WINNERS_MAX,
     STARS_WINNERS_MIN,
 )
-from pyfragment.models.enums import PaymentMethod
+from pyfragment.enums import PaymentMethod
 from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
 
 # Stars purchase validation tests

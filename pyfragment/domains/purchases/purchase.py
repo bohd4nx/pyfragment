@@ -25,8 +25,8 @@ from pyfragment.exceptions import (
     UserNotFoundError,
     VerificationError,
 )
-from pyfragment.models.enums import PaymentMethod
-from pyfragment.models.payments import PremiumResult, StarsResult
+from pyfragment.enums import PaymentMethod
+from pyfragment.domains.purchases.models import PremiumResult, StarsResult
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
