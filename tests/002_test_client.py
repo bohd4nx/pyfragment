@@ -5,7 +5,7 @@ import json
 import pytest
 
 from pyfragment import ConfigurationError, CookieError, FragmentClient
-from pyfragment.core.constants import MNEMONIC_WORD_COUNTS_VALID, TONAPI_KEY_MIN_LENGTH
+from pyfragment.core.constants import MNEMONIC_WORD_COUNTS_VALID
 from tests.shared import VALID_API_KEY, VALID_COOKIES, VALID_SEED
 
 # Client init tests
@@ -68,11 +68,6 @@ def test_valid_mnemonic_lengths() -> None:
 def test_missing_api_key_raises() -> None:
     with pytest.raises(ConfigurationError):
         FragmentClient(seed=VALID_SEED, api_key="", cookies=VALID_COOKIES)
-
-
-def test_short_api_key_raises() -> None:
-    with pytest.raises(ConfigurationError):
-        FragmentClient(seed=VALID_SEED, api_key="A" * (TONAPI_KEY_MIN_LENGTH - 1), cookies=VALID_COOKIES)
 
 
 # Cookie validation tests

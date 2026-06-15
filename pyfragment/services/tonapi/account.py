@@ -5,20 +5,27 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from ton_core import NetworkGlobalID
-from tonutils.clients import TonapiClient
+from tonutils.clients import TonapiClient, ToncenterClient
 from tonutils.contracts.jetton import get_wallet_address_get_method, get_wallet_data_get_method
 from tonutils.exceptions import ProviderResponseError
 
 from pyfragment.core.constants import MIN_GRAM_BALANCE, MIN_USDT_BALANCE, USDT_GRAM_MASTER_ADDRESS
-from pyfragment.domains.tonapi.models import WalletInfo
-from pyfragment.enums import WALLET_CLASSES
+from pyfragment.enums import WALLET_CLASSES, ApiProvider
 from pyfragment.exceptions import WalletError
+from pyfragment.services.tonapi.models import WalletInfo
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
 
 
 logger = logging.getLogger(__name__)
+
+
+def _make_ton_client(client: FragmentClient) -> Any:
+    """Return the appropriate tonutils client based on the configured api_provider."""
+    if client.api_provider == ApiProvider.TONCENTER:
+        return ToncenterClient(network=NetworkGlobalID.MAINNET, api_key=client.api_key)
+    return TonapiClient(network=NetworkGlobalID.MAINNET, api_key=client.api_key)
 
 
 async def get_usdt_balance(ton: Any, wallet_address: str) -> float:
@@ -92,7 +99,7 @@ async def check_usdt_payment_balance(
 
 async def get_account_info(client: FragmentClient) -> dict[str, Any]:
     """Build the wallet payload Fragment needs to prepare a transaction."""
-    async with TonapiClient(network=NetworkGlobalID.MAINNET, api_key=client.api_key) as ton:
+    async with _make_ton_client(client) as ton:
         try:
             wallet_cls = WALLET_CLASSES[client.wallet_version]
             wallet, pub_key, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)
@@ -110,7 +117,7 @@ async def get_account_info(client: FragmentClient) -> dict[str, Any]:
 
 async def get_wallet_info(client: FragmentClient) -> WalletInfo:
     """Fetch the wallet address, chain state, and GRAM (ex TON)/USDT balances."""
-    async with TonapiClient(network=NetworkGlobalID.MAINNET, api_key=client.api_key) as ton:
+    async with _make_ton_client(client) as ton:
         try:
             wallet_cls = WALLET_CLASSES[client.wallet_version]
             wallet, _, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)

@@ -82,6 +82,3 @@ PREMIUM_MONTHS_VALID: frozenset[int] = frozenset({3, 6, 12})
 
 # Mnemonic phrase valid word counts
 MNEMONIC_WORD_COUNTS_VALID: frozenset[int] = frozenset({12, 24})
-
-# Tonapi API key minimum length (tonapi.io)
-TONAPI_KEY_MIN_LENGTH: int = 68

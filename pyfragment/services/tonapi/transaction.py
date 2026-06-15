@@ -7,13 +7,12 @@ import random
 import ssl
 from typing import TYPE_CHECKING, Any
 
-from ton_core import Cell, NetworkGlobalID
-from tonutils.clients import TonapiClient
+from ton_core import Cell
 from tonutils.exceptions import ProviderResponseError
 
-from pyfragment.domains.tonapi.account import check_gram_payment_balance, check_usdt_payment_balance
 from pyfragment.enums import WALLET_CLASSES, PaymentMethod
 from pyfragment.exceptions import ParseError, TransactionError, WalletError
+from pyfragment.services.tonapi.account import _make_ton_client, check_gram_payment_balance, check_usdt_payment_balance
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
@@ -141,7 +140,7 @@ async def process_transaction(
     message = _extract_message(transaction_data)
     amount_gram = int(message["amount"]) / 1_000_000_000
 
-    async with TonapiClient(network=NetworkGlobalID.MAINNET, api_key=client.api_key) as ton:
+    async with _make_ton_client(client) as ton:
         wallet_cls = WALLET_CLASSES[client.wallet_version]
         wallet, _, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)
 

@@ -13,7 +13,7 @@ import json
 from pyfragment import FragmentClient, GiftsResult
 
 SEED = "word1 word2 ... word24"
-API_KEY = "YOUR_TONAPI_KEY"
+API_KEY = "YOUR_API_KEY"  # tonconsole.com (tonapi, default) or t.me/toncenter
 
 # Option A: extract cookies directly from your browser (no manual copy-paste needed)
 # COOKIES = get_cookies_from_browser("chrome").cookies  # or "firefox", "edge", "brave", ...
@@ -33,7 +33,13 @@ FILTER = ""  # "", "auction", "sale", "sold" — or omit
 
 
 async def main() -> None:
-    async with FragmentClient(seed=SEED, api_key=API_KEY, cookies=COOKIES) as client:
+    async with FragmentClient(
+        seed=SEED,
+        api_key=API_KEY,
+        cookies=COOKIES,
+        wallet_version="V5R1",  # or "V4R2", "HighloadV2", "HighloadV3R1"
+        api_provider="tonapi",  # or "toncenter"
+    ) as client:
         result: GiftsResult = await client.search_gifts(QUERY, collection=COLLECTION, sort=SORT, filter=FILTER)
 
         print(f"Found {len(result.items)} result(s):")

@@ -3,6 +3,7 @@ Example: fetch wallet address, state, and separate GRAM (ex TON)/USDT balances.
 
 Cookies can be passed as a dict or as a JSON string.
 wallet_version defaults to "V5R1" — change to "V4R2" for older wallets.
+api_provider defaults to "tonapi" (tonconsole.com) — pass "toncenter" to use t.me/toncenter instead.
 """
 
 import asyncio
@@ -10,7 +11,7 @@ import asyncio
 from pyfragment import FragmentClient
 
 SEED = "word1 word2 ... word24"
-API_KEY = "YOUR_TONAPI_KEY"
+API_KEY = "YOUR_API_KEY"  # tonconsole.com (tonapi, default) or t.me/toncenter
 
 # Option A: extract cookies directly from your browser (no manual copy-paste needed)
 # COOKIES = get_cookies_from_browser("chrome").cookies  # or "firefox", "edge", "brave", ...
@@ -29,7 +30,8 @@ async def main() -> None:
         seed=SEED,
         api_key=API_KEY,
         cookies=COOKIES,
-        wallet_version="V5R1",  # or "V4R2"
+        wallet_version="V5R1",  # or "V4R2", "HighloadV2", "HighloadV3R1"
+        api_provider="tonapi",  # or "toncenter"
     ) as client:
         wallet = await client.get_wallet()
         print(f"Address: {wallet.address}")

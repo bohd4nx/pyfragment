@@ -46,13 +46,15 @@ from pyfragment.enums import PaymentMethod
 async def main() -> None:
     async with FragmentClient(
         seed="word1 word2 ... word24",
-        api_key="YOUR_TONAPI_KEY",
+        api_key="YOUR_API_KEY",  # tonconsole.com (tonapi, default) or t.me/toncenter
         cookies={
             "stel_ssid": "...",
             "stel_dt": "...",
             "stel_token": "...",
             "stel_ton_token": "...",
         },
+        wallet_version="V5R1",   # or "V4R2", "HighloadV2", "HighloadV3R1"
+        api_provider="tonapi",   # or "toncenter"
     ) as client:
         wallet = await client.get_wallet()
         print(f"GRAM: {wallet.gram_balance} | USDT: {wallet.usdt_balance}")
@@ -73,13 +75,14 @@ asyncio.run(main())
 
 ## Configuration
 
-| Parameter        | Type          | Default  | Description                                                 |
-| ---------------- | ------------- | -------- | ----------------------------------------------------------- |
-| `seed`           | `str`         | —        | 12- or 24-word GRAM (ex TON) wallet mnemonic                |
-| `api_key`        | `str`         | —        | Tonapi key from [tonconsole.com](https://tonconsole.com)    |
-| `cookies`        | `dict \| str` | —        | Fragment session cookies                                    |
-| `wallet_version` | `str`         | `"V5R1"` | `"V4R2"` or `"V5R1"` — also accepts `WalletVersion` literal |
-| `timeout`        | `float`       | `30.0`   | HTTP request timeout in seconds                             |
+| Parameter        | Type          | Default     | Description                                                                    |
+| ---------------- | ------------- | ----------- | ------------------------------------------------------------------------------ |
+| `seed`           | `str`         | —           | 12- or 24-word GRAM (ex TON) wallet mnemonic                                   |
+| `api_key`        | `str`         | —           | API key for the chosen provider (see `api_provider`)                           |
+| `cookies`        | `dict \| str` | —           | Fragment session cookies                                                       |
+| `wallet_version` | `str`         | `"V5R1"`    | `"V4R2"` or `"V5R1"` — also accepts `WalletVersion` literal                   |
+| `api_provider`   | `str`         | `"tonapi"`  | `"tonapi"` ([tonconsole.com](https://tonconsole.com)) or `"toncenter"` ([t.me/toncenter](https://t.me/toncenter)) |
+| `timeout`        | `float`       | `30.0`      | HTTP request timeout in seconds                                                |
 
 ---
 

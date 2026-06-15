@@ -13,7 +13,6 @@ from pyfragment.core.constants import (
     STARS_PURCHASE_MIN,
     STARS_WINNERS_MAX,
     STARS_WINNERS_MIN,
-    TONAPI_KEY_MIN_LENGTH,
 )
 
 
@@ -31,10 +30,7 @@ class ConfigurationError(ClientError):
     MISSING_VARS = "Missing required parameter(s): {keys}."
     UNSUPPORTED_VERSION = "Unsupported wallet version '{version}'. Supported values: {supported}."
     INVALID_MNEMONIC = f"Invalid mnemonic phrase: expected {', '.join(str(n) for n in sorted(MNEMONIC_WORD_COUNTS_VALID))} words, got {{count}}."
-    INVALID_API_KEY = (
-        f"Invalid Tonapi API key: expected at least {TONAPI_KEY_MIN_LENGTH} characters, got {{length}}. "
-        "Get a key at https://tonconsole.com."
-    )
+    UNSUPPORTED_PROVIDER = "Unsupported API provider '{provider}'. Supported values: {supported}."
     INVALID_MONTHS = f"Invalid Premium duration: choose {', '.join(str(m) for m in sorted(PREMIUM_MONTHS_VALID))} months."
     INVALID_STARS_AMOUNT = (
         f"Invalid Stars amount: must be an integer between {STARS_PURCHASE_MIN:,} and {STARS_PURCHASE_MAX:,}."

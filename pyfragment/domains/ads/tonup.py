@@ -7,8 +7,6 @@ from typing import TYPE_CHECKING
 from pyfragment.core.constants import ADS_TOPUP_PAGE, DEVICE_INFO, GRAM_TOPUP_MAX, GRAM_TOPUP_MIN
 from pyfragment.domains.ads.models import AdsTopupResult
 from pyfragment.domains.payments import parse_required_payment_amount
-from pyfragment.domains.tonapi.account import get_account_info
-from pyfragment.domains.tonapi.transaction import process_transaction
 from pyfragment.exceptions import (
     ConfigurationError,
     FragmentAPIError,
@@ -17,6 +15,8 @@ from pyfragment.exceptions import (
     UserNotFoundError,
     VerificationError,
 )
+from pyfragment.services.tonapi.account import get_account_info
+from pyfragment.services.tonapi.transaction import process_transaction
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient

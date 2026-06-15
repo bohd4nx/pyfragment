@@ -11,6 +11,10 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ### Added
 
+- Added `ApiProvider` enum with `TONAPI` (tonconsole.com, default) and `TONCENTER` (t.me/toncenter) values.
+- Added `api_provider` parameter to `FragmentClient` — select the blockchain API provider at init time (`"tonapi"` or `"toncenter"`).
+- Both providers accept `api_key` with the same interface; the correct `tonutils` client is selected automatically.
+
 - New `AlreadySubscribedError` exception for Premium purchase flows when Fragment returns: `This account is already subscribed to Telegram Premium.`
 - New `UserNotFoundError.NOT_A_USER` message for when Fragment returns: `Please enter a username assigned to a user.` (e.g. when the username belongs to a channel or bot).
 - Added `WalletVersion.HighloadV2` and `WalletVersion.HighloadV3R1` to `WalletVersion`

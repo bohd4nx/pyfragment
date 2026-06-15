@@ -41,6 +41,11 @@ WALLET_CLASSES: dict[WalletVersion, Any] = {
 }
 
 
+class ApiProvider(StrEnum):
+    TONAPI = "tonapi"  # tonconsole.com — default
+    TONCENTER = "toncenter"  # t.me/toncenter
+
+
 class SupportedBrowser(StrEnum):
     ARC = "arc"
     BRAVE = "brave"
