@@ -73,3 +73,51 @@ async def test_topup_gram_user_not_found(client: FragmentClient) -> None:
     ):
         with pytest.raises(UserNotFoundError):
             await client.topup_gram("@ghost", amount=10)
+
+
+# topup_gram — error branches
+
+
+@pytest.mark.asyncio
+async def test_topup_gram_missing_req_id_raises(client: FragmentClient) -> None:
+    from pyfragment.exceptions import FragmentAPIError
+
+    with (
+        patch.object(
+            client,
+            "call",
+            AsyncMock(
+                side_effect=[
+                    {},  # updateAdsTopupState
+                    {"found": {"recipient": FAKE_RECIPIENT}},
+                    {"amount": "0.1"},  # initAdsTopupRequest — no req_id
+                ]
+            ),
+        ),
+        patch.object(_topup_gram_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+    ):
+        with pytest.raises(FragmentAPIError):
+            await client.topup_gram("@user", amount=10)
+
+
+@pytest.mark.asyncio
+async def test_topup_gram_need_verify_raises(client: FragmentClient) -> None:
+    from pyfragment.exceptions import VerificationError
+
+    with (
+        patch.object(
+            client,
+            "call",
+            AsyncMock(
+                side_effect=[
+                    {},  # updateAdsTopupState
+                    {"found": {"recipient": FAKE_RECIPIENT}},
+                    {"req_id": FAKE_REQ_ID},
+                    {"need_verify": True},  # getAdsTopupLink
+                ]
+            ),
+        ),
+        patch.object(_topup_gram_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+    ):
+        with pytest.raises(VerificationError):
+            await client.topup_gram("@user", amount=10)

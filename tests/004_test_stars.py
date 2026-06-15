@@ -236,3 +236,108 @@ async def test_giveaway_stars_channel_not_found(client: FragmentClient) -> None:
     with patch.object(client, "call", AsyncMock(return_value={"found": {}})):
         with pytest.raises(UserNotFoundError):
             await client.giveaway_stars("@ghost", winners=1, amount=500)
+
+
+# Stars purchase — error branches
+
+
+@pytest.mark.asyncio
+async def test_purchase_stars_not_a_user_raises(client: FragmentClient) -> None:
+    with patch.object(client, "call", AsyncMock(return_value={"error": "Please enter a username assigned to a user."})):
+        with pytest.raises(UserNotFoundError, match="does not belong"):
+            await client.purchase_stars("@channel", amount=500)
+
+
+@pytest.mark.asyncio
+async def test_purchase_stars_missing_req_id_raises(client: FragmentClient) -> None:
+    with (
+        patch.object(
+            client,
+            "call",
+            AsyncMock(
+                side_effect=[
+                    {"found": {"recipient": FAKE_RECIPIENT}},
+                    {},  # updateStarsBuyState
+                    {"amount": "0.1"},  # initBuyStarsRequest — no req_id
+                ]
+            ),
+        ),
+        patch.object(_purchase_stars_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+    ):
+        from pyfragment.exceptions import FragmentAPIError
+
+        with pytest.raises(FragmentAPIError):
+            await client.purchase_stars("@user", amount=500)
+
+
+@pytest.mark.asyncio
+async def test_purchase_stars_need_verify_raises(client: FragmentClient) -> None:
+    with (
+        patch.object(
+            client,
+            "call",
+            AsyncMock(
+                side_effect=[
+                    {"found": {"recipient": FAKE_RECIPIENT}},
+                    {},  # updateStarsBuyState
+                    {"req_id": FAKE_REQ_ID},
+                    {"need_verify": True},  # getBuyStarsLink
+                ]
+            ),
+        ),
+        patch.object(_purchase_stars_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+    ):
+        from pyfragment.exceptions import VerificationError
+
+        with pytest.raises(VerificationError):
+            await client.purchase_stars("@user", amount=500)
+
+
+# Stars giveaway — error branches
+
+
+@pytest.mark.asyncio
+async def test_giveaway_stars_missing_req_id_raises(client: FragmentClient) -> None:
+    with (
+        patch.object(
+            client,
+            "call",
+            AsyncMock(
+                side_effect=[
+                    {"found": {"recipient": FAKE_RECIPIENT}},
+                    {},  # updateStarsGiveawayState
+                    {},  # updateStarsGiveawayPrices
+                    {"amount": "0.1"},  # initGiveawayStarsRequest — no req_id
+                ]
+            ),
+        ),
+        patch.object(_giveaway_stars_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+    ):
+        from pyfragment.exceptions import FragmentAPIError
+
+        with pytest.raises(FragmentAPIError):
+            await client.giveaway_stars("@channel", winners=3, amount=1000)
+
+
+@pytest.mark.asyncio
+async def test_giveaway_stars_need_verify_raises(client: FragmentClient) -> None:
+    with (
+        patch.object(
+            client,
+            "call",
+            AsyncMock(
+                side_effect=[
+                    {"found": {"recipient": FAKE_RECIPIENT}},
+                    {},  # updateStarsGiveawayState
+                    {},  # updateStarsGiveawayPrices
+                    {"req_id": FAKE_REQ_ID},
+                    {"need_verify": True},  # getGiveawayStarsLink
+                ]
+            ),
+        ),
+        patch.object(_giveaway_stars_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+    ):
+        from pyfragment.exceptions import VerificationError
+
+        with pytest.raises(VerificationError):
+            await client.giveaway_stars("@channel", winners=3, amount=1000)

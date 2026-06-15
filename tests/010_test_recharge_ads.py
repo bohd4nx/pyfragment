@@ -55,3 +55,49 @@ async def test_recharge_ads_success(client: FragmentClient) -> None:
     assert isinstance(result, AdsRechargeResult)
     assert result.transaction_id == FAKE_TX_HASH
     assert result.amount == 10
+
+
+# recharge_ads — error branches
+
+
+@pytest.mark.asyncio
+async def test_recharge_ads_missing_req_id_raises(client: FragmentClient) -> None:
+    from pyfragment.exceptions import FragmentAPIError
+
+    with (
+        patch.object(
+            client,
+            "call",
+            AsyncMock(
+                side_effect=[
+                    {},  # updateAdsState
+                    {"amount": "0.1"},  # initAdsRechargeRequest — no req_id
+                ]
+            ),
+        ),
+        patch.object(_recharge_ads_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+    ):
+        with pytest.raises(FragmentAPIError):
+            await client.recharge_ads(FAKE_ADS_ACCOUNT, amount=10)
+
+
+@pytest.mark.asyncio
+async def test_recharge_ads_need_verify_raises(client: FragmentClient) -> None:
+    from pyfragment.exceptions import VerificationError
+
+    with (
+        patch.object(
+            client,
+            "call",
+            AsyncMock(
+                side_effect=[
+                    {},  # updateAdsState
+                    {"req_id": FAKE_REQ_ID},
+                    {"need_verify": True},  # getAdsRechargeLink
+                ]
+            ),
+        ),
+        patch.object(_recharge_ads_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+    ):
+        with pytest.raises(VerificationError):
+            await client.recharge_ads(FAKE_ADS_ACCOUNT, amount=10)

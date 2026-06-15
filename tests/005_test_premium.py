@@ -234,3 +234,108 @@ async def test_giveaway_premium_channel_not_found(client: FragmentClient) -> Non
     with patch.object(client, "call", AsyncMock(return_value={"found": {}})):
         with pytest.raises(UserNotFoundError):
             await client.giveaway_premium("@ghost", winners=1, months=3)
+
+
+# Premium purchase — error branches
+
+
+@pytest.mark.asyncio
+async def test_purchase_premium_not_a_user_raises(client: FragmentClient) -> None:
+    with patch.object(client, "call", AsyncMock(return_value={"error": "Please enter a username assigned to a user."})):
+        with pytest.raises(UserNotFoundError, match="does not belong"):
+            await client.purchase_premium("@channel", months=3)
+
+
+@pytest.mark.asyncio
+async def test_purchase_premium_missing_req_id_raises(client: FragmentClient) -> None:
+    from pyfragment.exceptions import FragmentAPIError
+
+    with (
+        patch.object(
+            client,
+            "call",
+            AsyncMock(
+                side_effect=[
+                    {"found": {"recipient": FAKE_RECIPIENT}},
+                    {},  # updatePremiumState
+                    {"amount": "0.1"},  # initGiftPremiumRequest — no req_id
+                ]
+            ),
+        ),
+        patch.object(_purchase_premium_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+    ):
+        with pytest.raises(FragmentAPIError):
+            await client.purchase_premium("@user", months=3)
+
+
+@pytest.mark.asyncio
+async def test_purchase_premium_need_verify_raises(client: FragmentClient) -> None:
+    from pyfragment.exceptions import VerificationError
+
+    with (
+        patch.object(
+            client,
+            "call",
+            AsyncMock(
+                side_effect=[
+                    {"found": {"recipient": FAKE_RECIPIENT}},
+                    {},  # updatePremiumState
+                    {"req_id": FAKE_REQ_ID},
+                    {"need_verify": True},  # getGiftPremiumLink
+                ]
+            ),
+        ),
+        patch.object(_purchase_premium_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+    ):
+        with pytest.raises(VerificationError):
+            await client.purchase_premium("@user", months=3)
+
+
+# Premium giveaway — error branches
+
+
+@pytest.mark.asyncio
+async def test_giveaway_premium_missing_req_id_raises(client: FragmentClient) -> None:
+    from pyfragment.exceptions import FragmentAPIError
+
+    with (
+        patch.object(
+            client,
+            "call",
+            AsyncMock(
+                side_effect=[
+                    {"found": {"recipient": FAKE_RECIPIENT}},
+                    {},  # updatePremiumGiveawayState
+                    {},  # updatePremiumGiveawayPrices
+                    {"amount": "0.1"},  # initGiveawayPremiumRequest — no req_id
+                ]
+            ),
+        ),
+        patch.object(_giveaway_premium_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+    ):
+        with pytest.raises(FragmentAPIError):
+            await client.giveaway_premium("@channel", winners=10, months=3)
+
+
+@pytest.mark.asyncio
+async def test_giveaway_premium_need_verify_raises(client: FragmentClient) -> None:
+    from pyfragment.exceptions import VerificationError
+
+    with (
+        patch.object(
+            client,
+            "call",
+            AsyncMock(
+                side_effect=[
+                    {"found": {"recipient": FAKE_RECIPIENT}},
+                    {},  # updatePremiumGiveawayState
+                    {},  # updatePremiumGiveawayPrices
+                    {"req_id": FAKE_REQ_ID},
+                    {"need_verify": True},  # getGiveawayPremiumLink
+                ]
+            ),
+        ),
+        patch.object(_giveaway_premium_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+    ):
+        with pytest.raises(VerificationError):
+            await client.giveaway_premium("@channel", winners=10, months=3)
