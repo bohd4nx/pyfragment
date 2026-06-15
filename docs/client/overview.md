@@ -19,7 +19,7 @@ Main async methods on `FragmentClient`:
 - `purchase_premium(...)`
 - `giveaway_stars(...)`
 - `giveaway_premium(...)`
-- `topup_ton(...)`
+- `topup_gram(...)`
 - `recharge_ads(...)`
 - `get_wallet()`
 - `get_login_code(...)`

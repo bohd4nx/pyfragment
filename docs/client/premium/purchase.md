@@ -9,7 +9,7 @@ await client.purchase_premium(
     username: str,
     months: int,
     show_sender: bool = True,
-    payment_method: PaymentMethod = "ton",
+    payment_method: PaymentMethod = PaymentMethod.GRAM,
 ) -> PremiumResult
 ```
 
@@ -18,7 +18,7 @@ await client.purchase_premium(
 - `username`: accepts `@username`, `username`, or `https://t.me/username`
 - `months`: one of `3`, `6`, `12`
 - `show_sender`: controls sender visibility on recipient side
-- `payment_method`: `"ton"` or `"usdt_ton"`
+- `payment_method`: `PaymentMethod.GRAM` (default), `PaymentMethod.USDT_GRAM`, or any other `PaymentMethod` value
 
 **`months` only supports `3`, `6`, or `12`.**
 
@@ -36,6 +36,6 @@ await client.purchase_premium(
 ## Example
 
 ```python
-result: PremiumResult = await client.purchase_premium("@username", months=6, payment_method="ton")
+result: PremiumResult = await client.purchase_premium("@username", months=6, payment_method=PaymentMethod.GRAM)
 print(result.transaction_id)
 ```

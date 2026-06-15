@@ -20,7 +20,7 @@
     - [Search Gifts](client/marketplace/search-gifts.md)
   - Ads
     - [Overview](client/ads/overview.md)
-    - [Top Up TON](client/ads/topup-ton.md)
+    - [Top Up GRAM](client/ads/topup-gram.md)
     - [Recharge Ads](client/ads/recharge-ads.md)
   - Anonymous Numbers
     - [Overview](client/anonymous-numbers/overview.md)

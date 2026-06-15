@@ -8,7 +8,7 @@ Generate an API key at https://tonconsole.com.
 
 ## Seed phrase
 
-Use your TON wallet mnemonic.
+Use your GRAM (ex TON) wallet mnemonic.
 
 - **Keep it private.**
 - **Never log it or commit it to git.**

@@ -43,7 +43,7 @@ Symptoms:
 
 Actions:
 
-- keep TON reserve for fees,
+- keep GRAM (ex TON) reserve for fees,
 - ensure USDT is on the **Fragment-linked wallet**,
 - retry after short delay when seqno collisions happen.
 - check operation constraints in Stars/Premium/Ads method pages.

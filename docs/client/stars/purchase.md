@@ -9,18 +9,18 @@ await client.purchase_stars(
     username: str,
     amount: int,
     show_sender: bool = True,
-    payment_method: PaymentMethod = "ton",
+    payment_method: PaymentMethod = PaymentMethod.GRAM,
 ) -> StarsResult
 ```
 
 ## Parameters
 
 - `username`: accepts `@username`, `username`, or `https://t.me/username`
-- `amount`: integer from `50` to `1_000_000`
+- `amount`: integer from `50` to `10_000_000`
 - `show_sender`: controls sender visibility on recipient side
-- `payment_method`: `"ton"` or `"usdt_ton"`
+- `payment_method`: `PaymentMethod.GRAM` (default), `PaymentMethod.USDT_GRAM`, or any other `PaymentMethod` value
 
-**Amount must be between `50` and `1_000_000`.**
+**Amount must be between `50` and `10_000_000`.**
 
 ## Return
 
@@ -36,6 +36,6 @@ await client.purchase_stars(
 ## Example
 
 ```python
-result: StarsResult = await client.purchase_stars("@username", amount=500, payment_method="ton")
+result: StarsResult = await client.purchase_stars("@username", amount=500, payment_method=PaymentMethod.GRAM)
 print(result.amount)
 ```

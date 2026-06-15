@@ -9,16 +9,16 @@ await client.giveaway_stars(
     channel: str,
     winners: int,
     amount: int,
-    payment_method: PaymentMethod = "ton",
+    payment_method: PaymentMethod = PaymentMethod.GRAM,
 ) -> StarsGiveawayResult
 ```
 
 ## Parameters
 
 - `channel`: accepts `@channel`, `channel`, or `https://t.me/channel`
-- `winners`: integer from `1` to `5`
+- `winners`: integer from `1` to `15`
 - `amount`: integer from `500` to `1_000_000` (per winner)
-- `payment_method`: `"ton"` or `"usdt_ton"`
+- `payment_method`: `PaymentMethod.GRAM` (default), `PaymentMethod.USDT_GRAM`, or any other `PaymentMethod` value
 
 **Each winner receives the full `amount` value.**
 

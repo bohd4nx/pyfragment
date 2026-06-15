@@ -11,7 +11,7 @@ Exported result models:
 - `AdsRechargeResult(transaction_id, amount)`
 - `StarsGiveawayResult(transaction_id, channel, winners, amount)`
 - `PremiumGiveawayResult(transaction_id, channel, winners, amount)`
-- `WalletInfo(address, state, ton_balance, usdt_balance)`
+- `WalletInfo(address, state, gram_balance, usdt_balance)`
 - `LoginCodeResult(number, code, active_sessions)`
 - `TerminateSessionsResult(number, message)`
 - `UsernamesResult(items, next_offset_id)`
@@ -26,7 +26,7 @@ Most high-level methods return one of these dataclasses.
 - `purchase_premium()`: `PremiumResult`
 - `giveaway_stars()`: `StarsGiveawayResult`
 - `giveaway_premium()`: `PremiumGiveawayResult`
-- `topup_ton()`: `AdsTopupResult`
+- `topup_gram()`: `AdsTopupResult`
 - `recharge_ads()`: `AdsRechargeResult`
 - `get_wallet()`: `WalletInfo`
 - `get_login_code()`: `LoginCodeResult`
