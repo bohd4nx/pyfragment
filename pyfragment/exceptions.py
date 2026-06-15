@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pyfragment.core.constants.limits import (
+from pyfragment.core.constants import (
     GRAM_TOPUP_MAX,
     GRAM_TOPUP_MIN,
     MNEMONIC_WORD_COUNTS_VALID,

@@ -17,9 +17,11 @@ from pyfragment.core.constants import (
     STARS_WINNERS_MAX,
     STARS_WINNERS_MIN,
 )
+from pyfragment.domains.giveaways.models import PremiumGiveawayResult, StarsGiveawayResult
 from pyfragment.domains.payments import parse_required_payment_amount
 from pyfragment.domains.tonapi.account import get_account_info
 from pyfragment.domains.tonapi.transaction import process_transaction
+from pyfragment.enums import PaymentMethod
 from pyfragment.exceptions import (
     ConfigurationError,
     FragmentAPIError,
@@ -28,8 +30,6 @@ from pyfragment.exceptions import (
     UserNotFoundError,
     VerificationError,
 )
-from pyfragment.enums import PaymentMethod
-from pyfragment.domains.giveaways.models import PremiumGiveawayResult, StarsGiveawayResult
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient

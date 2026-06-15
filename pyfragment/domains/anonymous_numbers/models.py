@@ -21,6 +21,3 @@ class TerminateSessionsResult:
 
     def __repr__(self) -> str:
         return f"TerminateSessionsResult(number='{self.number}', message={self.message!r})"
-
-
-__all__ = ["LoginCodeResult", "TerminateSessionsResult"]

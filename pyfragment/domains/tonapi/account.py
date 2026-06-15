@@ -10,9 +10,9 @@ from tonutils.contracts.jetton import get_wallet_address_get_method, get_wallet_
 from tonutils.exceptions import ProviderResponseError
 
 from pyfragment.core.constants import MIN_GRAM_BALANCE, MIN_USDT_BALANCE, USDT_GRAM_MASTER_ADDRESS
-from pyfragment.exceptions import WalletError
-from pyfragment.enums import WALLET_CLASSES
 from pyfragment.domains.tonapi.models import WalletInfo
+from pyfragment.enums import WALLET_CLASSES
+from pyfragment.exceptions import WalletError
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient

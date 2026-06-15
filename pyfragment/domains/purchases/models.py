@@ -21,6 +21,3 @@ class StarsResult:
 
     def __repr__(self) -> str:
         return f"StarsResult(username='{self.username}', amount={self.amount} stars, tx='{self.transaction_id}')"
-
-
-__all__ = ["PremiumResult", "StarsResult"]

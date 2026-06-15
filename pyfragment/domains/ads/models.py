@@ -20,6 +20,3 @@ class AdsRechargeResult:
 
     def __repr__(self) -> str:
         return f"AdsRechargeResult(amount={self.amount} GRAM (ex TON), tx='{self.transaction_id}')"
-
-
-__all__ = ["AdsRechargeResult", "AdsTopupResult"]

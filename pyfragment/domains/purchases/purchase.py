@@ -14,8 +14,10 @@ from pyfragment.core.constants import (
     STARS_PURCHASE_MIN,
 )
 from pyfragment.domains.payments import parse_required_payment_amount
+from pyfragment.domains.purchases.models import PremiumResult, StarsResult
 from pyfragment.domains.tonapi.account import get_account_info
 from pyfragment.domains.tonapi.transaction import process_transaction
+from pyfragment.enums import PaymentMethod
 from pyfragment.exceptions import (
     AlreadySubscribedError,
     ConfigurationError,
@@ -25,8 +27,6 @@ from pyfragment.exceptions import (
     UserNotFoundError,
     VerificationError,
 )
-from pyfragment.enums import PaymentMethod
-from pyfragment.domains.purchases.models import PremiumResult, StarsResult
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient

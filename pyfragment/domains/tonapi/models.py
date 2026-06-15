@@ -15,6 +15,3 @@ class WalletInfo:
             f"WalletInfo(address='{self.address}', state='{self.state}', "
             f"gram_balance={self.gram_balance} GRAM (ex TON), usdt_balance={self.usdt_balance} USDT)"
         )
-
-
-__all__ = ["WalletInfo"]

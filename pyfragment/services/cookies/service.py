@@ -5,9 +5,9 @@ from datetime import datetime, timezone
 from typing import Any
 
 from pyfragment.core.constants import FRAGMENT_BASE_URL, FRAGMENT_DOMAIN, REQUIRED_COOKIE_KEYS
-from pyfragment.exceptions import CookieError
-from pyfragment.core.models import CookieResult
 from pyfragment.enums import SupportedBrowser
+from pyfragment.exceptions import CookieError
+from pyfragment.services.cookies.models import CookieResult
 
 try:
     import rookiepy

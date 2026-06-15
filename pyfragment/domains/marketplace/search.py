@@ -4,9 +4,9 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from pyfragment.core.constants import FRAGMENT_BASE_URL, GIFTS_PAGE, NUMBERS_PAGE
+from pyfragment.domains.marketplace.models import GiftsResult, NumbersResult, UsernamesResult
 from pyfragment.domains.marketplace.parser import parse_auction_rows, parse_gift_items
 from pyfragment.exceptions import FragmentAPIError, FragmentError, UnexpectedError
-from pyfragment.domains.marketplace.models import GiftsResult, NumbersResult, UsernamesResult
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient

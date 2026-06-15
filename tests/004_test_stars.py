@@ -7,7 +7,7 @@ import pytest
 import pyfragment.domains.giveaways.giveaway as _giveaway_stars_mod
 import pyfragment.domains.purchases.purchase as _purchase_stars_mod
 from pyfragment import ConfigurationError, FragmentClient, StarsGiveawayResult, StarsResult, UserNotFoundError
-from pyfragment.core.constants.limits import (
+from pyfragment.core.constants import (
     STARS_GIVEAWAY_MAX,
     STARS_GIVEAWAY_MIN,
     STARS_PURCHASE_MAX,

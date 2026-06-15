@@ -12,8 +12,8 @@ from tonutils.clients import TonapiClient
 from tonutils.exceptions import ProviderResponseError
 
 from pyfragment.domains.tonapi.account import check_gram_payment_balance, check_usdt_payment_balance
-from pyfragment.exceptions import ParseError, TransactionError, WalletError
 from pyfragment.enums import WALLET_CLASSES, PaymentMethod
+from pyfragment.exceptions import ParseError, TransactionError, WalletError
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient

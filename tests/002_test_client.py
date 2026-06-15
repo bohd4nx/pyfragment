@@ -5,7 +5,7 @@ import json
 import pytest
 
 from pyfragment import ConfigurationError, CookieError, FragmentClient
-from pyfragment.core.constants.limits import MNEMONIC_WORD_COUNTS_VALID, TONAPI_KEY_MIN_LENGTH
+from pyfragment.core.constants import MNEMONIC_WORD_COUNTS_VALID, TONAPI_KEY_MIN_LENGTH
 from tests.shared import VALID_API_KEY, VALID_COOKIES, VALID_SEED
 
 # Client init tests

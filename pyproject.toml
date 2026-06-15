@@ -106,5 +106,5 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 # rookiepy = None assignment is valid when the package is installed (type: ModuleType)
 # but mypy on CI (without rookiepy) sees it as Any and flags the comment as unused.
-module = "pyfragment.core.cookies"
+module = "pyfragment.services.cookies.service"
 warn_unused_ignores = false

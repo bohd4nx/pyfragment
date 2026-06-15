@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 from pyfragment.domains.base import BaseService
 from pyfragment.domains.giveaways.giveaway import giveaway_premium, giveaway_stars
-from pyfragment.enums import PaymentMethod
 from pyfragment.domains.giveaways.models import PremiumGiveawayResult, StarsGiveawayResult
+from pyfragment.enums import PaymentMethod
 
 if TYPE_CHECKING:
     pass

@@ -55,6 +55,3 @@ class SupportedBrowser(StrEnum):
     OPERA_GX = "opera_gx"
     SAFARI = "safari"
     VIVALDI = "vivaldi"
-
-
-__all__ = ["PaymentMethod", "SupportedBrowser", "WALLET_CLASSES", "WalletVersion"]

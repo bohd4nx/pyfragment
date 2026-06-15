@@ -29,6 +29,3 @@ class GiftsResult:
 
     def __repr__(self) -> str:
         return f"GiftsResult(items={len(self.items)}, next_offset={self.next_offset!r})"
-
-
-__all__ = ["GiftsResult", "NumbersResult", "UsernamesResult"]

@@ -38,8 +38,10 @@ pip install git+https://github.com/bohd4nx/pyfragment.git@dev
 
 ```python
 import asyncio
+
 from pyfragment import FragmentClient
-from pyfragment.models.enums import PaymentMethod
+from pyfragment.enums import PaymentMethod
+
 
 async def main() -> None:
     async with FragmentClient(
@@ -58,14 +60,7 @@ async def main() -> None:
         recipient = "https://t.me/username"  # also: @username, username
 
         stars = await client.purchase_stars(recipient, amount=500, payment_method=PaymentMethod.USDT_GRAM)
-        if stars.auto_paid:
-            print(f"Sent {stars.amount} Stars to {stars.username} | tx: {stars.transaction_id}")
-        else:
-            print(f"Manual payment required for {stars.username}")
-            print(f"Address:   {stars.payment_address}")
-            print(f"Amount:    {stars.payment_amount}")
-            print(f"Expires:   {stars.payment_expires_at}")
-            print(f"QR link:   {stars.payment_qr_link}")
+        print(f"Sent {stars.amount} Stars to {stars.username} | tx: {stars.transaction_id}")
 
         premium = await client.purchase_premium(recipient, months=6, payment_method=PaymentMethod.GRAM)
         print(f"Sent Premium {premium.amount}m to {premium.username} | tx: {premium.transaction_id}")

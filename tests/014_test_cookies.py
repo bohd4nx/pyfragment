@@ -22,7 +22,7 @@ def _mock_rookiepy(jar: list[dict[str, str]] | None = None) -> MagicMock:
     return mock
 
 
-PATCH = "pyfragment.core.cookies.rookiepy"
+PATCH = "pyfragment.services.cookies.service.rookiepy"
 
 
 # unsupported browser tests

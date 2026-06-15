@@ -6,7 +6,7 @@ import pytest
 
 import pyfragment.domains.ads.tonup as _topup_gram_mod
 from pyfragment import AdsTopupResult, ConfigurationError, FragmentClient, UserNotFoundError
-from pyfragment.core.constants.limits import GRAM_TOPUP_MAX, GRAM_TOPUP_MIN
+from pyfragment.core.constants import GRAM_TOPUP_MAX, GRAM_TOPUP_MIN
 from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_HASH
 
 # Topup GRAM (ex TON) validation tests
