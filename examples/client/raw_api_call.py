@@ -14,7 +14,7 @@ import asyncio
 from pyfragment import FragmentClient
 
 SEED = "word1 word2 ... word24"
-API_KEY = "YOUR_TONAPI_KEY"
+API_KEY = "YOUR_API_KEY"  # tonconsole.com (tonapi, default) or t.me/toncenter
 
 # Option A: extract cookies directly from your browser (no manual copy-paste needed)
 # COOKIES = get_cookies_from_browser("chrome").cookies  # or "firefox", "edge", "brave", ...
@@ -33,7 +33,13 @@ PAGE_URL = "https://fragment.com/stars/buy"  # replace with the matching Fragmen
 
 
 async def main() -> None:
-    async with FragmentClient(seed=SEED, api_key=API_KEY, cookies=COOKIES) as client:
+    async with FragmentClient(
+        seed=SEED,
+        api_key=API_KEY,
+        cookies=COOKIES,
+        wallet_version="V5R1",  # or "V4R2", "HighloadV2", "HighloadV3R1"
+        api_provider="tonapi",  # or "toncenter"
+    ) as client:
         result = await client.call(METHOD, DATA, page_url=PAGE_URL)
         print(result)
 

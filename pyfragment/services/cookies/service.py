@@ -4,9 +4,10 @@ import importlib
 from datetime import datetime, timezone
 from typing import Any
 
-from pyfragment.core.constants import FRAGMENT_BASE_URL, FRAGMENT_DOMAIN, REQUIRED_COOKIE_KEYS, SUPPORTED_BROWSERS
+from pyfragment.core.constants import FRAGMENT_BASE_URL, FRAGMENT_DOMAIN, REQUIRED_COOKIE_KEYS
+from pyfragment.enums import SupportedBrowser
 from pyfragment.exceptions import CookieError
-from pyfragment.models.cookies import CookieResult
+from pyfragment.services.cookies.models import CookieResult
 
 try:
     import rookiepy
@@ -18,8 +19,8 @@ def get_cookies_from_browser(browser: str = "chrome") -> CookieResult:
     global rookiepy
 
     key = browser.lower()
-    if key not in SUPPORTED_BROWSERS:
-        supported = ", ".join(sorted(SUPPORTED_BROWSERS))
+    if not any(key == m for m in SupportedBrowser):
+        supported = ", ".join(sorted(b.value for b in SupportedBrowser))
         raise CookieError(CookieError.UNSUPPORTED_BROWSER.format(browser=browser, supported=supported))
 
     try:

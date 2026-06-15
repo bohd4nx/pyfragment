@@ -21,25 +21,3 @@ class StarsResult:
 
     def __repr__(self) -> str:
         return f"StarsResult(username='{self.username}', amount={self.amount} stars, tx='{self.transaction_id}')"
-
-
-@dataclass
-class AdsTopupResult:
-    transaction_id: str
-    username: str
-    amount: int
-
-    def __repr__(self) -> str:
-        return f"AdsTopupResult(username='{self.username}', amount={self.amount} TON, tx='{self.transaction_id}')"
-
-
-@dataclass
-class AdsRechargeResult:
-    transaction_id: str
-    amount: int
-
-    def __repr__(self) -> str:
-        return f"AdsRechargeResult(amount={self.amount} TON, tx='{self.transaction_id}')"
-
-
-__all__ = ["AdsRechargeResult", "AdsTopupResult", "PremiumResult", "StarsResult"]

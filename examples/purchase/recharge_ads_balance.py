@@ -1,8 +1,8 @@
 """
-Example: recharge your own Telegram Ads account with TON.
+Example: recharge your own Telegram Ads account with GRAM (ex TON).
 
-Amount must be an integer between 1 and 1 000 000 000 TON.
-Your wallet must satisfy the current minimum TON threshold and transaction cost.
+Amount must be an integer between 1 and 1 000 000 000 GRAM (ex TON).
+Your wallet must satisfy the current minimum GRAM (ex TON) threshold and transaction cost.
 """
 
 import asyncio
@@ -15,7 +15,7 @@ from pyfragment import (
 )
 
 SEED = "word1 word2 ... word24"
-API_KEY = "YOUR_TONAPI_KEY"
+API_KEY = "YOUR_API_KEY"  # tonconsole.com (tonapi, default) or t.me/toncenter
 
 # Option A: extract cookies directly from your browser (no manual copy-paste needed)
 # COOKIES = get_cookies_from_browser("chrome").cookies  # or "firefox", "edge", "brave", ...
@@ -29,11 +29,17 @@ COOKIES = {
 }
 
 ACCOUNT = "@mychannel"  # channel or bot username linked to your Telegram Ads account
-AMOUNT = 10  # 1–1 000 000 000 TON
+AMOUNT = 10  # 1–1 000 000 000 GRAM (ex TON)
 
 
 async def main() -> None:
-    async with FragmentClient(seed=SEED, api_key=API_KEY, cookies=COOKIES) as client:
+    async with FragmentClient(
+        seed=SEED,
+        api_key=API_KEY,
+        cookies=COOKIES,
+        wallet_version="V5R1",  # or "V4R2", "HighloadV2", "HighloadV3R1"
+        api_provider="tonapi",  # or "toncenter"
+    ) as client:
         try:
             result: AdsRechargeResult = await client.recharge_ads(ACCOUNT, amount=AMOUNT)
         except WalletError as e:
@@ -43,7 +49,7 @@ async def main() -> None:
             print(f"Invalid argument: {e}")
             return
 
-    print(f"{result.amount} TON recharged to Ads account {ACCOUNT} | tx: {result.transaction_id}")
+    print(f"{result.amount} GRAM (ex TON) recharged to Ads account {ACCOUNT} | tx: {result.transaction_id}")
 
 
 if __name__ == "__main__":

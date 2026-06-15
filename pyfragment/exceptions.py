@@ -1,5 +1,20 @@
 from __future__ import annotations
 
+from pyfragment.core.constants import (
+    GRAM_TOPUP_MAX,
+    GRAM_TOPUP_MIN,
+    MNEMONIC_WORD_COUNTS_VALID,
+    PREMIUM_MONTHS_VALID,
+    PREMIUM_WINNERS_MAX,
+    PREMIUM_WINNERS_MIN,
+    STARS_GIVEAWAY_MAX,
+    STARS_GIVEAWAY_MIN,
+    STARS_PURCHASE_MAX,
+    STARS_PURCHASE_MIN,
+    STARS_WINNERS_MAX,
+    STARS_WINNERS_MIN,
+)
+
 
 class FragmentError(Exception):
     """Base exception for all pyfragment errors."""
@@ -14,20 +29,26 @@ class ConfigurationError(ClientError):
 
     MISSING_VARS = "Missing required parameter(s): {keys}."
     UNSUPPORTED_VERSION = "Unsupported wallet version '{version}'. Supported values: {supported}."
-    INVALID_MNEMONIC = "Invalid mnemonic phrase: expected 12, 18, or 24 words, got {count}."
-    INVALID_API_KEY = (
-        "Invalid Tonapi API key: expected at least 68 characters, got {length}. Get a key at https://tonconsole.com."
+    INVALID_MNEMONIC = f"Invalid mnemonic phrase: expected {', '.join(str(n) for n in sorted(MNEMONIC_WORD_COUNTS_VALID))} words, got {{count}}."
+    UNSUPPORTED_PROVIDER = "Unsupported API provider '{provider}'. Supported values: {supported}."
+    INVALID_MONTHS = f"Invalid Premium duration: choose {', '.join(str(m) for m in sorted(PREMIUM_MONTHS_VALID))} months."
+    INVALID_STARS_AMOUNT = (
+        f"Invalid Stars amount: must be an integer between {STARS_PURCHASE_MIN:,} and {STARS_PURCHASE_MAX:,}."
     )
-    INVALID_MONTHS = "Invalid Premium duration: choose 3, 6, or 12 months."
-    INVALID_STARS_AMOUNT = "Invalid Stars amount: must be an integer between 50 and 1,000,000."
-    INVALID_TON_AMOUNT = "Invalid TON amount: must be an integer between 1 and 1,000,000,000."
+    INVALID_GRAM_AMOUNT = f"Invalid GRAM (ex TON) amount: must be an integer between {GRAM_TOPUP_MIN:,} and {GRAM_TOPUP_MAX:,}."
     INVALID_USERNAME = (
         "Invalid username '{username}'. "
         "Must be 5-32 characters and contain only letters (A-Z, a-z), digits (0-9), or underscores (_)."
     )
-    INVALID_WINNERS_STARS = "Invalid winners count: must be an integer between 1 and 5."
-    INVALID_WINNERS_PREMIUM = "Invalid winners count: must be an integer between 1 and 24,000."
-    INVALID_STARS_PER_WINNER = "Invalid Stars per winner: must be an integer between 500 and 1,000,000."
+    INVALID_WINNERS_STARS = (
+        f"Invalid winners count: must be an integer between {STARS_WINNERS_MIN:,} and {STARS_WINNERS_MAX:,}."
+    )
+    INVALID_WINNERS_PREMIUM = (
+        f"Invalid winners count: must be an integer between {PREMIUM_WINNERS_MIN:,} and {PREMIUM_WINNERS_MAX:,}."
+    )
+    INVALID_STARS_PER_WINNER = (
+        f"Invalid Stars per winner: must be an integer between {STARS_GIVEAWAY_MIN:,} and {STARS_GIVEAWAY_MAX:,}."
+    )
     INVALID_PAYMENT_METHOD = "Invalid payment method '{method}'. Supported values: {supported}."
 
 
@@ -45,7 +66,7 @@ class CookieError(ClientError):
     )
     MISSING_BROWSER_KEYS = (
         "Fragment cookies not found in {browser}: {keys}. "
-        "Make sure you are logged in to {url} and have connected your TON wallet in {browser}."
+        "Make sure you are logged in to {url} and have connected your GRAM (ex TON) wallet in {browser}."
     )
     EXPIRED = "Fragment session cookie expired at {expires}. Log in to fragment.com in your browser and extract fresh cookies."
 
@@ -69,6 +90,13 @@ class UserNotFoundError(FragmentAPIError):
     NOT_FOUND = (
         "Telegram user '{username}' was not found on Fragment. Double-check the username and make sure the account exists."
     )
+    NOT_A_USER = "'{username}' does not belong to a user account. Make sure the username is assigned to a personal Telegram account, not a channel or bot."
+
+
+class AlreadySubscribedError(FragmentAPIError):
+    """Raised when trying to gift Premium to a user who already has an active subscription."""
+
+    PREMIUM_ACTIVE = "This account is already subscribed to Telegram Premium."
 
 
 class AnonymousNumberError(FragmentAPIError):
@@ -79,7 +107,7 @@ class AnonymousNumberError(FragmentAPIError):
 
 
 class TransactionError(FragmentAPIError):
-    """Raised when a TON transaction fails to build or broadcast."""
+    """Raised when a GRAM (ex TON) transaction fails to build or broadcast."""
 
     INVALID_PAYLOAD = "Fragment returned an invalid transaction payload: 'transaction.messages' is missing or empty."
     BROADCAST_FAILED = "Transaction broadcast failed: {exc}"
@@ -91,7 +119,7 @@ class TransactionError(FragmentAPIError):
         "located in your Python installation folder."
     )
     DUPLICATE_SEQNO = (
-        "Transaction broadcast failed: the TON wallet rejected the message "
+        "Transaction broadcast failed: the GRAM (ex TON) wallet rejected the message "
         "because a previous transaction with the same sequence number (seqno) "
         "is still pending confirmation on-chain.\n"
         "Wait a few seconds for the previous transaction to confirm, then retry."
@@ -118,14 +146,16 @@ class OperationError(FragmentError):
 
 
 class WalletError(OperationError):
-    """Raised for TON wallet issues (connection, balance, account info)."""
+    """Raised for GRAM (ex TON) wallet issues (connection, balance, account info)."""
 
-    LOW_TON_BALANCE = "Insufficient TON balance: {balance:.4f} TON available, {required:.4f} TON required."
+    LOW_GRAM_BALANCE = (
+        "Insufficient GRAM (ex TON) balance: {balance:.4f} GRAM (ex TON) available, {required:.4f} GRAM (ex TON) required."
+    )
     LOW_USDT_BALANCE = "Insufficient USDT balance: {balance:.4f} USDT available, {required:.4f} USDT required."
-    TON_BALANCE_CHECK_FAILED = "Failed to fetch TON balance: {exc}"
+    GRAM_BALANCE_CHECK_FAILED = "Failed to fetch GRAM (ex TON) balance: {exc}"
     USDT_BALANCE_CHECK_FAILED = "Failed to fetch USDT balance: {exc}"
-    ACCOUNT_INFO_FAILED = "Failed to retrieve wallet account info from TON network: {exc}"
-    WALLET_INFO_FAILED = "Failed to retrieve wallet info from TON network: {exc}"
+    ACCOUNT_INFO_FAILED = "Failed to retrieve wallet account info from GRAM (ex TON) network: {exc}"
+    WALLET_INFO_FAILED = "Failed to retrieve wallet info from GRAM (ex TON) network: {exc}"
 
 
 class UnexpectedError(OperationError):
@@ -142,6 +172,7 @@ __all__ = [
     "FragmentAPIError",
     "FragmentPageError",
     "AnonymousNumberError",
+    "AlreadySubscribedError",
     "UserNotFoundError",
     "TransactionError",
     "ParseError",

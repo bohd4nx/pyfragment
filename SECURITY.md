@@ -16,4 +16,4 @@ You will receive a response within 72 hours. Once the fix is released, the advis
 
 ## Scope
 
-This library handles sensitive credentials (TON seed phrases, Fragment session cookies, Tonapi keys). Please treat any finding that could expose or misuse these credentials as high severity.
+This library handles sensitive credentials (GRAM (ex TON) seed phrases, Fragment session cookies, Tonapi keys). Please treat any finding that could expose or misuse these credentials as high severity.

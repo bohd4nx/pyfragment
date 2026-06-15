@@ -8,7 +8,7 @@ import pytest
 from ton_core import Cell
 
 from pyfragment import ParseError
-from pyfragment.domains.tonapi.transaction import clean_decode
+from pyfragment.services.tonapi.transaction import clean_decode
 
 PAYLOAD_CASES = [
     pytest.param(
@@ -86,7 +86,7 @@ def test_decode_payload_accepts_base64url_alphabet() -> None:
     raw = b"\xfb\xef\xff\x00"
     payload = base64.urlsafe_b64encode(raw).decode().rstrip("=")
 
-    with patch("pyfragment.domains.tonapi.transaction.Cell.one_from_boc", return_value=_FakeCell()) as mocked:
+    with patch("pyfragment.services.tonapi.transaction.Cell.one_from_boc", return_value=_FakeCell()) as mocked:
         result = clean_decode(payload)
 
     mocked.assert_called_once_with(raw)
@@ -106,7 +106,7 @@ def test_clean_decode_returns_text_comment_when_utf8() -> None:
             return _FakeSlice()
 
     payload = base64.urlsafe_b64encode(b"\x00\x01").decode().rstrip("=")
-    with patch("pyfragment.domains.tonapi.transaction.Cell.one_from_boc", return_value=_FakeCell()):
+    with patch("pyfragment.services.tonapi.transaction.Cell.one_from_boc", return_value=_FakeCell()):
         parsed = clean_decode(payload)
 
     assert parsed == "Telegram Premium Ref#abc"
@@ -126,7 +126,7 @@ def test_clean_decode_returns_cell_for_binary_payload() -> None:
 
     payload = base64.urlsafe_b64encode(b"\x00\x01").decode().rstrip("=")
     fake_cell: object = _FakeCell()
-    with patch("pyfragment.domains.tonapi.transaction.Cell.one_from_boc", return_value=fake_cell):
+    with patch("pyfragment.services.tonapi.transaction.Cell.one_from_boc", return_value=fake_cell):
         parsed = clean_decode(payload)
 
     assert parsed is fake_cell

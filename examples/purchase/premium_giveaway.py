@@ -3,16 +3,16 @@ Example: run a Telegram Premium giveaway for a channel.
 
 winners must be an integer between 1 and 24 000.
 months (Premium duration per winner) must be 3, 6, or 12.
-payment_method can be "ton" or "usdt_ton".
 Channel can be "@channel", "channel", or "https://t.me/channel".
 """
 
 import asyncio
 
 from pyfragment import ConfigurationError, FragmentClient, UserNotFoundError
+from pyfragment.enums import PaymentMethod
 
 SEED = "word1 word2 ... word24"
-API_KEY = "YOUR_TONAPI_KEY"
+API_KEY = "YOUR_API_KEY"  # tonconsole.com (tonapi, default) or t.me/toncenter
 
 # Option A: extract cookies directly from your browser (no manual copy-paste needed)
 # COOKIES = get_cookies_from_browser("chrome").cookies  # or "firefox", "edge", "brave", ...
@@ -28,11 +28,17 @@ COOKIES = {
 CHANNEL = "https://t.me/channel"
 WINNERS = 10  # 1–24 000
 MONTHS = 3  # 3, 6 or 12
-PAYMENT_METHOD = "ton"  # "ton" or "usdt_ton"
+PAYMENT_METHOD = PaymentMethod.GRAM  # GRAM, USDT_GRAM, USDT_ETH, USDT_POL, USDC_ETH, USDC_BASE, USDC_POL
 
 
 async def main() -> None:
-    async with FragmentClient(seed=SEED, api_key=API_KEY, cookies=COOKIES) as client:
+    async with FragmentClient(
+        seed=SEED,
+        api_key=API_KEY,
+        cookies=COOKIES,
+        wallet_version="V5R1",  # or "V4R2", "HighloadV2", "HighloadV3R1"
+        api_provider="tonapi",  # or "toncenter"
+    ) as client:
         try:
             result = await client.giveaway_premium(
                 CHANNEL,

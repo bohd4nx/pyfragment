@@ -1,22 +1,10 @@
 from __future__ import annotations
 
-import json
 from typing import Any
-
-from tonutils.contracts.wallet import WalletV4R2, WalletV5R1
-
-WALLET_CLASSES: dict[str, Any] = {"V4R2": WalletV4R2, "V5R1": WalletV5R1}
-
-MIN_TON_BALANCE: float = 0.33
-USDT_TON_MASTER_ADDRESS: str = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"
-MIN_USDT_BALANCE: float = 0.75
-
-DEFAULT_TIMEOUT: float = 30.0
-
-REQUIRED_COOKIE_KEYS: tuple[str, ...] = ("stel_ssid", "stel_dt", "stel_token", "stel_ton_token")
 
 FRAGMENT_DOMAIN: str = "fragment.com"
 FRAGMENT_BASE_URL: str = f"https://{FRAGMENT_DOMAIN}"
+
 STARS_PAGE: str = f"{FRAGMENT_BASE_URL}/stars/buy"
 STARS_GIVEAWAY_PAGE: str = f"{FRAGMENT_BASE_URL}/stars/giveaway"
 PREMIUM_PAGE: str = f"{FRAGMENT_BASE_URL}/premium/gift"
@@ -25,37 +13,10 @@ ADS_TOPUP_PAGE: str = f"{FRAGMENT_BASE_URL}/ads/topup"
 NUMBERS_PAGE: str = f"{FRAGMENT_BASE_URL}/numbers"
 GIFTS_PAGE: str = f"{FRAGMENT_BASE_URL}/gifts"
 
-SUPPORTED_BROWSERS: frozenset[str] = frozenset(
-    {
-        "arc",
-        "brave",
-        "chrome",
-        "chromium",
-        "chromium_based",
-        "edge",
-        "firefox",
-        "firefox_based",
-        "librewolf",
-        "opera",
-        "opera_gx",
-        "safari",
-        "vivaldi",
-    }
-)
+DEFAULT_TIMEOUT: float = 30.0
 
-DEVICE: str = json.dumps(
-    {
-        "platform": "iphone",
-        "appName": "Tonkeeper",
-        "appVersion": "26.04.0",
-        "maxProtocolVersion": 2,
-        "features": [
-            "SendTransaction",
-            {"name": "SendTransaction", "maxMessages": 255},
-            {"name": "SignData", "types": ["text", "binary", "cell"]},
-        ],
-    }
-)
+# Fragment cookie keys required for authenticated API calls
+REQUIRED_COOKIE_KEYS: tuple[str, ...] = ("stel_ssid", "stel_dt", "stel_token", "stel_ton_token")
 
 BASE_HEADERS: dict[str, str] = {
     "accept": "application/json, text/javascript, */*; q=0.01",
@@ -75,3 +36,49 @@ BASE_HEADERS: dict[str, str] = {
     ),
     "x-requested-with": "XMLHttpRequest",
 }
+
+# USDT-TON jetton master contract address on GRAM (ex TON) mainnet
+USDT_GRAM_MASTER_ADDRESS: str = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"
+
+# TON Connect device info sent during wallet connection handshake
+DEVICE_INFO: dict[str, Any] = {
+    "platform": "iphone",
+    "appName": "Tonkeeper",
+    "appVersion": "26.05.0",
+    "maxProtocolVersion": 2,
+    "features": [
+        "SendTransaction",
+        {"name": "SendTransaction", "maxMessages": 255},
+        {"name": "SignData", "types": ["text", "binary", "cell"]},
+    ],
+}
+
+# Stars: direct purchase per transaction
+STARS_PURCHASE_MIN: int = 50
+STARS_PURCHASE_MAX: int = 10_000_000
+
+# Stars: giveaway amount per winner
+STARS_GIVEAWAY_MIN: int = 500
+STARS_GIVEAWAY_MAX: int = 1_000_000
+
+# Stars giveaway winner count
+STARS_WINNERS_MIN: int = 1
+STARS_WINNERS_MAX: int = 15
+
+# Premium giveaway winner count
+PREMIUM_WINNERS_MIN: int = 1
+PREMIUM_WINNERS_MAX: int = 24_000
+
+# GRAM (ex TON) topup / Ads recharge amount
+GRAM_TOPUP_MIN: int = 1
+GRAM_TOPUP_MAX: int = 1_000_000_000
+
+# Minimum wallet balances required before broadcasting a transaction
+MIN_GRAM_BALANCE: float = 0.33
+MIN_USDT_BALANCE: float = 0.75
+
+# Premium subscription durations (months)
+PREMIUM_MONTHS_VALID: frozenset[int] = frozenset({3, 6, 12})
+
+# Mnemonic phrase valid word counts
+MNEMONIC_WORD_COUNTS_VALID: frozenset[int] = frozenset({12, 24})

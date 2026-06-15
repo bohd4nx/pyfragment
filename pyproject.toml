@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pyfragment"
-version = "2026.3.1"
-description = "Async Python client for the Fragment API. Buy Stars and Premium, top up TON and Ads balances, run giveaways, manage anonymous numbers, and search Fragment listings."
+version = "2026.3.2"
+description = "Async Python client for the Fragment API. Buy Stars and Premium, top up GRAM (ex TON) and Ads balances, run giveaways, manage anonymous numbers, and search Fragment listings."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
@@ -91,14 +91,20 @@ ignore = ["E501", "UP017"]
 [tool.mypy]
 python_version = "3.10"
 strict = true
-exclude = ["^examples/"]
+exclude = ["^examples/", "^logs/", "^tests/"]
 
 [[tool.mypy.overrides]]
-module = "rookiepy"
+module = [
+    "rookiepy",
+    "httpx",
+    "ton_core",
+    "tonutils",
+    "tonutils.*",
+]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 # rookiepy = None assignment is valid when the package is installed (type: ModuleType)
 # but mypy on CI (without rookiepy) sees it as Any and flags the comment as unused.
-module = "pyfragment.core.cookies"
+module = "pyfragment.services.cookies.service"
 warn_unused_ignores = false

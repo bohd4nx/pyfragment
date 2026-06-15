@@ -5,6 +5,7 @@ import json
 import pytest
 
 from pyfragment import ConfigurationError, CookieError, FragmentClient
+from pyfragment.core.constants import MNEMONIC_WORD_COUNTS_VALID
 from tests.shared import VALID_API_KEY, VALID_COOKIES, VALID_SEED
 
 # Client init tests
@@ -15,6 +16,30 @@ def test_valid_init() -> None:
     assert client.seed == VALID_SEED.strip()
     assert client.api_key == VALID_API_KEY
     assert client.wallet_version == "V5R1"
+    assert client.api_provider == "tonapi"
+
+
+# API provider tests
+
+
+def test_api_provider_default_is_tonapi() -> None:
+    client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
+    assert client.api_provider == "tonapi"
+
+
+def test_api_provider_toncenter() -> None:
+    client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES, api_provider="toncenter")
+    assert client.api_provider == "toncenter"
+
+
+def test_api_provider_is_case_insensitive() -> None:
+    client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES, api_provider="TONAPI")
+    assert client.api_provider == "tonapi"
+
+
+def test_unsupported_api_provider_raises() -> None:
+    with pytest.raises(ConfigurationError):
+        FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES, api_provider="infura")
 
 
 # Wallet version tests
@@ -43,6 +68,11 @@ def test_missing_seed_raises() -> None:
         FragmentClient(seed="", api_key=VALID_API_KEY, cookies=VALID_COOKIES)
 
 
+def test_both_seed_and_api_key_missing_raises() -> None:
+    with pytest.raises(ConfigurationError):
+        FragmentClient(seed="", api_key="", cookies=VALID_COOKIES)
+
+
 def test_whitespace_only_seed_raises() -> None:
     with pytest.raises(ConfigurationError):
         FragmentClient(seed="   ", api_key=VALID_API_KEY, cookies=VALID_COOKIES)
@@ -55,7 +85,7 @@ def test_invalid_mnemonic_length_raises() -> None:
 
 
 def test_valid_mnemonic_lengths() -> None:
-    for length in (12, 18, 24):
+    for length in sorted(MNEMONIC_WORD_COUNTS_VALID):
         seed = " ".join(["abandon"] * (length - 1) + ["about"])
         client = FragmentClient(seed=seed, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
         assert len(client.seed.split()) == length
@@ -67,11 +97,6 @@ def test_valid_mnemonic_lengths() -> None:
 def test_missing_api_key_raises() -> None:
     with pytest.raises(ConfigurationError):
         FragmentClient(seed=VALID_SEED, api_key="", cookies=VALID_COOKIES)
-
-
-def test_short_api_key_raises() -> None:
-    with pytest.raises(ConfigurationError):
-        FragmentClient(seed=VALID_SEED, api_key="A" * 42, cookies=VALID_COOKIES)
 
 
 # Cookie validation tests
@@ -109,6 +134,7 @@ def test_repr() -> None:
     r = repr(client)
     assert "FragmentClient" in r
     assert "V5R1" in r
+    assert "tonapi" in r
     assert "4 keys" in r
 
 

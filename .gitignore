@@ -37,3 +37,7 @@ systests/
 dist/
 build/
 *.egg-info/
+uv.lock
+
+#docs
+*-docs/

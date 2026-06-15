@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from pyfragment.domains.base import BaseService
-from pyfragment.domains.tonapi.account import get_wallet_info
-from pyfragment.models.wallet import WalletInfo
+from pyfragment.services.tonapi.account import get_wallet_info
+from pyfragment.services.tonapi.models import WalletInfo
 
 if TYPE_CHECKING:
     pass

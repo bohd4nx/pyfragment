@@ -20,14 +20,16 @@ async def raw_api_call(
     method: str,
     data: dict[str, Any] | None,
     page_url: str,
+    headers: dict[str, str] | None = None,
 ) -> dict[str, Any]:
+    base = headers if headers is not None else BASE_HEADERS
     payload = {"method": method, **(data or {})}
-    headers = {**BASE_HEADERS, "referer": page_url, "x-aj-referer": page_url}
+    call_headers = {**base, "referer": page_url, "x-aj-referer": page_url}
     logger.debug("Starting Fragment API call '%s' on %s", method, page_url)
     try:
         async with httpx.AsyncClient(cookies=cookies, timeout=timeout) as session:
-            fragment_hash = await get_fragment_hash(cookies, headers, page_url, timeout)
-            response = await fragment_request(session, fragment_hash, headers, payload)
+            fragment_hash = await get_fragment_hash(cookies, call_headers, page_url, timeout)
+            response = await fragment_request(session, fragment_hash, call_headers, payload)
             logger.debug("Completed Fragment API call '%s' with response keys: %s", method, sorted(response.keys()))
             return response
     except Exception:

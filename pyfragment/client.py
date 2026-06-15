@@ -1,23 +1,29 @@
 from __future__ import annotations
 
-import json
-from typing import Any, cast, get_args
+from typing import Any
 
-from pyfragment.core.constants import DEFAULT_TIMEOUT, FRAGMENT_BASE_URL, REQUIRED_COOKIE_KEYS
+from pyfragment.core.constants import BASE_HEADERS, DEFAULT_TIMEOUT, FRAGMENT_BASE_URL
+from pyfragment.core.validation import (
+    normalize_provider,
+    normalize_wallet_version,
+    parse_cookies,
+    validate_cookie_keys,
+    validate_credentials,
+)
+from pyfragment.domains.ads.models import AdsRechargeResult, AdsTopupResult
 from pyfragment.domains.ads.service import AdsService
+from pyfragment.domains.anonymous_numbers.models import LoginCodeResult, TerminateSessionsResult
 from pyfragment.domains.anonymous_numbers.service import AnonymousNumbersService
 from pyfragment.domains.base import raw_api_call
+from pyfragment.domains.giveaways.models import PremiumGiveawayResult, StarsGiveawayResult
 from pyfragment.domains.giveaways.service import GiveawaysService
+from pyfragment.domains.marketplace.models import GiftsResult, NumbersResult, UsernamesResult
 from pyfragment.domains.marketplace.service import MarketplaceService
+from pyfragment.domains.purchases.models import PremiumResult, StarsResult
 from pyfragment.domains.purchases.service import PurchasesService
-from pyfragment.domains.tonapi.service import TonapiService
-from pyfragment.exceptions import ConfigurationError, CookieError
-from pyfragment.models.anonymous_numbers import LoginCodeResult, TerminateSessionsResult
-from pyfragment.models.enums import PaymentMethod, WalletVersion
-from pyfragment.models.giveaways import PremiumGiveawayResult, StarsGiveawayResult
-from pyfragment.models.marketplace import GiftsResult, NumbersResult, UsernamesResult
-from pyfragment.models.payments import AdsRechargeResult, AdsTopupResult, PremiumResult, StarsResult
-from pyfragment.models.wallet import WalletInfo
+from pyfragment.enums import ApiProvider, PaymentMethod, WalletVersion
+from pyfragment.services.tonapi.models import WalletInfo
+from pyfragment.services.tonapi.service import TonapiService
 
 
 class FragmentClient:
@@ -29,14 +35,18 @@ class FragmentClient:
         connected with Fragment or Telegram.
 
     Args:
-        seed: 12- or 24-word mnemonic phrase for the TON wallet.
-        api_key: Tonapi API key — get one at https://tonconsole.com.
+        seed: 12- or 24-word mnemonic phrase for the GRAM (ex TON) wallet.
+        api_key: API key for the chosen provider — tonconsole.com (default) or t.me/toncenter.
         cookies: Fragment session cookies as a dict or JSON string.
         wallet_version: Wallet contract version — ``"V4R2"`` or ``"V5R1"`` (default).
+        api_provider: Blockchain API provider — ``"tonapi"`` (tonconsole.com, default)
+            or ``"toncenter"`` (t.me/toncenter).
         timeout: HTTP request timeout in seconds. Defaults to ``30.0``.
+        headers: Custom HTTP request headers. If omitted, :data:`BASE_HEADERS` is used.
 
     Raises:
-        ConfigurationError: If ``seed``, ``api_key``, or ``wallet_version`` are missing or invalid.
+        ConfigurationError: If ``seed``, ``api_key``, ``wallet_version``, or ``api_provider``
+            are missing or invalid.
         CookieError: If ``cookies`` cannot be parsed or are missing required keys.
 
     Example::
@@ -51,63 +61,29 @@ class FragmentClient:
             print(result.transaction_id)
     """
 
-    @staticmethod
-    def _parse_cookies(cookies: dict[str, Any] | str) -> dict[str, Any]:
-        if isinstance(cookies, str):
-            try:
-                cookies = json.loads(cookies)
-            except Exception as exc:
-                raise CookieError(CookieError.READ_FAILED.format(exc=exc)) from exc
-        return cast(dict[str, Any], cookies)
-
-    @staticmethod
-    def _validate_required(seed: str, api_key: str) -> None:
-        missing = [name for name, val in (("seed", seed), ("api_key", api_key)) if not val or not str(val).strip()]
-        if missing:
-            raise ConfigurationError(ConfigurationError.MISSING_VARS.format(keys=", ".join(missing)))
-
-        word_count = len(seed.split())
-        if word_count not in (12, 18, 24):
-            raise ConfigurationError(ConfigurationError.INVALID_MNEMONIC.format(count=word_count))
-
-        if len(api_key.strip()) < 68:
-            raise ConfigurationError(ConfigurationError.INVALID_API_KEY.format(length=len(api_key.strip())))
-
-    @staticmethod
-    def _validate_cookie_keys(cookies: dict[str, Any]) -> None:
-        missing_keys = [k for k in REQUIRED_COOKIE_KEYS if not str(cookies.get(k, "")).strip()]
-        if missing_keys:
-            raise CookieError(CookieError.MISSING_KEYS.format(keys=", ".join(missing_keys)))
-
-    @staticmethod
-    def _normalize_wallet_version(wallet_version: str) -> WalletVersion:
-        version = wallet_version.strip().upper()
-        if version not in get_args(WalletVersion):
-            raise ConfigurationError(
-                ConfigurationError.UNSUPPORTED_VERSION.format(
-                    version=version, supported=", ".join(sorted(get_args(WalletVersion)))
-                )
-            )
-        return cast(WalletVersion, version)
-
     def __init__(
         self,
         seed: str,
         api_key: str,
         cookies: dict[str, Any] | str,
         wallet_version: str = "V5R1",
+        api_provider: str = "tonapi",
         timeout: float = DEFAULT_TIMEOUT,
+        headers: dict[str, str] | None = None,
     ) -> None:
-        self._validate_required(seed, api_key)
-        parsed_cookies = self._parse_cookies(cookies)
-        self._validate_cookie_keys(parsed_cookies)
-        version = self._normalize_wallet_version(wallet_version)
+        validate_credentials(seed, api_key)
+        provider = normalize_provider(api_provider)
+        parsed_cookies = parse_cookies(cookies)
+        validate_cookie_keys(parsed_cookies)
+        version = normalize_wallet_version(wallet_version)
 
         self.seed: str = seed.strip()
         self.api_key: str = api_key.strip()
+        self.api_provider: ApiProvider = provider
         self.cookies: dict[str, Any] = parsed_cookies
         self.wallet_version: WalletVersion = version
         self.timeout: float = timeout
+        self.headers: dict[str, str] = headers if headers is not None else BASE_HEADERS
         self.marketplace = MarketplaceService(self)
         self.purchases = PurchasesService(self)
         self.giveaways = GiveawaysService(self)
@@ -122,14 +98,14 @@ class FragmentClient:
         pass
 
     def __repr__(self) -> str:
-        return f"FragmentClient(wallet_version='{self.wallet_version}', cookies={len(self.cookies)} keys)"
+        return f"FragmentClient(wallet_version='{self.wallet_version}', api_provider='{self.api_provider}', cookies={len(self.cookies)} keys)"
 
     async def purchase_premium(
         self,
         username: str,
         months: int,
         show_sender: bool = True,
-        payment_method: PaymentMethod = "ton",
+        payment_method: PaymentMethod = PaymentMethod.GRAM,
     ) -> PremiumResult:
         """Gift Telegram Premium to a user.
 
@@ -137,7 +113,7 @@ class FragmentClient:
             username: Recipient identifier — ``@username``, ``username``, or ``https://t.me/username``.
             months: Duration — ``3``, ``6``, or ``12``.
             show_sender: Show your name as the sender. Defaults to ``True``.
-            payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.
+            payment_method: Payment currency — defaults to ``PaymentMethod.GRAM``.
 
         Returns:
             :class:`PremiumResult` with ``transaction_id``, ``username``, and ``amount``.
@@ -149,41 +125,40 @@ class FragmentClient:
         username: str,
         amount: int,
         show_sender: bool = True,
-        payment_method: PaymentMethod = "ton",
+        payment_method: PaymentMethod = PaymentMethod.GRAM,
     ) -> StarsResult:
         """Send Telegram Stars to a user.
 
         Args:
             username: Recipient identifier — ``@username``, ``username``, or ``https://t.me/username``.
-            amount: Number of stars — integer from ``50`` to ``1 000 000``.
+            amount: Number of stars — integer from ``50`` to ``10 000 000``.
             show_sender: Show your name as the gift sender. Defaults to ``True``.
-            payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.
+            payment_method: Payment currency — defaults to ``PaymentMethod.GRAM``.
 
         Returns:
             :class:`StarsResult` with ``transaction_id``, ``username``, and ``amount``.
         """
         return await self.purchases.purchase_stars(username, amount, show_sender=show_sender, payment_method=payment_method)
 
-    async def topup_ton(self, username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
-        """Top up TON to a recipient's Telegram balance.
+    async def topup_gram(self, username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
+        """Top up GRAM (ex TON) to a recipient's Telegram balance.
 
         Args:
             username: Recipient's Telegram username (with or without ``@``).
-            amount: Amount in TON — integer from ``1`` to ``1 000 000 000``.
+            amount: Amount in GRAM (ex TON) — integer from ``1`` to ``1 000 000 000``.
             show_sender: Show your name as the sender. Defaults to ``True``.
 
         Returns:
             :class:`AdsTopupResult` with ``transaction_id``, ``username``, and ``amount``.
         """
-        return await self.ads.topup_ton(username, amount, show_sender=show_sender)
+        return await self.ads.topup_gram(username, amount, show_sender=show_sender)
 
     async def recharge_ads(self, account: str, amount: int) -> AdsRechargeResult:
         """Add funds to your own Telegram Ads account.
 
         Args:
-            account: Your Fragment Ads account identifier — the channel or bot username
-                the Ads account is linked to (e.g. ``"@mychannel"``).
-            amount: Amount in TON — integer from ``1`` to ``1 000 000 000``.
+            account: Channel or bot username the Ads account is linked to (e.g. ``"@mychannel"``).
+            amount: Amount in GRAM (ex TON) — integer from ``1`` to ``1 000 000 000``.
 
         Returns:
             :class:`AdsRechargeResult` with ``transaction_id`` and ``amount``.
@@ -194,9 +169,7 @@ class FragmentClient:
         """Return the address, state, and balances of the wallet.
 
         Returns:
-            :class:`WalletInfo` with ``address`` (``"UQ..."``), ``state``
-            (``"active"``, ``"uninit"``, ``"nonexist"``, or ``"frozen"``),
-            ``ton_balance`` in TON, and ``usdt_balance`` in USDT.
+            :class:`WalletInfo` with ``address``, ``state``, ``gram_balance``, and ``usdt_balance``.
         """
         return await self.tonapi.get_wallet()
 
@@ -205,19 +178,18 @@ class FragmentClient:
         channel: str,
         winners: int,
         amount: int,
-        payment_method: PaymentMethod = "ton",
+        payment_method: PaymentMethod = PaymentMethod.GRAM,
     ) -> StarsGiveawayResult:
         """Run a Telegram Stars giveaway for a channel.
 
         Args:
             channel: Channel identifier — ``@channel``, ``channel``, or ``https://t.me/channel``.
-            winners: Number of winners — integer from ``1`` to ``5``.
+            winners: Number of winners — integer from ``1`` to ``15``.
             amount: Stars each winner receives — integer from ``500`` to ``1 000 000``.
-            payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.
+            payment_method: Payment currency — defaults to ``PaymentMethod.GRAM``.
 
         Returns:
-            :class:`StarsGiveawayResult` with ``transaction_id``, ``channel``,
-            ``winners``, and ``amount``.
+            :class:`StarsGiveawayResult` with ``transaction_id``, ``channel``, ``winners``, and ``amount``.
         """
         return await self.giveaways.giveaway_stars(channel, winners, amount, payment_method=payment_method)
 
@@ -226,19 +198,18 @@ class FragmentClient:
         channel: str,
         winners: int,
         months: int = 3,
-        payment_method: PaymentMethod = "ton",
+        payment_method: PaymentMethod = PaymentMethod.GRAM,
     ) -> PremiumGiveawayResult:
         """Run a Telegram Premium giveaway for a channel.
 
         Args:
             channel: Channel identifier — ``@channel``, ``channel``, or ``https://t.me/channel``.
-            winners: Number of winners — positive integer.
+            winners: Number of winners — integer from ``1`` to ``24 000``.
             months: Premium duration per winner — ``3``, ``6``, or ``12``. Defaults to ``3``.
-            payment_method: Payment currency — ``"ton"`` (default) or ``"usdt_ton"``.
+            payment_method: Payment currency — defaults to ``PaymentMethod.GRAM``.
 
         Returns:
-            :class:`PremiumGiveawayResult` with ``transaction_id``, ``channel``,
-            ``winners``, and ``amount``.
+            :class:`PremiumGiveawayResult` with ``transaction_id``, ``channel``, ``winners``, and ``amount``.
         """
         return await self.giveaways.giveaway_premium(channel, winners, months, payment_method=payment_method)
 
@@ -246,7 +217,7 @@ class FragmentClient:
         """Fetch the current pending login code for an anonymous number.
 
         Args:
-            number: Phone number with or without leading ``+`` (e.g. ``"+1234567890"``).
+            number: Phone number with or without leading ``+``.
 
         Returns:
             :class:`LoginCodeResult` with ``number``, ``code`` (``None`` if none pending),
@@ -273,7 +244,7 @@ class FragmentClient:
             :class:`TerminateSessionsResult` with ``number`` and ``message``.
 
         Raises:
-            AnonymousNumberError: If the number is not owned by this account or has no active sessions.
+            AnonymousNumberError: If the number is not owned or has no active sessions.
         """
         return await self.anonymous_numbers.terminate_sessions(number)
 
@@ -287,17 +258,13 @@ class FragmentClient:
         """Search the Fragment marketplace for Telegram usernames.
 
         Args:
-            query: Search text (e.g. ``"durov"``). Omit or pass ``""`` to browse all.
-            sort: Sort order — ``"price_desc"``, ``"price_asc"``, ``"listed"``, or
-                ``"ending"``. Omit to use Fragment's default ordering.
-            filter: Filter results — ``"auction"``, ``"sale"``, ``"sold"``, or
-                ``""`` (available items). Omit to return all.
-            offset_id: Pagination cursor — pass :attr:`UsernamesResult.next_offset_id`
-                from a previous result to fetch the next page.
+            query: Search text. Omit or pass ``""`` to browse all.
+            sort: ``"price_desc"``, ``"price_asc"``, ``"listed"``, or ``"ending"``.
+            filter: ``"auction"``, ``"sale"``, ``"sold"``, or ``""`` (available).
+            offset_id: Pass :attr:`UsernamesResult.next_offset_id` to fetch the next page.
 
         Returns:
-            :class:`UsernamesResult` with ``items`` (parsed list of item dicts)
-            and ``next_offset_id`` (``None`` on the last page).
+            :class:`UsernamesResult` with ``items`` and ``next_offset_id``.
         """
         return await self.marketplace.search_usernames(query, sort=sort, filter=filter, offset_id=offset_id)
 
@@ -311,17 +278,13 @@ class FragmentClient:
         """Search the Fragment marketplace for anonymous Telegram numbers.
 
         Args:
-            query: Search text (e.g. ``"888"``). Omit or pass ``""`` to browse all.
-            sort: Sort order — ``"price_desc"``, ``"price_asc"``, ``"listed"``, or
-                ``"ending"``. Omit to use Fragment's default ordering.
-            filter: Filter results — ``"auction"``, ``"sale"``, ``"sold"``, or
-                ``""`` (available items). Omit to return all.
-            offset_id: Pagination cursor — pass :attr:`NumbersResult.next_offset_id`
-                from a previous result to fetch the next page.
+            query: Search text. Omit or pass ``""`` to browse all.
+            sort: ``"price_desc"``, ``"price_asc"``, ``"listed"``, or ``"ending"``.
+            filter: ``"auction"``, ``"sale"``, ``"sold"``, or ``""`` (available).
+            offset_id: Pass :attr:`NumbersResult.next_offset_id` to fetch the next page.
 
         Returns:
-            :class:`NumbersResult` with ``items`` (parsed list of item dicts)
-            and ``next_offset_id`` (``None`` on the last page).
+            :class:`NumbersResult` with ``items`` and ``next_offset_id``.
         """
         return await self.marketplace.search_numbers(query, sort=sort, filter=filter, offset_id=offset_id)
 
@@ -338,22 +301,16 @@ class FragmentClient:
         """Search the Fragment gifts marketplace.
 
         Args:
-            query: Search text. Omit or pass ``""`` to browse without filtering by name.
-            collection: Filter by gift collection slug (e.g. ``"artisanbrick"``). Omit for all.
-            sort: Sort order — ``"price_desc"``, ``"price_asc"``, ``"listed"``, or
-                ``"ending"``. Omit to use Fragment's default ordering.
-            filter: Filter results — ``"auction"``, ``"sale"``, ``"sold"``, or
-                ``""`` (available items). Omit to return all.
-            view: Active attribute tab name (e.g. ``"Model"``, ``"Backdrop"``). Omit for default.
-            attr: Attribute filters — mapping of trait name to accepted values, e.g.
-                ``{"Model": ["Foosball"], "Backdrop": ["Celtic Blue", "Orange"]}``.
-                Each key is sent as ``attr[Key]`` with its list of values.
-            offset: Integer page offset from a previous :class:`GiftsResult`.
-                Pass ``next_offset`` to fetch the next page.
+            query: Search text. Omit or pass ``""`` to browse all.
+            collection: Gift collection slug (e.g. ``"artisanbrick"``).
+            sort: ``"price_desc"``, ``"price_asc"``, ``"listed"``, or ``"ending"``.
+            filter: ``"auction"``, ``"sale"``, ``"sold"``, or ``""`` (available).
+            view: Active attribute tab name (e.g. ``"Model"``).
+            attr: Attribute filters — e.g. ``{"Model": ["Foosball"], "Backdrop": ["Celtic Blue"]}``.
+            offset: Pass :attr:`GiftsResult.next_offset` to fetch the next page.
 
         Returns:
-            :class:`GiftsResult` with ``items`` (parsed list of item dicts)
-            and ``next_offset`` (``None`` on the last page).
+            :class:`GiftsResult` with ``items`` and ``next_offset``.
         """
         return await self.marketplace.search_gifts(
             query, collection=collection, sort=sort, filter=filter, view=view, attr=attr, offset=offset
@@ -364,24 +321,12 @@ class FragmentClient:
     ) -> dict[str, Any]:
         """Send a raw request to the Fragment API.
 
-        Useful for accessing undocumented or future Fragment API methods
-        without waiting for a library update.
-
         Args:
             method: Fragment API method name, e.g. ``"searchPremiumGiftRecipient"``.
-            data: Additional form-data fields to include in the request body.
-            page_url: Fragment page URL used to derive the API hash and headers.
-                Defaults to ``FRAGMENT_BASE_URL`` (``"https://fragment.com"``).
+            data: Additional form-data fields.
+            page_url: Fragment page URL to derive the API hash. Defaults to ``FRAGMENT_BASE_URL``.
 
         Returns:
             Raw parsed JSON response as a dict.
-
-        Example::
-
-            result = await client.call(
-                "searchPremiumGiftRecipient",
-                {"query": "@username", "months": 3},
-                page_url="https://fragment.com/premium/gift",
-            )
         """
-        return await raw_api_call(self.cookies, self.timeout, method, data, page_url)
+        return await raw_api_call(self.cookies, self.timeout, method, data, page_url, self.headers)

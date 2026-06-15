@@ -5,13 +5,14 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from ton_core import NetworkGlobalID
-from tonutils.clients import TonapiClient
+from tonutils.clients import TonapiClient, ToncenterClient
 from tonutils.contracts.jetton import get_wallet_address_get_method, get_wallet_data_get_method
 from tonutils.exceptions import ProviderResponseError
 
-from pyfragment.core.constants import MIN_TON_BALANCE, MIN_USDT_BALANCE, USDT_TON_MASTER_ADDRESS, WALLET_CLASSES
+from pyfragment.core.constants import MIN_GRAM_BALANCE, MIN_USDT_BALANCE, USDT_GRAM_MASTER_ADDRESS
+from pyfragment.enums import WALLET_CLASSES, ApiProvider
 from pyfragment.exceptions import WalletError
-from pyfragment.models.wallet import WalletInfo
+from pyfragment.services.tonapi.models import WalletInfo
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
@@ -20,12 +21,19 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _make_ton_client(client: FragmentClient) -> Any:
+    """Return the appropriate tonutils client based on the configured api_provider."""
+    if client.api_provider == ApiProvider.TONCENTER:
+        return ToncenterClient(network=NetworkGlobalID.MAINNET, api_key=client.api_key)
+    return TonapiClient(network=NetworkGlobalID.MAINNET, api_key=client.api_key)
+
+
 async def get_usdt_balance(ton: Any, wallet_address: str) -> float:
-    """Return the USDT balance for a Fragment-linked TON wallet."""
+    """Return the USDT balance for a Fragment-linked GRAM (ex TON) wallet."""
     try:
         jetton_wallet_address = await get_wallet_address_get_method(
             client=ton,
-            address=USDT_TON_MASTER_ADDRESS,
+            address=USDT_GRAM_MASTER_ADDRESS,
             owner_address=wallet_address,
         )
         wallet_data = await get_wallet_data_get_method(client=ton, address=jetton_wallet_address)
@@ -42,40 +50,40 @@ async def get_usdt_balance(ton: Any, wallet_address: str) -> float:
         raise WalletError(WalletError.USDT_BALANCE_CHECK_FAILED.format(exc=exc)) from exc
 
 
-async def check_ton_payment_balance(
-    balance_ton: float,
-    amount_ton: float,
+async def check_gram_payment_balance(
+    balance_gram: float,
+    amount_gram: float,
     required_payment_amount: float | None,
 ) -> None:
-    """Validate that the TON wallet can cover a TON-denominated payment."""
-    tx_price_ton = amount_ton
+    """Validate that the GRAM (ex TON) wallet can cover a GRAM (ex TON)-denominated payment."""
+    tx_price_gram = amount_gram
     if required_payment_amount is not None and required_payment_amount > 0:
-        tx_price_ton = max(tx_price_ton, required_payment_amount)
+        tx_price_gram = max(tx_price_gram, required_payment_amount)
 
-    required_ton = max(tx_price_ton, MIN_TON_BALANCE)
-    if balance_ton < required_ton:
+    required_gram = max(tx_price_gram, MIN_GRAM_BALANCE)
+    if balance_gram < required_gram:
         logger.error(
-            "Failed TON balance check: balance=%s TON, required=%s TON",
-            round(balance_ton, 6),
-            round(required_ton, 6),
+            "Failed GRAM (ex TON) balance check: balance=%s GRAM (ex TON), required=%s GRAM (ex TON)",
+            round(balance_gram, 6),
+            round(required_gram, 6),
         )
-        raise WalletError(WalletError.LOW_TON_BALANCE.format(balance=balance_ton, required=required_ton))
+        raise WalletError(WalletError.LOW_GRAM_BALANCE.format(balance=balance_gram, required=required_gram))
 
 
 async def check_usdt_payment_balance(
-    balance_ton: float,
+    balance_gram: float,
     required_payment_amount: float | None,
     ton: Any,
     wallet_address: str,
 ) -> None:
     """Validate that the wallet can cover a USDT-denominated payment."""
-    if balance_ton < MIN_TON_BALANCE:
+    if balance_gram < MIN_GRAM_BALANCE:
         logger.error(
-            "Failed TON gas reserve check for USDT payment: balance=%s TON, required=%s TON",
-            round(balance_ton, 6),
-            MIN_TON_BALANCE,
+            "Failed GRAM (ex TON) gas reserve check for USDT payment: balance=%s GRAM (ex TON), required=%s GRAM (ex TON)",
+            round(balance_gram, 6),
+            MIN_GRAM_BALANCE,
         )
-        raise WalletError(WalletError.LOW_TON_BALANCE.format(balance=balance_ton, required=MIN_TON_BALANCE))
+        raise WalletError(WalletError.LOW_GRAM_BALANCE.format(balance=balance_gram, required=MIN_GRAM_BALANCE))
 
     usdt_balance = await get_usdt_balance(ton, wallet_address)
     required_usdt = required_payment_amount if required_payment_amount is not None else MIN_USDT_BALANCE
@@ -91,7 +99,7 @@ async def check_usdt_payment_balance(
 
 async def get_account_info(client: FragmentClient) -> dict[str, Any]:
     """Build the wallet payload Fragment needs to prepare a transaction."""
-    async with TonapiClient(network=NetworkGlobalID.MAINNET, api_key=client.api_key) as ton:
+    async with _make_ton_client(client) as ton:
         try:
             wallet_cls = WALLET_CLASSES[client.wallet_version]
             wallet, pub_key, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)
@@ -108,8 +116,8 @@ async def get_account_info(client: FragmentClient) -> dict[str, Any]:
 
 
 async def get_wallet_info(client: FragmentClient) -> WalletInfo:
-    """Fetch the wallet address, chain state, and TON/USDT balances."""
-    async with TonapiClient(network=NetworkGlobalID.MAINNET, api_key=client.api_key) as ton:
+    """Fetch the wallet address, chain state, and GRAM (ex TON)/USDT balances."""
+    async with _make_ton_client(client) as ton:
         try:
             wallet_cls = WALLET_CLASSES[client.wallet_version]
             wallet, _, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)
@@ -119,7 +127,7 @@ async def get_wallet_info(client: FragmentClient) -> WalletInfo:
             return WalletInfo(
                 address=wallet.address.to_str(is_user_friendly=True, is_bounceable=False),
                 state=wallet.state.value,
-                ton_balance=round(wallet.balance / 1_000_000_000, 4),
+                gram_balance=round(wallet.balance / 1_000_000_000, 4),
                 usdt_balance=round(usdt_balance, 4),
             )
         except Exception as exc:

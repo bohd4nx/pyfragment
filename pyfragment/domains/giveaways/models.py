@@ -29,6 +29,3 @@ class PremiumGiveawayResult:
             f"PremiumGiveawayResult(channel='{self.channel}', winners={self.winners}, "
             f"amount={self.amount} months per winner, tx='{self.transaction_id}')"
         )
-
-
-__all__ = ["PremiumGiveawayResult", "StarsGiveawayResult"]

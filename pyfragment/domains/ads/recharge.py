@@ -4,11 +4,11 @@ import json
 import logging
 from typing import TYPE_CHECKING
 
-from pyfragment.core.constants import ADS_TOPUP_PAGE, DEVICE
-from pyfragment.domains.tonapi.account import get_account_info
-from pyfragment.domains.tonapi.transaction import process_transaction
+from pyfragment.core.constants import ADS_TOPUP_PAGE, DEVICE_INFO, GRAM_TOPUP_MAX, GRAM_TOPUP_MIN
+from pyfragment.domains.ads.models import AdsRechargeResult
 from pyfragment.exceptions import ConfigurationError, FragmentAPIError, FragmentError, UnexpectedError, VerificationError
-from pyfragment.models.payments import AdsRechargeResult
+from pyfragment.services.tonapi.account import get_account_info
+from pyfragment.services.tonapi.transaction import process_transaction
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 async def recharge_ads(client: FragmentClient, account: str, amount: int) -> AdsRechargeResult:
-    if not isinstance(amount, int) or not (1 <= amount <= 1_000_000_000):
-        raise ConfigurationError(ConfigurationError.INVALID_TON_AMOUNT)
+    if not isinstance(amount, int) or not (GRAM_TOPUP_MIN <= amount <= GRAM_TOPUP_MAX):
+        raise ConfigurationError(ConfigurationError.INVALID_GRAM_AMOUNT)
 
     try:
         await client.call("updateAdsState", {"mode": "new"}, page_url=ADS_TOPUP_PAGE)
@@ -34,7 +34,7 @@ async def recharge_ads(client: FragmentClient, account: str, amount: int) -> Ads
             "getAdsRechargeLink",
             {
                 "account": json.dumps(account_info),
-                "device": DEVICE,
+                "device": json.dumps(DEVICE_INFO),
                 "transaction": 1,
                 "id": req_id,
             },
@@ -47,8 +47,8 @@ async def recharge_ads(client: FragmentClient, account: str, amount: int) -> Ads
         return AdsRechargeResult(transaction_id=tx_hash, amount=amount)
 
     except FragmentError as exc:
-        logger.error("Failed to recharge Ads account '%s' for %s TON: %s", account, amount, exc, exc_info=True)
+        logger.error("Failed to recharge Ads account '%s' for %s GRAM (ex TON): %s", account, amount, exc, exc_info=True)
         raise
     except Exception as exc:
-        logger.exception("Failed to recharge Ads account '%s' for %s TON due to an unexpected error", account, amount)
+        logger.exception("Failed to recharge Ads account '%s' for %s GRAM (ex TON) due to an unexpected error", account, amount)
         raise UnexpectedError(UnexpectedError.UNEXPECTED.format(exc=exc)) from exc

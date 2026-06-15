@@ -2,8 +2,14 @@ import logging
 from importlib.metadata import version
 
 from pyfragment.client import FragmentClient
-from pyfragment.core.cookies import get_cookies_from_browser
+from pyfragment.domains.ads.models import AdsRechargeResult, AdsTopupResult
+from pyfragment.domains.anonymous_numbers.models import LoginCodeResult, TerminateSessionsResult
+from pyfragment.domains.giveaways.models import PremiumGiveawayResult, StarsGiveawayResult
+from pyfragment.domains.marketplace.models import GiftsResult, NumbersResult, UsernamesResult
+from pyfragment.domains.purchases.models import PremiumResult, StarsResult
+from pyfragment.enums import ApiProvider, PaymentMethod, WalletVersion
 from pyfragment.exceptions import (
+    AlreadySubscribedError,
     AnonymousNumberError,
     ClientError,
     ConfigurationError,
@@ -19,13 +25,8 @@ from pyfragment.exceptions import (
     VerificationError,
     WalletError,
 )
-from pyfragment.models.anonymous_numbers import LoginCodeResult, TerminateSessionsResult
-from pyfragment.models.cookies import CookieResult
-from pyfragment.models.enums import PaymentMethod, WalletVersion
-from pyfragment.models.giveaways import PremiumGiveawayResult, StarsGiveawayResult
-from pyfragment.models.marketplace import GiftsResult, NumbersResult, UsernamesResult
-from pyfragment.models.payments import AdsRechargeResult, AdsTopupResult, PremiumResult, StarsResult
-from pyfragment.models.wallet import WalletInfo
+from pyfragment.services.cookies import CookieResult, get_cookies_from_browser
+from pyfragment.services.tonapi.models import WalletInfo
 
 logging.getLogger("pyfragment").addHandler(logging.NullHandler())
 
@@ -53,6 +54,7 @@ __all__ = [
     "FragmentAPIError",
     "FragmentPageError",
     "ConfigurationError",
+    "AlreadySubscribedError",
     "UserNotFoundError",
     "WalletError",
     "VerificationError",
@@ -64,6 +66,7 @@ __all__ = [
     "ParseError",
     "UnexpectedError",
     # literal types
+    "ApiProvider",
     "PaymentMethod",
     "WalletVersion",
     "get_cookies_from_browser",

@@ -10,6 +10,3 @@ class CookieResult:
 
     def __repr__(self) -> str:
         return f"CookieResult(cookies={self.cookies!r}, expires={self.expires!r})"
-
-
-__all__ = ["CookieResult"]

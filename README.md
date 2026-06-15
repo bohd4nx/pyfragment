@@ -10,10 +10,10 @@
 [![License](https://img.shields.io/github/license/bohd4nx/pyfragment?style=flat&color=blue&label=License)](LICENSE)
 
 Async Python client for the **[Fragment](https://fragment.com)** marketplace API.
-Buy Stars & Premium, run giveaways, top up TON and Ads balances,
+Buy Stars & Premium, run giveaways, top up GRAM (ex TON) and Ads balances,
 manage anonymous numbers, and search Fragment listings.
 
-**[Documentation](https://bohd4nx.gitbook.io/pyfragment/)** · **[Examples](https://github.com/bohd4nx/pyfragment/tree/master/examples)** · **[Changelog](CHANGELOG.md)** · **[Donate TON](https://app.tonkeeper.com/transfer/UQCppfw5DxWgdVHf3zkmZS8k1mt9oAUYxQLwq2fz3nhO8No5)**
+**[Documentation](https://bohd4nx.gitbook.io/pyfragment/)** · **[Examples](https://github.com/bohd4nx/pyfragment/tree/master/examples)** · **[Changelog](CHANGELOG.md)** · **[Donate GRAM](https://app.tonkeeper.com/transfer/UQCppfw5DxWgdVHf3zkmZS8k1mt9oAUYxQLwq2fz3nhO8No5)**
 
 </div>
 
@@ -38,29 +38,33 @@ pip install git+https://github.com/bohd4nx/pyfragment.git@dev
 
 ```python
 import asyncio
+
 from pyfragment import FragmentClient
+from pyfragment.enums import PaymentMethod
 
 
 async def main() -> None:
     async with FragmentClient(
         seed="word1 word2 ... word24",
-        api_key="YOUR_TONAPI_KEY",
+        api_key="YOUR_API_KEY",  # tonconsole.com (tonapi, default) or t.me/toncenter
         cookies={
             "stel_ssid": "...",
             "stel_dt": "...",
             "stel_token": "...",
             "stel_ton_token": "...",
         },
+        wallet_version="V5R1",   # or "V4R2", "HighloadV2", "HighloadV3R1"
+        api_provider="tonapi",   # or "toncenter"
     ) as client:
         wallet = await client.get_wallet()
-        print(f"TON: {wallet.ton_balance} | USDT: {wallet.usdt_balance}")
+        print(f"GRAM: {wallet.gram_balance} | USDT: {wallet.usdt_balance}")
 
         recipient = "https://t.me/username"  # also: @username, username
 
-        stars = await client.purchase_stars(recipient, amount=500, payment_method="usdt_ton")
+        stars = await client.purchase_stars(recipient, amount=500, payment_method=PaymentMethod.USDT_GRAM)
         print(f"Sent {stars.amount} Stars to {stars.username} | tx: {stars.transaction_id}")
 
-        premium = await client.purchase_premium(recipient, months=6, payment_method="ton")
+        premium = await client.purchase_premium(recipient, months=6, payment_method=PaymentMethod.GRAM)
         print(f"Sent Premium {premium.amount}m to {premium.username} | tx: {premium.transaction_id}")
 
 
@@ -71,13 +75,14 @@ asyncio.run(main())
 
 ## Configuration
 
-| Parameter        | Type          | Default  | Description                                                 |
-| ---------------- | ------------- | -------- | ----------------------------------------------------------- |
-| `seed`           | `str`         | —        | 12- or 24-word TON wallet mnemonic                          |
-| `api_key`        | `str`         | —        | Tonapi key from [tonconsole.com](https://tonconsole.com)    |
-| `cookies`        | `dict \| str` | —        | Fragment session cookies                                    |
-| `wallet_version` | `str`         | `"V5R1"` | `"V4R2"` or `"V5R1"` — also accepts `WalletVersion` literal |
-| `timeout`        | `float`       | `30.0`   | HTTP request timeout in seconds                             |
+| Parameter        | Type          | Default    | Description                                                                                                       |
+| ---------------- | ------------- | ---------- | ----------------------------------------------------------------------------------------------------------------- |
+| `seed`           | `str`         | —          | 12- or 24-word GRAM (ex TON) wallet mnemonic                                                                      |
+| `api_key`        | `str`         | —          | API key for the chosen provider (see `api_provider`)                                                              |
+| `cookies`        | `dict \| str` | —          | Fragment session cookies                                                                                          |
+| `wallet_version` | `str`         | `"V5R1"`   | `"V4R2"` or `"V5R1"` — also accepts `WalletVersion` literal                                                       |
+| `api_provider`   | `str`         | `"tonapi"` | `"tonapi"` ([tonconsole.com](https://tonconsole.com)) or `"toncenter"` ([t.me/toncenter](https://t.me/toncenter)) |
+| `timeout`        | `float`       | `30.0`     | HTTP request timeout in seconds                                                                                   |
 
 ---
 
@@ -85,7 +90,7 @@ asyncio.run(main())
 
 ### Fragment cookies
 
-Log in to [fragment.com](https://fragment.com) and connect your TON wallet.
+Log in to [fragment.com](https://fragment.com) and connect your GRAM (ex TON) wallet.
 
 **Automatically** (recommended) — reads directly from your browser, no extension needed:
 
@@ -111,7 +116,7 @@ Generate at [tonconsole.com](https://tonconsole.com).
 
 ### Seed phrase
 
-12- or 24-word mnemonic from your TON wallet (**Tonkeeper → Settings → Backup**). Never share it.
+12- or 24-word mnemonic from your GRAM (ex TON) wallet (**Tonkeeper → Settings → Backup**). Never share it.
 
 ---
 
@@ -136,7 +141,7 @@ All exceptions inherit from `FragmentError`:
 from pyfragment import (
     ConfigurationError,   # invalid arguments (amount, months, payment_method…)
     UserNotFoundError,    # recipient not found on Fragment
-    WalletError,          # insufficient TON or USDT balance
+    WalletError,          # insufficient GRAM (ex TON) or USDT balance
     TransactionError,     # broadcast failed, duplicate seqno, invalid payload
     FragmentAPIError,     # Fragment API returned an error response
     FragmentPageError,    # page fetch or hash extraction failed

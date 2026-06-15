@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from pyfragment.domains.base import BaseService
+from pyfragment.domains.marketplace.models import GiftsResult, NumbersResult, UsernamesResult
 from pyfragment.domains.marketplace.search import search_gifts, search_numbers, search_usernames
-from pyfragment.models.marketplace import GiftsResult, NumbersResult, UsernamesResult
 
 if TYPE_CHECKING:
     pass
