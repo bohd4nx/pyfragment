@@ -60,6 +60,6 @@ asyncio.run(main())
 
 <div align="center">
 
-Made with ❤️ by [@bohd4nx](https://t.me/bohd4nx) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
+[Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
 
 </div>
