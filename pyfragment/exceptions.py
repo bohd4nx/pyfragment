@@ -36,10 +36,6 @@ class ConfigurationError(ClientError):
         f"Invalid Stars amount: must be an integer between {STARS_PURCHASE_MIN:,} and {STARS_PURCHASE_MAX:,}."
     )
     INVALID_GRAM_AMOUNT = f"Invalid GRAM (ex TON) amount: must be an integer between {GRAM_TOPUP_MIN:,} and {GRAM_TOPUP_MAX:,}."
-    INVALID_USERNAME = (
-        "Invalid username '{username}'. "
-        "Must be 5-32 characters and contain only letters (A-Z, a-z), digits (0-9), or underscores (_)."
-    )
     INVALID_WINNERS_STARS = (
         f"Invalid winners count: must be an integer between {STARS_WINNERS_MIN:,} and {STARS_WINNERS_MAX:,}."
     )

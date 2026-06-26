@@ -36,10 +36,6 @@ FAKE_BALANCE_NANOGRAM: int = 1_500_000_000  # 1.5 GRAM (ex TON)
 # recharge_ads
 FAKE_ADS_ACCOUNT: str = "@mychannel"
 
-# Revenue withdrawals
-FAKE_WITHDRAWAL_WALLET: str = "EQDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-FAKE_REVENUE_TX: str = "revenue_tx_abc123"
-
 # Anonymous number
 FAKE_HTML_WITH_CODE: str = """
 <table>
