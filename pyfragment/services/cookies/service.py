@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import importlib
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from pyfragment.core.constants import FRAGMENT_BASE_URL, FRAGMENT_DOMAIN, REQUIRED_COOKIE_KEYS
@@ -42,11 +42,11 @@ def get_cookies_from_browser(browser: str = "chrome") -> CookieResult:
         if cookie.get("name") == "stel_ssid":
             raw = cookie.get("expires")
             if isinstance(raw, (int, float)):
-                expires_iso = datetime.fromtimestamp(raw, tz=timezone.utc).isoformat()
+                expires_iso = datetime.fromtimestamp(raw, tz=UTC).isoformat()
             elif isinstance(raw, str) and raw:
                 for fmt in ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"):
                     try:
-                        expires_iso = datetime.strptime(raw, fmt).replace(tzinfo=timezone.utc).isoformat()
+                        expires_iso = datetime.strptime(raw, fmt).replace(tzinfo=UTC).isoformat()
                         break
                     except ValueError:
                         continue
@@ -54,7 +54,7 @@ def get_cookies_from_browser(browser: str = "chrome") -> CookieResult:
 
     if expires_iso:
         expires_dt = datetime.fromisoformat(expires_iso)
-        if expires_dt < datetime.now(timezone.utc):
+        if expires_dt < datetime.now(UTC):
             raise CookieError(CookieError.EXPIRED.format(expires=expires_iso))
 
     return CookieResult(cookies={k: cookie_map[k] for k in REQUIRED_COOKIE_KEYS}, expires=expires_iso)

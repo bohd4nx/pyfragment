@@ -8,7 +8,7 @@ from typing import Any, cast
 import httpx
 
 from pyfragment.core.constants import DEFAULT_TIMEOUT, FRAGMENT_BASE_URL
-from pyfragment.exceptions import FragmentPageError, ParseError, VerificationError
+from pyfragment.exceptions import FragmentPageError, ParseError
 
 
 async def get_fragment_hash(
@@ -73,17 +73,3 @@ async def fragment_request(
             )
         return parse_json_response(resp, data.get("method", "request"))
     raise FragmentPageError(FragmentPageError.BAD_STATUS.format(status=429, url=f"{FRAGMENT_BASE_URL}/api"))
-
-
-async def execute_transaction_request(
-    session: httpx.AsyncClient,
-    headers: dict[str, str],
-    tx_data: dict[str, Any],
-    fragment_hash: str,
-) -> dict[str, Any]:
-    transaction = await fragment_request(session, fragment_hash, headers, tx_data)
-
-    if transaction.get("need_verify"):
-        raise VerificationError(VerificationError.KYC_REQUIRED)
-
-    return transaction
