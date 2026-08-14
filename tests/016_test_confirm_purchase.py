@@ -90,6 +90,8 @@ async def test_confirm_purchase_skips_confirm_call_when_no_confirm_method(client
     assert response["mode"] == "done"
     call_mock.assert_awaited_once()
     assert call_mock.await_args.args[0] == STATE_METHOD
+    # Fragment's own frontend always polls this endpoint with lv=false, never lv=1.
+    assert call_mock.await_args.args[1]["lv"] == "false"
 
 
 @pytest.mark.asyncio

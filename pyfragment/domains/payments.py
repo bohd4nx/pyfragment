@@ -73,7 +73,7 @@ async def confirm_purchase(
         mode = "new"
         response: dict[str, Any] = {}
         while time.monotonic() < deadline:
-            response = await client.call(state_method, {"mode": mode, "lv": "1", "dh": dh}, page_url=page_url)
+            response = await client.call(state_method, {"mode": mode, "lv": "false", "dh": dh}, page_url=page_url)
             mode = str(response.get("mode", mode))
             if not response.get("need_update", True):
                 return response
