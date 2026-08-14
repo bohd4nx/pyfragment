@@ -93,7 +93,7 @@ jobs:
     - name: Extract latest changelog entry
       id: changelog
       run: |
-        body=$(awk '/^## \[/{if(found) exit; found=1; next} found{print}' CHANGELOG.md)
+        body=$(awk '/^## \[Unreleased\]/{next} /^## \[/{if(found) exit; found=1; next} found{print}' CHANGELOG.md)
         echo "body<<EOF" >> $GITHUB_OUTPUT
         echo "$body" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
