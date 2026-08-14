@@ -9,6 +9,17 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ## [Unreleased]
 
+### Changed
+
+- `FragmentClient.headers` is now always a copy — sharing the same dict object as the module-level `BASE_HEADERS` meant mutating one client's headers leaked into `BASE_HEADERS` itself and every other client in the process.
+
+### Fixed
+
+- `purchase_stars()`/`purchase_premium()`/`giveaway_stars()`/`giveaway_premium()` now reject `PaymentMethod` values that aren't actually broadcastable yet (`usdt_eth`, `usdt_pol`, `usdc_eth`, `usdc_base`, `usdc_pol`) before making any network call. The balance check for all of these always validates the TON-chain USDT jetton balance regardless of which one was selected, so picking one of them would silently check the wrong currency on the wrong chain.
+- `check_gram_payment_balance()` computed the required balance as `max(payment, MIN_GRAM_BALANCE)` instead of `payment + MIN_GRAM_BALANCE`, so a wallet with a balance exactly equal to the payment amount passed the check but had nothing left over to cover the transfer's own network fee.
+- `get_fragment_hash()`'s referer derivation mangled the root Fragment URL (`https://fragment.com` → `https:/`) by blindly stripping the last `/`-separated segment. Affects `search_usernames()`, which queries the root page.
+- `confirm_purchase()`'s state-poll loop sent `lv=1`, while Fragment's own frontend always polls with `lv=false` — now matches.
+
 ---
 
 ## [2026.3.4] — 2026-08-14
