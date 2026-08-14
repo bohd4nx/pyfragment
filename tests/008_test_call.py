@@ -6,7 +6,7 @@ import pytest
 from curl_cffi.requests import AsyncSession, Response
 
 from pyfragment import FragmentClient, FragmentPageError
-from pyfragment.core.transport import fragment_request
+from pyfragment.core.transport import fragment_request, get_fragment_hash
 from tests.shared import FAKE_HASH, FAKE_RESPONSE
 
 # client.call() mocked tests
@@ -75,3 +75,33 @@ async def test_fragment_request_non_200_raises() -> None:
 
     with pytest.raises(FragmentPageError, match="429"):
         await fragment_request(session, FAKE_HASH, {}, {"method": "anyMethod"})
+
+
+# get_fragment_hash referer derivation
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("page_url", ["https://fragment.com", "https://fragment.com/"])
+async def test_get_fragment_hash_root_url_referer(page_url: str) -> None:
+    response = MagicMock(spec=Response)
+    response.status_code = 200
+    response.text = r"\/api?hash=abc123"
+
+    session = AsyncMock(spec=AsyncSession)
+    session.get = AsyncMock(return_value=response)
+
+    assert await get_fragment_hash(session, page_url) == "abc123"
+    assert session.get.call_args.kwargs["headers"]["referer"] == "https://fragment.com"
+
+
+@pytest.mark.asyncio
+async def test_get_fragment_hash_nested_url_referer_is_parent_path() -> None:
+    response = MagicMock(spec=Response)
+    response.status_code = 200
+    response.text = r"\/api?hash=abc123"
+
+    session = AsyncMock(spec=AsyncSession)
+    session.get = AsyncMock(return_value=response)
+
+    assert await get_fragment_hash(session, "https://fragment.com/stars/buy") == "abc123"
+    assert session.get.call_args.kwargs["headers"]["referer"] == "https://fragment.com/stars"
