@@ -83,7 +83,7 @@ class FragmentClient:
         self.cookies: dict[str, Any] = parsed_cookies
         self.wallet_version: WalletVersion = version
         self.timeout: float = timeout
-        self.headers: dict[str, str | None] = headers if headers is not None else BASE_HEADERS
+        self.headers: dict[str, str | None] = dict(headers) if headers is not None else dict(BASE_HEADERS)
         self.marketplace = MarketplaceService(self)
         self.purchases = PurchasesService(self)
         self.giveaways = GiveawaysService(self)

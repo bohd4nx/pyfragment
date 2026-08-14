@@ -5,7 +5,7 @@ import json
 import pytest
 
 from pyfragment import ConfigurationError, CookieError, FragmentClient
-from pyfragment.core.constants import MNEMONIC_WORD_COUNTS_VALID
+from pyfragment.core.constants import BASE_HEADERS, MNEMONIC_WORD_COUNTS_VALID
 from tests.shared import VALID_API_KEY, VALID_COOKIES, VALID_SEED
 
 # Client init tests
@@ -17,6 +17,26 @@ def test_valid_init() -> None:
     assert client.api_key == VALID_API_KEY
     assert client.wallet_version == "V5R1"
     assert client.api_provider == "tonapi"
+
+
+def test_default_headers_are_a_copy_not_shared_across_clients() -> None:
+    client_a = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
+    client_b = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
+
+    client_a.headers["x-test"] = "client-a"
+
+    assert client_a.headers is not BASE_HEADERS
+    assert "x-test" not in client_b.headers
+    assert "x-test" not in BASE_HEADERS
+
+
+def test_custom_headers_are_copied_not_referenced() -> None:
+    source = {"x-test": "source"}
+    client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES, headers=source)
+
+    client.headers["x-test"] = "changed"
+
+    assert source["x-test"] == "source"
 
 
 # API provider tests
