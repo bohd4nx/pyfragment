@@ -24,7 +24,7 @@ from pyfragment.domains.payments import (
     parse_required_payment_amount,
     state_nonce,
 )
-from pyfragment.enums import PaymentMethod
+from pyfragment.enums import SUPPORTED_PAYMENT_METHODS, PaymentMethod
 from pyfragment.exceptions import (
     ConfigurationError,
     FragmentAPIError,
@@ -55,11 +55,11 @@ async def giveaway_stars(
         raise ConfigurationError(ConfigurationError.INVALID_WINNERS_STARS)
     if not isinstance(amount, int) or not (STARS_GIVEAWAY_MIN <= amount <= STARS_GIVEAWAY_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_STARS_PER_WINNER)
-    if not any(payment_method == m for m in PaymentMethod):
+    if payment_method not in SUPPORTED_PAYMENT_METHODS:
         raise ConfigurationError(
             ConfigurationError.INVALID_PAYMENT_METHOD.format(
                 method=payment_method,
-                supported=", ".join(sorted(m.value for m in PaymentMethod)),
+                supported=", ".join(sorted(m.value for m in SUPPORTED_PAYMENT_METHODS)),
             )
         )
 
@@ -164,11 +164,11 @@ async def giveaway_premium(
         raise ConfigurationError(ConfigurationError.INVALID_WINNERS_PREMIUM)
     if months not in PREMIUM_MONTHS_VALID:
         raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
-    if not any(payment_method == m for m in PaymentMethod):
+    if payment_method not in SUPPORTED_PAYMENT_METHODS:
         raise ConfigurationError(
             ConfigurationError.INVALID_PAYMENT_METHOD.format(
                 method=payment_method,
-                supported=", ".join(sorted(m.value for m in PaymentMethod)),
+                supported=", ".join(sorted(m.value for m in SUPPORTED_PAYMENT_METHODS)),
             )
         )
 

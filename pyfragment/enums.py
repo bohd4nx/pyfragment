@@ -18,6 +18,14 @@ class PaymentMethod(StrEnum):
     USDC_POL = "usdc_pol"
 
 
+# Only these are actually broadcastable by this library today - the rest are non-TON chains
+# that `process_transaction()` can't sign or settle for, even though Fragment lists them.
+SUPPORTED_PAYMENT_METHODS: set[PaymentMethod] = {
+    PaymentMethod.GRAM,
+    PaymentMethod.USDT_GRAM,
+}
+
+
 class WalletVersion(StrEnum):
     V4R2 = "V4R2"
     V5R1 = "V5R1"

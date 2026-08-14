@@ -33,6 +33,12 @@ async def test_purchase_premium_invalid_payment_method(client: FragmentClient) -
         await client.purchase_premium("@user", months=3, payment_method="btc")  # type: ignore[arg-type]
 
 
+@pytest.mark.asyncio
+async def test_purchase_premium_rejects_unimplemented_payment_method(client: FragmentClient) -> None:
+    with pytest.raises(ConfigurationError, match="Invalid payment method"):
+        await client.purchase_premium("@user", months=3, payment_method=PaymentMethod.USDC_ETH)
+
+
 # Premium purchase mocked tests
 
 
@@ -157,6 +163,12 @@ async def test_giveaway_premium_invalid_months(client: FragmentClient) -> None:
 async def test_giveaway_premium_invalid_payment_method(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError, match="Invalid payment method"):
         await client.giveaway_premium("@channel", winners=10, months=3, payment_method="btc")  # type: ignore[arg-type]
+
+
+@pytest.mark.asyncio
+async def test_giveaway_premium_rejects_unimplemented_payment_method(client: FragmentClient) -> None:
+    with pytest.raises(ConfigurationError, match="Invalid payment method"):
+        await client.giveaway_premium("@channel", winners=10, months=3, payment_method=PaymentMethod.USDC_BASE)
 
 
 # Premium giveaway mocked tests

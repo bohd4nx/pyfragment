@@ -45,6 +45,20 @@ async def test_purchase_stars_invalid_payment_method(client: FragmentClient) -> 
         await client.purchase_stars("@user", amount=500, payment_method="btc")  # type: ignore[arg-type]
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "payment_method",
+    [PaymentMethod.USDT_ETH, PaymentMethod.USDT_POL, PaymentMethod.USDC_ETH, PaymentMethod.USDC_BASE, PaymentMethod.USDC_POL],
+)
+async def test_purchase_stars_rejects_unimplemented_payment_method(
+    client: FragmentClient, payment_method: PaymentMethod
+) -> None:
+    # These are real PaymentMethod values, but process_transaction() has no broadcast/balance
+    # logic for non-TON chains yet - reject them before any network call, not deep in a broadcast failure.
+    with pytest.raises(ConfigurationError, match="Invalid payment method"):
+        await client.purchase_stars("@user", amount=500, payment_method=payment_method)
+
+
 # Stars purchase mocked tests
 
 
@@ -203,6 +217,12 @@ async def test_giveaway_stars_float_amount(client: FragmentClient) -> None:
 async def test_giveaway_stars_invalid_payment_method(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError, match="Invalid payment method"):
         await client.giveaway_stars("@channel", winners=1, amount=500, payment_method="btc")  # type: ignore[arg-type]
+
+
+@pytest.mark.asyncio
+async def test_giveaway_stars_rejects_unimplemented_payment_method(client: FragmentClient) -> None:
+    with pytest.raises(ConfigurationError, match="Invalid payment method"):
+        await client.giveaway_stars("@channel", winners=1, amount=500, payment_method=PaymentMethod.USDT_POL)
 
 
 # Stars giveaway mocked tests

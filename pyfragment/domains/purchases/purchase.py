@@ -20,7 +20,7 @@ from pyfragment.domains.payments import (
     state_nonce,
 )
 from pyfragment.domains.purchases.models import PremiumResult, StarsResult
-from pyfragment.enums import PaymentMethod
+from pyfragment.enums import SUPPORTED_PAYMENT_METHODS, PaymentMethod
 from pyfragment.exceptions import (
     AlreadySubscribedError,
     ConfigurationError,
@@ -50,11 +50,11 @@ async def purchase_stars(
 ) -> StarsResult:
     if not isinstance(amount, int) or not (STARS_PURCHASE_MIN <= amount <= STARS_PURCHASE_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_STARS_AMOUNT)
-    if not any(payment_method == m for m in PaymentMethod):
+    if payment_method not in SUPPORTED_PAYMENT_METHODS:
         raise ConfigurationError(
             ConfigurationError.INVALID_PAYMENT_METHOD.format(
                 method=payment_method,
-                supported=", ".join(sorted(m.value for m in PaymentMethod)),
+                supported=", ".join(sorted(m.value for m in SUPPORTED_PAYMENT_METHODS)),
             )
         )
 
@@ -143,11 +143,11 @@ async def purchase_premium(
 ) -> PremiumResult:
     if months not in PREMIUM_MONTHS_VALID:
         raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
-    if not any(payment_method == m for m in PaymentMethod):
+    if payment_method not in SUPPORTED_PAYMENT_METHODS:
         raise ConfigurationError(
             ConfigurationError.INVALID_PAYMENT_METHOD.format(
                 method=payment_method,
-                supported=", ".join(sorted(m.value for m in PaymentMethod)),
+                supported=", ".join(sorted(m.value for m in SUPPORTED_PAYMENT_METHODS)),
             )
         )
 
