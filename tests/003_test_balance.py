@@ -82,7 +82,9 @@ async def test_insufficient_balance_raises() -> None:
 
 @pytest.mark.asyncio
 async def test_exact_minimum_balance_broadcasts() -> None:
-    wallet = _make_wallet(balance_nanotons=500_000_000)  # exactly transaction amount threshold
+    # Transaction amount (0.5 GRAM) plus the MIN_GRAM_BALANCE fee reserve (0.33 GRAM), with a
+    # small margin above the threshold to stay clear of float rounding at the exact boundary.
+    wallet = _make_wallet(balance_nanotons=831_000_000)
     with _patch_wallet(wallet), patch("pyfragment.services.tonapi.transaction.clean_decode", return_value="50 Telegram Stars"):
         result = await process_transaction(_make_client(), TRANSACTION_DATA)
     assert result == ("abc123", "boc_abc123")
@@ -90,7 +92,7 @@ async def test_exact_minimum_balance_broadcasts() -> None:
 
 @pytest.mark.asyncio
 async def test_one_nanoton_below_minimum_raises() -> None:
-    wallet = _make_wallet(balance_nanotons=499_999_999)  # 1 nanogram below transaction amount threshold
+    wallet = _make_wallet(balance_nanotons=829_000_000)  # below the payment + fee-reserve threshold
     with _patch_wallet(wallet):
         with pytest.raises(WalletError, match="required"):
             await process_transaction(_make_client(), TRANSACTION_DATA)
