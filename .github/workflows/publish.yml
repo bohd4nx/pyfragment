@@ -98,7 +98,7 @@ jobs:
         echo "$body" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
 
-    - uses: softprops/action-gh-release@v3.0.2
+    - uses: softprops/action-gh-release@v3.0.3
       with:
         tag_name: v${{ needs.version-check.outputs.version }}
         name: v${{ needs.version-check.outputs.version }}
