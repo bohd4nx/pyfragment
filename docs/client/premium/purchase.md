@@ -18,7 +18,7 @@ await client.purchase_premium(
 - `username`: accepts `@username`, `username`, or `https://t.me/username`
 - `months`: one of `3`, `6`, `12`
 - `show_sender`: controls sender visibility on recipient side
-- `payment_method`: `PaymentMethod.GRAM` (default), `PaymentMethod.USDT_GRAM`, or any other `PaymentMethod` value
+- `payment_method`: `PaymentMethod.GRAM` (default) or `PaymentMethod.USDT_GRAM` — other `PaymentMethod` values aren't broadcastable yet and raise `ConfigurationError`
 
 **`months` only supports `3`, `6`, or `12`.**
 

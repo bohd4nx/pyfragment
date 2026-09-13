@@ -18,7 +18,7 @@ await client.giveaway_premium(
 - `channel`: accepts `@channel`, `channel`, or `https://t.me/channel`
 - `winners`: integer from `1` to `24_000`
 - `months`: one of `3`, `6`, `12`
-- `payment_method`: `PaymentMethod.GRAM` (default), `PaymentMethod.USDT_GRAM`, or any other `PaymentMethod` value
+- `payment_method`: `PaymentMethod.GRAM` (default) or `PaymentMethod.USDT_GRAM` — other `PaymentMethod` values aren't broadcastable yet and raise `ConfigurationError`
 
 **`winners` must be a positive integer, and large values can increase total cost significantly.**
 

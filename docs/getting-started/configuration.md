@@ -10,6 +10,7 @@ FragmentClient(
     wallet_version: str = "V5R1",
     api_provider: str = "tonapi",
     timeout: float = 30.0,
+    headers: dict[str, str | None] | None = None,
 )
 ```
 
@@ -21,6 +22,7 @@ FragmentClient(
 - `wallet_version`: `"V4R2"`, `"V5R1"`, `"HighloadV2"`, or `"HighloadV3R1"`
 - `api_provider`: blockchain API provider — `"tonapi"` (default) or `"toncenter"`
 - `timeout`: request timeout in seconds
+- `headers`: custom HTTP headers for Fragment API calls — defaults to `BASE_HEADERS` when omitted; a `None` value for a key omits that header instead of sending it empty
 
 **If `api_key` or cookies are missing, initialization fails immediately.**
 

@@ -18,7 +18,7 @@ await client.purchase_stars(
 - `username`: accepts `@username`, `username`, or `https://t.me/username`
 - `amount`: integer from `50` to `10_000_000`
 - `show_sender`: controls sender visibility on recipient side
-- `payment_method`: `PaymentMethod.GRAM` (default), `PaymentMethod.USDT_GRAM`, or any other `PaymentMethod` value
+- `payment_method`: `PaymentMethod.GRAM` (default) or `PaymentMethod.USDT_GRAM` — other `PaymentMethod` values aren't broadcastable yet and raise `ConfigurationError`
 
 **Amount must be between `50` and `10_000_000`.**
 
