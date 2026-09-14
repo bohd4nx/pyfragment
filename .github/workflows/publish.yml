@@ -48,7 +48,7 @@ jobs:
       with:
         python-version: "3.12"
 
-    - uses: astral-sh/setup-uv@v9.0.0
+    - uses: astral-sh/setup-uv@v10.1.0
 
     - run: uv build
 
