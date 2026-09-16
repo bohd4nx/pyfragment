@@ -125,7 +125,19 @@ async def get_wallet_info(client: FragmentClient) -> WalletInfo:
             wallet, _, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)
             await wallet.refresh()
             wallet_address = wallet.address.to_str(False, False)
-            usdt_balance = await get_usdt_balance(ton, wallet_address)
+            try:
+                usdt_balance = await get_usdt_balance(ton, wallet_address)
+            except WalletError:
+                # The GRAM balance above is already known good - a wallet that has
+                # never held USDT (no jetton wallet deployed on-chain yet) can fail
+                # this lookup in ways get_usdt_balance's own 404 handling doesn't
+                # catch. Don't let that take down the GRAM balance we already have.
+                logger.warning(
+                    "USDT balance check failed for wallet '%s'; reporting 0.0",
+                    wallet_address,
+                    exc_info=True,
+                )
+                usdt_balance = 0.0
             return WalletInfo(
                 address=wallet.address.to_str(is_user_friendly=True, is_bounceable=False),
                 state=wallet.state.value,
