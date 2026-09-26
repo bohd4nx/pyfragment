@@ -19,7 +19,8 @@ def _parent_url(page_url: str) -> str:
     parsed = urlsplit(page_url)
     if parsed.path in ("", "/"):
         return urlunsplit((parsed.scheme, parsed.netloc, "", "", ""))
-    return page_url.rsplit("/", 1)[0]
+    path = parsed.path.rstrip("/").rsplit("/", 1)[0]
+    return urlunsplit((parsed.scheme, parsed.netloc, path, "", ""))
 
 
 async def get_fragment_hash(
