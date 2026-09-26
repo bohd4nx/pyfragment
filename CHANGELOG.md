@@ -9,8 +9,13 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ## [Unreleased]
 
+### Added
+
+- `SUPPORTED_PAYMENT_METHODS` is now exported from the package root alongside `PaymentMethod`.
+
 ### Changed
 
+- `WalletInfo.usdt_balance` is now `float | None`: `None` means the USDT balance lookup failed (previously the failure was reported as `0.0`, indistinguishable from an empty balance). The GRAM balance is still returned.
 - `FragmentClient.headers` is now always a copy — sharing the same dict object as the module-level `BASE_HEADERS` meant mutating one client's headers leaked into `BASE_HEADERS` itself and every other client in the process.
 
 ### Fixed
@@ -18,6 +23,8 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - `purchase_stars()`/`purchase_premium()`/`giveaway_stars()`/`giveaway_premium()` now reject `PaymentMethod` values that aren't actually broadcastable yet (`usdt_eth`, `usdt_pol`, `usdc_eth`, `usdc_base`, `usdc_pol`) before making any network call. The balance check for all of these always validates the TON-chain USDT jetton balance regardless of which one was selected, so picking one of them would silently check the wrong currency on the wrong chain.
 - `check_gram_payment_balance()` computed the required balance as `max(payment, MIN_GRAM_BALANCE)` instead of `payment + MIN_GRAM_BALANCE`, so a wallet with a balance exactly equal to the payment amount passed the check but had nothing left over to cover the transfer's own network fee.
 - `get_fragment_hash()`'s referer derivation mangled the root Fragment URL (`https://fragment.com` → `https:/`) by blindly stripping the last `/`-separated segment. Affects `search_usernames()`, which queries the root page.
+- `get_fragment_hash()`'s referer for non-root pages ignored the parsed URL, so a trailing slash or a `/` inside the query string produced a wrong referer — now derived from the URL path only.
+- The release workflow's changelog extraction no longer appends the `---` separator to the GitHub Release body.
 - `confirm_purchase()`'s state-poll loop sent `lv=1`, while Fragment's own frontend always polls with `lv=false` — now matches.
 
 ---

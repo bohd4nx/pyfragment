@@ -8,11 +8,23 @@ import time
 from typing import TYPE_CHECKING, Any
 
 from pyfragment.core.constants import CONFIRM_STATE_POLL_INTERVAL, CONFIRM_STATE_TIMEOUT, DEVICE_INFO
+from pyfragment.enums import SUPPORTED_PAYMENT_METHODS, PaymentMethod
+from pyfragment.exceptions import ConfigurationError
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
 
 logger = logging.getLogger(__name__)
+
+
+def validate_payment_method(payment_method: PaymentMethod) -> None:
+    if payment_method not in SUPPORTED_PAYMENT_METHODS:
+        raise ConfigurationError(
+            ConfigurationError.INVALID_PAYMENT_METHOD.format(
+                method=payment_method,
+                supported=", ".join(sorted(m.value for m in SUPPORTED_PAYMENT_METHODS)),
+            )
+        )
 
 
 def parse_required_payment_amount(init_response: dict[str, Any]) -> float | None:

@@ -7,7 +7,7 @@ from pyfragment.domains.anonymous_numbers.models import LoginCodeResult, Termina
 from pyfragment.domains.giveaways.models import PremiumGiveawayResult, StarsGiveawayResult
 from pyfragment.domains.marketplace.models import GiftsResult, NumbersResult, UsernamesResult
 from pyfragment.domains.purchases.models import PremiumResult, StarsResult
-from pyfragment.enums import ApiProvider, PaymentMethod, WalletVersion
+from pyfragment.enums import SUPPORTED_PAYMENT_METHODS, ApiProvider, PaymentMethod, WalletVersion
 from pyfragment.exceptions import (
     AlreadySubscribedError,
     AnonymousNumberError,
@@ -68,6 +68,7 @@ __all__ = [
     # literal types
     "ApiProvider",
     "PaymentMethod",
+    "SUPPORTED_PAYMENT_METHODS",
     "WalletVersion",
     "get_cookies_from_browser",
 ]
