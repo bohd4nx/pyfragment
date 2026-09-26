@@ -128,21 +128,19 @@ async def get_wallet_info(client: FragmentClient) -> WalletInfo:
             try:
                 usdt_balance = await get_usdt_balance(ton, wallet_address)
             except WalletError:
-                # The GRAM balance above is already known good - a wallet that has
-                # never held USDT (no jetton wallet deployed on-chain yet) can fail
-                # this lookup in ways get_usdt_balance's own 404 handling doesn't
-                # catch. Don't let that take down the GRAM balance we already have.
+                # The GRAM balance is already known good; don't lose it over a failed
+                # USDT lookup. Report the USDT balance as unknown (None), not as 0.
                 logger.warning(
-                    "USDT balance check failed for wallet '%s'; reporting 0.0",
+                    "USDT balance check failed for wallet '%s'; reporting it as unknown",
                     wallet_address,
                     exc_info=True,
                 )
-                usdt_balance = 0.0
+                usdt_balance = None
             return WalletInfo(
                 address=wallet.address.to_str(is_user_friendly=True, is_bounceable=False),
                 state=wallet.state.value,
                 gram_balance=round(wallet.balance / 1_000_000_000, 4),
-                usdt_balance=round(usdt_balance, 4),
+                usdt_balance=None if usdt_balance is None else round(usdt_balance, 4),
             )
         except Exception as exc:
             logger.exception("Failed to fetch wallet info from Tonapi")

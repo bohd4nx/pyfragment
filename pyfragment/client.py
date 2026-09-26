@@ -169,7 +169,8 @@ class FragmentClient:
         """Return the address, state, and balances of the wallet.
 
         Returns:
-            :class:`WalletInfo` with ``address``, ``state``, ``gram_balance``, and ``usdt_balance``.
+            :class:`WalletInfo` with ``address``, ``state``, ``gram_balance``, and ``usdt_balance``
+            (``None`` if the USDT lookup failed).
         """
         return await self.tonapi.get_wallet()
 

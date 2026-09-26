@@ -152,3 +152,27 @@ async def test_get_wallet_info_exception_raises_wallet_error(client: FragmentCli
 
         with pytest.raises(WalletError, match="wallet info"):
             await get_wallet_info(client)
+
+
+async def test_get_wallet_usdt_failure_reports_unknown(client: FragmentClient) -> None:
+    from pyfragment.exceptions import WalletError
+
+    mock_wallet = MagicMock()
+    mock_wallet.refresh = AsyncMock()
+    mock_wallet.balance = 2_000_000_000
+    mock_wallet.state = MagicMock(value="active")
+    mock_wallet.address.to_str.return_value = FAKE_ADDRESS
+
+    with (
+        patch("pyfragment.services.tonapi.account._make_ton_client") as mock_tonapi,
+        patch("pyfragment.services.tonapi.account.WALLET_CLASSES") as mock_classes,
+        patch("pyfragment.services.tonapi.account.get_usdt_balance", AsyncMock(side_effect=WalletError("boom"))),
+    ):
+        mock_tonapi.return_value.__aenter__ = AsyncMock(return_value=MagicMock())
+        mock_tonapi.return_value.__aexit__ = AsyncMock(return_value=False)
+        mock_classes["V5R1"].from_mnemonic.return_value = (mock_wallet, MagicMock(), None, None)
+
+        result = await client.get_wallet()
+
+    assert result.gram_balance == 2.0
+    assert result.usdt_balance is None
