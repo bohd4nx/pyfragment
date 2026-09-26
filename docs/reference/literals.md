@@ -25,11 +25,19 @@ from pyfragment.enums import PaymentMethod
 
 PaymentMethod.GRAM        # GRAM (ex TON) — default
 PaymentMethod.USDT_GRAM   # USDT on GRAM (ex TON)
-PaymentMethod.USDT_ETH    # USDT on Ethereum
-PaymentMethod.USDT_POL    # USDT on Polygon
-PaymentMethod.USDC_ETH    # USDC on Ethereum
-PaymentMethod.USDC_BASE   # USDC on Base
-PaymentMethod.USDC_POL    # USDC on Polygon
+PaymentMethod.USDT_ETH    # USDT on Ethereum (not supported yet)
+PaymentMethod.USDT_POL    # USDT on Polygon (not supported yet)
+PaymentMethod.USDC_ETH    # USDC on Ethereum (not supported yet)
+PaymentMethod.USDC_BASE   # USDC on Base (not supported yet)
+PaymentMethod.USDC_POL    # USDC on Polygon (not supported yet)
+```
+
+Only `GRAM` and `USDT_GRAM` can be broadcast today. To check programmatically, use `SUPPORTED_PAYMENT_METHODS`:
+
+```python
+from pyfragment import SUPPORTED_PAYMENT_METHODS
+
+PaymentMethod.USDT_ETH in SUPPORTED_PAYMENT_METHODS  # False
 ```
 
 ## WalletVersion

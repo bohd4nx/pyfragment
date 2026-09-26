@@ -11,7 +11,7 @@ Exported result models:
 - `AdsRechargeResult(transaction_id, amount, confirmed)`
 - `StarsGiveawayResult(transaction_id, channel, winners, amount, confirmed)`
 - `PremiumGiveawayResult(transaction_id, channel, winners, amount, confirmed)`
-- `WalletInfo(address, state, gram_balance, usdt_balance)`
+- `WalletInfo(address, state, gram_balance, usdt_balance)` — `usdt_balance` is `None` if the USDT lookup failed (the balance is unknown, not zero)
 - `LoginCodeResult(number, code, active_sessions)`
 - `TerminateSessionsResult(number, message)`
 - `UsernamesResult(items, next_offset_id)`
