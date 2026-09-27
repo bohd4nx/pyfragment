@@ -17,6 +17,7 @@ from pyfragment.exceptions import ParseError, TransactionError, WalletError
 from pyfragment.services.tonapi.account import (
     check_gram_payment_balance,
     check_usdt_payment_balance,
+    fetch_onchain_state,
     load_wallet,
     make_ton_client,
 )
@@ -73,10 +74,9 @@ async def _check_payment_balances(
     transaction_data: dict[str, Any],
     ton: Any,
 ) -> None:
-    """Refresh wallet and verify sufficient balance before broadcasting."""
+    """Load the wallet's balance and verify it suffices before broadcasting."""
     try:
-        await wallet.refresh()
-        balance_gram = wallet.balance / NANO_PER_GRAM
+        balance_gram = (await fetch_onchain_state(ton, wallet)).balance / NANO_PER_GRAM
         if payment_method == PaymentMethod.GRAM:
             await check_gram_payment_balance(balance_gram, amount_gram, required_payment_amount)
         else:

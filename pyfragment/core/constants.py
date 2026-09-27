@@ -50,6 +50,9 @@ BASE_HEADERS: dict[str, str | None] = {
 NANO_PER_GRAM: int = 1_000_000_000
 USDT_UNITS: int = 1_000_000
 
+# TVM exit code of a get-method called on a contract that isn't deployed (toncenter reports it as an error)
+TVM_EXIT_ACCOUNT_NOT_FOUND: int = -13
+
 # TON Connect network id of the mainnet, as sent in the wallet account payload
 MAINNET_CHAIN_ID: str = "-239"
 

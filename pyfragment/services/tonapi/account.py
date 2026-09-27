@@ -8,13 +8,14 @@ from typing import TYPE_CHECKING, Any
 from ton_core import NetworkGlobalID
 from tonutils.clients import TonapiClient, ToncenterClient
 from tonutils.contracts.jetton import get_wallet_address_get_method, get_wallet_data_get_method
-from tonutils.exceptions import ProviderResponseError
+from tonutils.exceptions import ProviderResponseError, RunGetMethodError
 
 from pyfragment.core.constants import (
     MAINNET_CHAIN_ID,
     MIN_GRAM_BALANCE,
     MIN_USDT_BALANCE,
     NANO_PER_GRAM,
+    TVM_EXIT_ACCOUNT_NOT_FOUND,
     USDT_GRAM_MASTER_ADDRESS,
     USDT_UNITS,
 )
@@ -43,6 +44,22 @@ def load_wallet(client: FragmentClient, ton: Any) -> tuple[Any, Any]:
     return wallet, public_key
 
 
+async def fetch_onchain_state(ton: Any, wallet: Any) -> Any:
+    """The wallet's on-chain state (``balance`` in nanograms, ``state``).
+
+    ``wallet.refresh()`` is deliberately not used: tonutils answers *any* provider failure (bad API key,
+    outage, timeout) with an empty "nonexistent, zero balance" account, which would show up as an empty wallet.
+    """
+    return await ton.get_info(wallet.address)
+
+
+def _is_missing_jetton_wallet(exc: Exception) -> bool:
+    """Whether the owner simply has no USDT jetton wallet yet: tonapi answers 404, toncenter a TVM exit code -13."""
+    if isinstance(exc, ProviderResponseError):
+        return exc.code == HTTPStatus.NOT_FOUND
+    return isinstance(exc, RunGetMethodError) and exc.exit_code == TVM_EXIT_ACCOUNT_NOT_FOUND
+
+
 async def get_usdt_balance(ton: Any, wallet_address: str) -> float:
     """Return the USDT balance for a Fragment-linked GRAM (ex TON) wallet."""
     try:
@@ -54,14 +71,11 @@ async def get_usdt_balance(ton: Any, wallet_address: str) -> float:
         wallet_data = await get_wallet_data_get_method(client=ton, address=jetton_wallet_address)
         raw_balance = int(wallet_data[0]) if wallet_data else 0
         return float(raw_balance) / USDT_UNITS
-    except ProviderResponseError as exc:
-        if exc.code == HTTPStatus.NOT_FOUND:
+    except Exception as exc:
+        if _is_missing_jetton_wallet(exc):
             logger.debug("No USDT jetton wallet found for '%s'; treating balance as 0", wallet_address)
             return 0.0
-        logger.error("Failed to load USDT balance for wallet '%s': %s", wallet_address, exc, exc_info=True)
-        raise WalletError(WalletError.USDT_BALANCE_CHECK_FAILED.format(exc=exc)) from exc
-    except Exception as exc:
-        logger.exception("Failed to load USDT balance for wallet '%s' due to an unexpected error", wallet_address)
+        logger.exception("Failed to load USDT balance for wallet '%s'", wallet_address)
         raise WalletError(WalletError.USDT_BALANCE_CHECK_FAILED.format(exc=exc)) from exc
 
 
@@ -136,7 +150,7 @@ async def get_wallet_info(client: FragmentClient) -> WalletInfo:
     async with make_ton_client(client) as ton:
         try:
             wallet, _ = load_wallet(client, ton)
-            await wallet.refresh()
+            onchain = await fetch_onchain_state(ton, wallet)
             wallet_address = wallet.address.to_str(False, False)
             try:
                 usdt_balance = await get_usdt_balance(ton, wallet_address)
@@ -151,8 +165,8 @@ async def get_wallet_info(client: FragmentClient) -> WalletInfo:
                 usdt_balance = None
             return WalletInfo(
                 address=wallet.address.to_str(is_user_friendly=True, is_bounceable=False),
-                state=wallet.state.value,
-                gram_balance=round(wallet.balance / NANO_PER_GRAM, 4),
+                state=onchain.state.value,
+                gram_balance=round(onchain.balance / NANO_PER_GRAM, 4),
                 usdt_balance=None if usdt_balance is None else round(usdt_balance, 4),
             )
         except Exception as exc:

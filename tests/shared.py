@@ -8,7 +8,9 @@ numbers, and gifts.
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
+from unittest.mock import AsyncMock, MagicMock
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -37,6 +39,7 @@ VALID_COOKIES: dict[str, str] = {
 FAKE_HASH: str = "abc123"
 FAKE_RECIPIENT: str = "recipient_token"
 FAKE_REQ_ID: str = "req_42"
+FAKE_CONFIRM_METHOD: str = "confirmReq"  # named by Fragment in the transaction payload, not a fixed API method
 FAKE_TX_HASH: str = "deadbeef" * 8
 FAKE_TX_BOC: str = "te6ccgEBAQEAAgAAAA=="
 FAKE_ACCOUNT: dict[str, Any] = {"address": "0:abc", "publicKey": "pub", "chain": "-239", "walletStateInit": "base64=="}
@@ -44,6 +47,17 @@ FAKE_TRANSACTION: dict[str, Any] = {"transaction": {"messages": [{"address": "0:
 
 # client.call()
 FAKE_RESPONSE: dict[str, Any] = {"status": "ok", "data": {"value": 42}}
+
+
+def ton_client_with_account(balance: int, state: str = "active", error: Exception | None = None) -> MagicMock:
+    """A mocked tonutils client whose ``get_info`` reports the given on-chain account (or raises ``error``)."""
+    ton = MagicMock()
+    if error is not None:
+        ton.get_info = AsyncMock(side_effect=error)
+    else:
+        ton.get_info = AsyncMock(return_value=SimpleNamespace(balance=balance, state=SimpleNamespace(value=state)))
+    return ton
+
 
 # get_wallet()
 FAKE_ADDRESS: str = "UQCppfw5DxWgdVHf3zkmZS8k1mt9oAUYxQLwq2fz3nhO8No5"

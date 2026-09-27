@@ -8,9 +8,9 @@ import pytest
 from tonutils.exceptions import ProviderResponseError
 
 from pyfragment import TransactionError, WalletError
-from pyfragment.enums import PaymentMethod
+from pyfragment.enums import PaymentMethod, WalletVersion
 from pyfragment.services.tonapi.transaction import process_transaction
-from tests.shared import VALID_SEED
+from tests.shared import VALID_SEED, ton_client_with_account
 
 
 def _provider_error(code: int, message: str = "error") -> ProviderResponseError:
@@ -34,14 +34,14 @@ def _make_client() -> MagicMock:
     client = MagicMock()
     client.api_key = "test_key"
     client.seed = VALID_SEED.split()
-    client.wallet_version = "V5R1"
+    client.wallet_version = WalletVersion.V5R1
     return client
 
 
 def _make_wallet(balance_nanotons: int) -> MagicMock:
     wallet = MagicMock()
-    wallet.refresh = AsyncMock()
-    wallet.balance = balance_nanotons
+    wallet.balance = balance_nanotons  # read by _patch_wallet to seed the mocked on-chain account
+    wallet.account_error = None
     wallet.transfer = AsyncMock(return_value=MagicMock(normalized_hash="abc123", as_b64="boc_abc123"))
     return wallet
 
@@ -49,13 +49,14 @@ def _make_wallet(balance_nanotons: int) -> MagicMock:
 @contextmanager
 def _patch_wallet(wallet: MagicMock) -> Generator[None, None, None]:
     mock_ton_ctx = MagicMock()
-    mock_ton_ctx.__aenter__ = AsyncMock(return_value=MagicMock())
+    ton = ton_client_with_account(wallet.balance, error=wallet.account_error)
+    mock_ton_ctx.__aenter__ = AsyncMock(return_value=ton)
     mock_ton_ctx.__aexit__ = AsyncMock(return_value=False)
     with (
         patch("pyfragment.services.tonapi.transaction.make_ton_client", return_value=mock_ton_ctx),
         patch("pyfragment.services.tonapi.account.WALLET_CLASSES") as mock_classes,
     ):
-        mock_classes["V5R1"].from_mnemonic.return_value = (wallet, MagicMock(), None, None)
+        mock_classes[WalletVersion.V5R1].from_mnemonic.return_value = (wallet, MagicMock(), None, None)
         yield
 
 
@@ -116,7 +117,7 @@ async def test_empty_messages_list_raises() -> None:
 @pytest.mark.asyncio
 async def test_balance_check_failed_raises_wallet_error() -> None:
     wallet = _make_wallet(balance_nanotons=1_000_000_000)
-    wallet.refresh = AsyncMock(side_effect=RuntimeError("network timeout"))
+    wallet.account_error = RuntimeError("network timeout")
     with _patch_wallet(wallet):
         with pytest.raises(WalletError, match="balance"):
             await process_transaction(_make_client(), TRANSACTION_DATA)
