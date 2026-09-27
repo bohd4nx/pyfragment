@@ -25,7 +25,8 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - **Live contract checks**: `tests/018_test_contract.py` (opt-in with `FRAGMENT_LIVE=1`) and a weekly `Contract`
   workflow verify against fragment.com that the API hash is still discoverable and that limits, payment methods,
   sort/filter values, gift traits and error texts still match what the library assumes.
-- Parser tests run against real, trimmed fragment.com responses (`tests/fixtures/`).
+- Parser and purchase-flow tests run against real, trimmed fragment.com responses (`tests/fixtures/`).
+- CI type-checks the examples too, so they can't drift from the API.
 
 ### Changed
 
@@ -57,6 +58,8 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
   - magic numbers and codes live in `core.constants` (`NANO_PER_GRAM`, `USDT_UNITS`, `MAINNET_CHAIN_ID`,
     `FRAGMENT_API_URL`, retry limits) and `http.HTTPStatus`.
 - The marketplace parsers were re-checked against about 17 600 real listings and simplified.
+- Examples use the enums, handle errors the same way (specific errors first, `FragmentError` last) and show `confirmed`;
+  the gifts example pages through results.
 
 ### Removed
 
@@ -70,6 +73,14 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ### Fixed
 
+- **`get_wallet()` and the pre-broadcast balance check reported an empty wallet when the blockchain provider failed.**
+  tonutils' `wallet.refresh()` answers *any* provider error (invalid API key, outage, timeout) with "nonexistent
+  account, zero balance", so a bad key looked like an empty wallet ("0.0000 GRAM available"). The wallet state is now
+  read with `client.get_info()`, and provider failures surface as `WalletError` with the provider's message.
+- **A zero USDT balance was not recognised on toncenter.** For an owner without a USDT jetton wallet tonapi answers
+  404 but toncenter a TVM exit code -13; only the former counted as `0.0`, so toncenter users got
+  `usdt_balance=None` from `get_wallet()` and a "failed to fetch USDT balance" error instead of "insufficient
+  USDT balance".
 - **`giveaway_stars()` accepted 1-15 winners; Fragment allows 1-5.** Values above 5 passed local validation and
   failed remotely after the invoice flow had started.
 - **`wallet_version="HighloadV2"` / `"HighloadV3R1"` were always rejected**, although documented: the value was

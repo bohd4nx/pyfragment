@@ -14,14 +14,15 @@ pip install -e ".[dev]"
 # Lint and format
 ruff check . --fix && ruff format .
 
-# Type check
-mypy . --explicit-package-bases
+# Type check (the library, and the examples so they don't rot)
+mypy pyfragment --explicit-package-bases
+mypy $(git ls-files 'examples/*.py') --explicit-package-bases
 
 # Tests
 pytest
 ```
 
-All three must pass before opening a PR.
+All of them must pass before opening a PR (CI runs the same commands).
 
 `tests/018_test_contract.py` checks the live fragment.com and is skipped by default; run it with `FRAGMENT_LIVE=1 pytest tests/018_test_contract.py`.
 
@@ -56,7 +57,9 @@ examples/             — runnable usage examples (excluded from CI)
 - All public async methods live on `FragmentClient` and delegate to a domain service.
 - Domain functions receive a `FragmentClient` instance, never raw HTTP clients.
 - Patch targets in tests use the module where the name is **defined**, e.g. `pyfragment.services.tonapi.account.make_ton_client` or `pyfragment.domains.payments.flow.process_transaction`.
-- Fragment method names and error texts are enums (`ApiMethod`, `ApiError`); response bodies are read through `pyfragment.schemas`.
+- Fragment method names and error texts are enums (`ApiMethod`, `ApiError`); response bodies are read through `pyfragment.schemas`. A new Fragment call means a new `ApiMethod` member; tests use the enums, not string literals.
+- Errors: raise a `FragmentError` subclass with a message template defined on the exception class; wrap a whole operation with `domains.base.operation()` so it is logged once.
+- tonutils swallows provider failures in some calls (`wallet.refresh()` turns a bad API key into an empty wallet): use the strict helpers in `services/tonapi/account.py`.
 - Parser changes are checked against real markup: add or refresh a trimmed response under `tests/fixtures/` (see its README).
 - Versioning follows [CalVer](https://calver.org/): `YYYY.MINOR.MICRO`. Bump in `pyproject.toml`; tag as `vYYYY.MINOR.MICRO`.
 
