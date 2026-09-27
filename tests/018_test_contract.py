@@ -27,8 +27,8 @@ from pyfragment.core.constants import (
     STARS_WINNERS_MAX,
     STARS_WINNERS_MIN,
 )
-from pyfragment.core.transport import get_fragment_hash
 from pyfragment.enums import PaymentMethod
+from pyfragment.transport import get_fragment_hash
 
 pytestmark = pytest.mark.skipif(os.environ.get("FRAGMENT_LIVE") != "1", reason="FRAGMENT_LIVE=1 not set")
 

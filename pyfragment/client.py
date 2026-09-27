@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Any
 
 from pyfragment.core.constants import BASE_HEADERS, DEFAULT_TIMEOUT, FRAGMENT_BASE_URL
-from pyfragment.core.transport import FragmentTransport
 from pyfragment.core.validation import (
     normalize_provider,
     normalize_wallet_version,
@@ -24,6 +23,7 @@ from pyfragment.domains.purchases.service import PurchasesService
 from pyfragment.enums import ApiProvider, PaymentMethod, WalletVersion
 from pyfragment.services.tonapi.models import WalletInfo
 from pyfragment.services.tonapi.service import TonapiService
+from pyfragment.transport import FragmentTransport
 
 
 class FragmentClient:
