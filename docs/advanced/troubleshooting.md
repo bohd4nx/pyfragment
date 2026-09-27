@@ -58,13 +58,13 @@ for Fragment's own backend to acknowledge it. A `False` value just means that ac
 (slow Fragment backend, network blip); it does not mean the purchase failed or should be retried. See
 [Result Models](../reference/models.md#confirmed).
 
-## Purchase failed and the Fragment invoice was cancelled
+## A purchase failed and left an open invoice
 
-If a purchase/giveaway/topup fails *after* Fragment already opened an invoice (e.g. `getBuyStarsLink` errors, KYC is
-required, or the wallet fails to sign), the client calls Fragment's `cancelInvoice` before raising, so no dangling
-invoice is left on your account. The one exception is a failure during the broadcast itself — in that case the client
-can't tell whether the transaction reached the chain, so the invoice is left alone instead of being cancelled out from
-under a possibly-successful payment. Check your GRAM (ex TON)/USDT balance and recent transactions if you're unsure.
+If a purchase/giveaway/topup fails *after* Fragment already opened an invoice (for example KYC is required or the
+wallet fails to sign), the invoice stays open until it expires on its own; Fragment offers no way to cancel a GRAM or
+USDT invoice (`cancelInvoice` answers "Bad request" for it). Nothing is charged for an invoice that was never paid.
+If the failure happened during the broadcast itself, the transaction may still have reached the chain, so check your
+GRAM (ex TON)/USDT balance and recent transactions before retrying.
 
 ## SSL-related broadcast failures
 
