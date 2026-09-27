@@ -5,11 +5,13 @@ import base64
 import logging
 import random
 import ssl
+from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
 from ton_core import Cell
 from tonutils.exceptions import ProviderResponseError
 
+from pyfragment.core.constants import MAX_BROADCAST_ATTEMPTS, NANO_PER_GRAM
 from pyfragment.enums import WALLET_CLASSES, PaymentMethod
 from pyfragment.exceptions import ParseError, TransactionError, WalletError
 from pyfragment.services.tonapi.account import _make_ton_client, check_gram_payment_balance, check_usdt_payment_balance
@@ -69,8 +71,8 @@ async def _check_payment_balances(
     """Refresh wallet and verify sufficient balance before broadcasting."""
     try:
         await wallet.refresh()
-        balance_gram = wallet.balance / 1_000_000_000
-        if payment_method == "ton":
+        balance_gram = wallet.balance / NANO_PER_GRAM
+        if payment_method == PaymentMethod.GRAM:
             await check_gram_payment_balance(balance_gram, amount_gram, required_payment_amount)
         else:
             # USDT is paid from the Fragment-linked wallet, not the signing wallet.
@@ -85,7 +87,7 @@ async def _check_payment_balances(
 
 async def _broadcast_with_retry(wallet: Any, message: dict[str, Any], payload: str | Cell) -> Any:
     """Attempt to broadcast a transaction up to 3 times, handling rate-limit and seqno errors."""
-    for attempt in range(3):
+    for attempt in range(MAX_BROADCAST_ATTEMPTS):
         try:
             return await wallet.transfer(
                 destination=message["address"],
@@ -93,7 +95,7 @@ async def _broadcast_with_retry(wallet: Any, message: dict[str, Any], payload: s
                 body=payload,
             )
         except ProviderResponseError as exc:
-            if exc.code == 429 and attempt == 0:
+            if exc.code == HTTPStatus.TOO_MANY_REQUESTS and attempt == 0:
                 logger.warning(
                     "Broadcast rate-limited (429), retrying transaction once: %s",
                     exc,
@@ -101,8 +103,8 @@ async def _broadcast_with_retry(wallet: Any, message: dict[str, Any], payload: s
                 )
                 await asyncio.sleep(1 + random.uniform(0, 0.5))
                 continue
-            if exc.code == 406 and "seqno" in str(exc).lower():
-                if attempt < 2:
+            if exc.code == HTTPStatus.NOT_ACCEPTABLE and "seqno" in str(exc).lower():
+                if attempt < MAX_BROADCAST_ATTEMPTS - 1:
                     logger.warning(
                         "Broadcast seqno conflict (406), retrying attempt %s: %s",
                         attempt + 2,
@@ -138,7 +140,7 @@ async def process_transaction(
         The boc is what Fragment's own `confirm_method` (e.g. confirmReq) expects.
     """
     message = _extract_message(transaction_data)
-    amount_gram = int(message["amount"]) / 1_000_000_000
+    amount_gram = int(message["amount"]) / NANO_PER_GRAM
 
     async with _make_ton_client(client) as ton:
         wallet_cls = WALLET_CLASSES[client.wallet_version]

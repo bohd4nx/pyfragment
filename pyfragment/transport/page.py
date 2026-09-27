@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from http import HTTPStatus
 from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
@@ -31,7 +32,7 @@ async def get_fragment_hash(session: AsyncSession[Any], page_url: str) -> str:
     # curl_cffi's impersonate="chrome" defaults, which already look like a real navigation.
     response = await session.get(page_url, headers={"referer": referer})
 
-    if response.status_code != 200:
+    if response.status_code != HTTPStatus.OK:
         raise FragmentPageError(FragmentPageError.BAD_STATUS.format(status=response.status_code, url=page_url))
 
     match = API_HASH_RE.search(response.text)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import logging
+from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
 from ton_core import NetworkGlobalID
@@ -9,7 +10,14 @@ from tonutils.clients import TonapiClient, ToncenterClient
 from tonutils.contracts.jetton import get_wallet_address_get_method, get_wallet_data_get_method
 from tonutils.exceptions import ProviderResponseError
 
-from pyfragment.core.constants import MIN_GRAM_BALANCE, MIN_USDT_BALANCE, USDT_GRAM_MASTER_ADDRESS
+from pyfragment.core.constants import (
+    MAINNET_CHAIN_ID,
+    MIN_GRAM_BALANCE,
+    MIN_USDT_BALANCE,
+    NANO_PER_GRAM,
+    USDT_GRAM_MASTER_ADDRESS,
+    USDT_UNITS,
+)
 from pyfragment.enums import WALLET_CLASSES, ApiProvider
 from pyfragment.exceptions import WalletError
 from pyfragment.services.tonapi.models import WalletInfo
@@ -38,9 +46,9 @@ async def get_usdt_balance(ton: Any, wallet_address: str) -> float:
         )
         wallet_data = await get_wallet_data_get_method(client=ton, address=jetton_wallet_address)
         raw_balance = int(wallet_data[0]) if wallet_data else 0
-        return float(raw_balance) / 1_000_000.0
+        return float(raw_balance) / USDT_UNITS
     except ProviderResponseError as exc:
-        if exc.code == 404:
+        if exc.code == HTTPStatus.NOT_FOUND:
             logger.debug("No USDT jetton wallet found for '%s'; treating balance as 0", wallet_address)
             return 0.0
         logger.error("Failed to load USDT balance for wallet '%s': %s", wallet_address, exc, exc_info=True)
@@ -109,7 +117,7 @@ async def get_account_info(client: FragmentClient) -> dict[str, Any]:
             return {
                 "address": wallet.address.to_str(False, False),
                 "publicKey": pub_key.as_hex,
-                "chain": "-239",
+                "chain": MAINNET_CHAIN_ID,
                 "walletStateInit": base64.b64encode(boc).decode(),
             }
         except Exception as exc:
@@ -139,7 +147,7 @@ async def get_wallet_info(client: FragmentClient) -> WalletInfo:
             return WalletInfo(
                 address=wallet.address.to_str(is_user_friendly=True, is_bounceable=False),
                 state=wallet.state.value,
-                gram_balance=round(wallet.balance / 1_000_000_000, 4),
+                gram_balance=round(wallet.balance / NANO_PER_GRAM, 4),
                 usdt_balance=None if usdt_balance is None else round(usdt_balance, 4),
             )
         except Exception as exc:
