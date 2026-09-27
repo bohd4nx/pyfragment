@@ -2,15 +2,15 @@
 Example: search the Fragment gifts marketplace.
 
 collection filters by gift type slug (e.g. "plushpepe", "swisswatch").
-sort can be "price_desc", "price_asc", "listed", or "ending".
-filter can be "", "auction", "sale", or "sold".
+sort is an AuctionSort: PRICE (default), PRICE_DESC, PRICE_ASC, LISTED or ENDING.
+filter is an AuctionFilter: AVAILABLE (default), AUCTION, SALE or SOLD.
 Use next_offset for pagination.
 """
 
 import asyncio
 import json
 
-from pyfragment import FragmentClient, GiftsResult
+from pyfragment import AuctionFilter, AuctionSort, FragmentClient, GiftsResult
 
 SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_API_KEY"  # tonconsole.com (tonapi, default) or t.me/toncenter
@@ -28,8 +28,8 @@ COOKIES = {
 
 QUERY = ""  # search text — or omit for all
 COLLECTION = "plushpepe"  # gift collection slug — or omit for all
-SORT = "price_desc"  # "price_desc", "price_asc", "listed", "ending" — or omit
-FILTER = ""  # "", "auction", "sale", "sold" — or omit
+SORT = AuctionSort.PRICE_DESC  # or omit
+FILTER = AuctionFilter.AVAILABLE  # or omit
 
 
 async def main() -> None:

@@ -47,6 +47,7 @@ class ConfigurationError(ClientError):
     )
     INVALID_SORT = "Invalid sort order '{sort}'. Supported values: {supported}."
     INVALID_FILTER = "Invalid filter '{filter}'. Supported values: {supported}."
+    INVALID_GIFT_ATTRIBUTE = "Invalid gift attribute '{attribute}'. Supported values: {supported}."
     INVALID_PAYMENT_METHOD = "Invalid payment method '{method}'. Supported values: {supported}."
 
 

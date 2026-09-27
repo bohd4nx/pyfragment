@@ -1,15 +1,15 @@
 """
 Example: search the Fragment marketplace for Telegram usernames.
 
-sort can be "price_desc", "price_asc", "listed", or "ending".
-filter can be "", "auction", "sale", or "sold".
+sort is an AuctionSort: PRICE (default), PRICE_DESC, PRICE_ASC, LISTED or ENDING.
+filter is an AuctionFilter: AVAILABLE (default), AUCTION, SALE or SOLD.
 Use next_offset_id for pagination.
 """
 
 import asyncio
 import json
 
-from pyfragment import FragmentClient, UsernamesResult
+from pyfragment import AuctionFilter, AuctionSort, FragmentClient, UsernamesResult
 
 SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_API_KEY"  # tonconsole.com (tonapi, default) or t.me/toncenter
@@ -26,8 +26,8 @@ COOKIES = {
 }
 
 QUERY = "durov"  # search term
-SORT = "price_desc"  # "price_desc", "price_asc", "listed", "ending" — or omit
-FILTER = "auction"  # "", "auction", "sale", "sold" — or omit
+SORT = AuctionSort.PRICE_DESC  # or omit
+FILTER = AuctionFilter.AUCTION  # or omit
 
 
 async def main() -> None:

@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 from pyfragment.core.constants import FRAGMENT_BASE_URL, GIFTS_PAGE, NUMBERS_PAGE
-from pyfragment.core.validation import normalize_filter, normalize_sort
+from pyfragment.core.validation import normalize_filter, normalize_gift_attributes, normalize_sort
 from pyfragment.domains.base import operation
 from pyfragment.domains.marketplace.models import GiftsResult, NumbersResult, UsernamesResult
 from pyfragment.domains.marketplace.parser import parse_auction_rows, parse_gift_items
@@ -82,11 +83,11 @@ async def search_gifts(
     sort: AuctionSort | str | None = None,
     filter: AuctionFilter | str | None = None,
     view: str | None = None,
-    attr: dict[str, list[str]] | None = None,
+    attr: Mapping[str, Sequence[str]] | None = None,
     offset: int | None = None,
 ) -> GiftsResult:
     data = _listing_query(MarketplaceType.GIFTS, query, sort, filter, collection=collection, view=view, offset_id=offset)
-    for trait, values in (attr or {}).items():
+    for trait, values in normalize_gift_attributes(attr).items():
         data[f"attr[{trait}]"] = json.dumps(values)
 
     with operation(

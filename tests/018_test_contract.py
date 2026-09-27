@@ -28,7 +28,7 @@ from pyfragment.core.constants import (
     STARS_WINNERS_MAX,
     STARS_WINNERS_MIN,
 )
-from pyfragment.enums import ApiError, ApiMethod, AuctionFilter, AuctionSort, PaymentMethod
+from pyfragment.enums import ApiError, ApiMethod, AuctionFilter, AuctionSort, GiftAttribute, PaymentMethod
 from pyfragment.schemas import has_error
 from pyfragment.transport import FragmentTransport, get_fragment_hash
 
@@ -99,5 +99,32 @@ async def test_api_error_messages() -> None:
         assert has_error(
             await transport.call(ApiMethod.SEARCH_STARS_RECIPIENT, {"query": "zzzzzzzzzzzq1"}, STARS_PAGE), ApiError.NOT_A_USER
         )
+    finally:
+        await transport.aclose()
+
+
+async def test_gift_attribute_names(session: AsyncSession) -> None:
+    html = await _page(session, f"{GIFTS_PAGE}/bowtie")
+    assert set(re.findall(r'name="attr\[(\w+)\]"', html)) == {m.value for m in GiftAttribute}
+
+
+@pytest.mark.parametrize(
+    ("method", "page_url", "data", "error"),
+    [
+        (ApiMethod.SEARCH_STARS_RECIPIENT, STARS_PAGE, {"query": "x", "quantity": ""}, ApiError.NO_USERS_FOUND),
+        (ApiMethod.SEARCH_PREMIUM_GIFT_RECIPIENT, PREMIUM_PAGE, {"query": "x", "months": 3}, ApiError.NO_USERS_FOUND),
+        (ApiMethod.SEARCH_ADS_TOPUP_RECIPIENT, ADS_TOPUP_PAGE, {"query": "x"}, ApiError.NO_USERS_FOUND),
+        (
+            ApiMethod.SEARCH_STARS_GIVEAWAY_RECIPIENT,
+            STARS_GIVEAWAY_PAGE,
+            {"query": "zzzzzzzznochannel"},
+            ApiError.NO_CHANNELS_FOUND,
+        ),
+    ],
+)
+async def test_recipient_not_found_messages(method: ApiMethod, page_url: str, data: dict[str, object], error: ApiError) -> None:
+    transport = FragmentTransport({}, 30.0, dict(BASE_HEADERS))
+    try:
+        assert has_error(await transport.call(method, data, page_url), error)
     finally:
         await transport.aclose()

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping, Sequence
 from typing import Any, cast
 
 from pyfragment.core.constants import MNEMONIC_WORD_COUNTS_VALID, REQUIRED_COOKIE_KEYS
-from pyfragment.enums import ApiProvider, AuctionFilter, AuctionSort, WalletVersion
+from pyfragment.enums import ApiProvider, AuctionFilter, AuctionSort, GiftAttribute, WalletVersion
 from pyfragment.exceptions import ConfigurationError, CookieError
 
 
@@ -68,6 +69,21 @@ def normalize_filter(filter: str | None) -> AuctionFilter | None:
         raise ConfigurationError(
             ConfigurationError.INVALID_FILTER.format(filter=filter, supported=", ".join(repr(m.value) for m in AuctionFilter))
         ) from None
+
+
+def normalize_gift_attributes(attr: Mapping[str, Sequence[str]] | None) -> dict[GiftAttribute, list[str]]:
+    normalized: dict[GiftAttribute, list[str]] = {}
+    for name, values in (attr or {}).items():
+        try:
+            trait = GiftAttribute(name.strip().title())
+        except ValueError:
+            raise ConfigurationError(
+                ConfigurationError.INVALID_GIFT_ATTRIBUTE.format(
+                    attribute=name, supported=", ".join(m.value for m in GiftAttribute)
+                )
+            ) from None
+        normalized[trait] = list(values)
+    return normalized
 
 
 def is_int_in_range(value: object, low: int, high: int) -> bool:

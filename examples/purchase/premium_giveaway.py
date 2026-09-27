@@ -8,7 +8,7 @@ Channel can be "@channel", "channel", or "https://t.me/channel".
 
 import asyncio
 
-from pyfragment import ConfigurationError, FragmentClient, UserNotFoundError
+from pyfragment import ChannelNotFoundError, ConfigurationError, FragmentClient
 from pyfragment.enums import PaymentMethod
 
 SEED = "word1 word2 ... word24"
@@ -28,7 +28,7 @@ COOKIES = {
 CHANNEL = "https://t.me/channel"
 WINNERS = 10  # 1–24 000
 MONTHS = 3  # 3, 6 or 12
-PAYMENT_METHOD = PaymentMethod.GRAM  # GRAM, USDT_GRAM, USDT_ETH, USDT_POL, USDC_ETH, USDC_BASE, USDC_POL
+PAYMENT_METHOD = PaymentMethod.GRAM  # PaymentMethod.GRAM or PaymentMethod.USDT_GRAM
 
 
 async def main() -> None:
@@ -46,7 +46,7 @@ async def main() -> None:
                 months=MONTHS,
                 payment_method=PAYMENT_METHOD,
             )
-        except UserNotFoundError:
+        except ChannelNotFoundError:
             print(f"Channel {CHANNEL} was not found on fragment.com — check the username and try again.")
             return
         except ConfigurationError as e:

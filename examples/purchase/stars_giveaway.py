@@ -1,14 +1,14 @@
 """
 Example: run a Telegram Stars giveaway for a channel.
 
-winners must be an integer between 1 and 15.
+winners must be an integer between 1 and 5.
 amount (stars per winner) must be an integer between 500 and 1 000 000.
 Channel can be "@channel", "channel", or "https://t.me/channel".
 """
 
 import asyncio
 
-from pyfragment import ConfigurationError, FragmentClient, UserNotFoundError
+from pyfragment import ChannelNotFoundError, ConfigurationError, FragmentClient
 from pyfragment.enums import PaymentMethod
 
 SEED = "word1 word2 ... word24"
@@ -26,9 +26,9 @@ COOKIES = {
 }
 
 CHANNEL = "https://t.me/channel"
-WINNERS = 3  # 1–15
+WINNERS = 3  # 1–5
 AMOUNT = 1000  # 500–1 000 000 stars per winner
-PAYMENT_METHOD = PaymentMethod.USDT_GRAM  # GRAM, USDT_GRAM, USDT_ETH, USDT_POL, USDC_ETH, USDC_BASE, USDC_POL
+PAYMENT_METHOD = PaymentMethod.USDT_GRAM  # PaymentMethod.GRAM or PaymentMethod.USDT_GRAM
 
 
 async def main() -> None:
@@ -46,7 +46,7 @@ async def main() -> None:
                 amount=AMOUNT,
                 payment_method=PAYMENT_METHOD,
             )
-        except UserNotFoundError:
+        except ChannelNotFoundError:
             print(f"Channel {CHANNEL} was not found on fragment.com — check the username and try again.")
             return
         except ConfigurationError as e:

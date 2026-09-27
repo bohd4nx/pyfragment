@@ -4,10 +4,18 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from pyfragment import ChannelNotFoundError, ConfigurationError, FragmentClient, UnexpectedError, UserNotFoundError
+from pyfragment import (
+    AlreadySubscribedError,
+    ChannelNotFoundError,
+    ConfigurationError,
+    FragmentAPIError,
+    FragmentClient,
+    UnexpectedError,
+    UserNotFoundError,
+)
 from pyfragment.core.constants import STARS_WINNERS_MAX
 from pyfragment.core.validation import is_int_in_range
-from pyfragment.enums import AuctionFilter, AuctionSort
+from pyfragment.enums import AuctionFilter, AuctionSort, GiftAttribute
 
 # is_int_in_range
 
@@ -111,3 +119,59 @@ async def test_unexpected_errors_are_wrapped(client: FragmentClient) -> None:
     with patch.object(client, "call", AsyncMock(side_effect=RuntimeError("boom"))):
         with pytest.raises(UnexpectedError, match="boom"):
             await client.search_usernames("ton")
+
+
+# Gift traits: Fragment silently ignores unknown or wrongly cased attribute names
+
+
+@pytest.mark.asyncio
+async def test_search_gifts_rejects_unknown_attribute(client: FragmentClient) -> None:
+    with pytest.raises(ConfigurationError, match="Invalid gift attribute 'rarity'"):
+        await client.search_gifts(attr={"rarity": ["rare"]})
+
+
+@pytest.mark.asyncio
+async def test_search_gifts_sends_canonical_attribute_names(client: FragmentClient) -> None:
+    call_mock = AsyncMock(return_value={"html": ""})
+    with patch.object(client, "call", call_mock):
+        await client.search_gifts(
+            collection="bowtie", attr={"model": ["Bordeaux"], GiftAttribute.BACKDROP: ["Onyx Black", "Mint Green"]}
+        )
+
+    sent = call_mock.await_args.args[1]
+    assert sent["attr[Model]"] == '["Bordeaux"]'
+    assert sent["attr[Backdrop]"] == '["Onyx Black", "Mint Green"]'
+    assert sent["collection"] == "bowtie"
+    assert not any(key.lower() == "attr[model]" and key != "attr[Model]" for key in sent)
+
+
+# Recipient search: real Fragment error texts map to specific exceptions, unknown errors surface as-is
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("search", "error", "exception"),
+    [
+        ("purchase_stars", "No Telegram users found.", UserNotFoundError),
+        ("purchase_stars", "Please enter a username assigned to a user.", UserNotFoundError),
+        ("purchase_premium", "This account is already subscribed to Telegram Premium.", AlreadySubscribedError),
+        ("giveaway_stars", "No Telegram channels found.", ChannelNotFoundError),
+        ("topup_gram", "No Telegram users found.", UserNotFoundError),
+    ],
+)
+async def test_recipient_search_errors_map_to_exceptions(
+    client: FragmentClient, search: str, error: str, exception: type[Exception]
+) -> None:
+    args = {"purchase_stars": (500,), "purchase_premium": (3,), "giveaway_stars": (1, 500), "topup_gram": (5,)}[search]
+    with patch.object(client, "call", AsyncMock(return_value={"error": error})):
+        with pytest.raises(exception):
+            await getattr(client, search)("@target", *args)
+
+
+@pytest.mark.asyncio
+async def test_recipient_search_surfaces_unrelated_errors(client: FragmentClient) -> None:
+    with patch.object(client, "call", AsyncMock(return_value={"error": "Access denied"})):
+        with pytest.raises(FragmentAPIError, match="Access denied") as exc_info:
+            await client.purchase_stars("@target", 500)
+
+    assert not isinstance(exc_info.value, UserNotFoundError)

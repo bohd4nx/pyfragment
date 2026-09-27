@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 from pyfragment.core.constants import BASE_HEADERS, DEFAULT_TIMEOUT, FRAGMENT_BASE_URL
@@ -308,7 +309,7 @@ class FragmentClient:
         sort: AuctionSort | str | None = None,
         filter: AuctionFilter | str | None = None,
         view: str | None = None,
-        attr: dict[str, list[str]] | None = None,
+        attr: Mapping[str, Sequence[str]] | None = None,
         offset: int | None = None,
     ) -> GiftsResult:
         """Search the Fragment gifts marketplace.
@@ -321,7 +322,8 @@ class FragmentClient:
             filter: An :class:`AuctionFilter` or its value: ``""`` (available, default), ``"auction"``,
                 ``"sale"``, or ``"sold"``.
             view: Active attribute tab name (e.g. ``"Model"``).
-            attr: Attribute filters — e.g. ``{"Model": ["Foosball"], "Backdrop": ["Celtic Blue"]}``.
+            attr: Trait filters keyed by :class:`GiftAttribute` name (``Model``, ``Backdrop`` or ``Symbol``,
+                any casing) — e.g. ``{"Model": ["Foosball"], "Backdrop": ["Celtic Blue"]}``.
             offset: Pass :attr:`GiftsResult.next_offset` to fetch the next page.
 
         Returns:

@@ -128,6 +128,8 @@ class ApiError(StrEnum):
     INVALID_METHOD = "Invalid method"
     ACCESS_DENIED = "Access denied"
     NOT_A_USER = "assigned to a user"  # "Please enter a username assigned to a user."
+    NO_USERS_FOUND = "No Telegram users found"
+    NO_CHANNELS_FOUND = "No Telegram channels found"
     ALREADY_SUBSCRIBED = "already subscribed to telegram premium"
 
 
@@ -164,3 +166,11 @@ class AuctionFilter(StrEnum):
     AUCTION = "auction"
     SALE = "sale"
     SOLD = "sold"
+
+
+class GiftAttribute(StrEnum):
+    """Traits a collection of gifts can be filtered by. Fragment silently ignores unknown (or differently cased) names."""
+
+    MODEL = "Model"
+    BACKDROP = "Backdrop"
+    SYMBOL = "Symbol"
