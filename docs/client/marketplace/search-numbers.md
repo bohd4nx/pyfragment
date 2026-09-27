@@ -7,8 +7,8 @@ Use this endpoint to search anonymous Telegram number listings.
 ```python
 await client.search_numbers(
     query: str = "",
-    sort: str | None = None,
-    filter: str | None = None,
+    sort: AuctionSort | str | None = None,
+    filter: AuctionFilter | str | None = None,
     offset_id: str | None = None,
 ) -> NumbersResult
 ```
@@ -16,8 +16,8 @@ await client.search_numbers(
 ## Parameters
 
 - `query`: digits or text to match number listings
-- `sort`: optional sort key passed to Fragment
-- `filter`: optional listing filter passed to Fragment
+- `sort`: optional `AuctionSort` (or its string value); unknown values raise `ConfigurationError`
+- `filter`: optional `AuctionFilter` (or its string value); unknown values raise `ConfigurationError`
 - `offset_id`: page cursor for next page
 
 `query` can be partial digits (for example `"888"`) when you need pattern-based discovery.

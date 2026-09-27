@@ -7,8 +7,8 @@ Use this endpoint to discover Telegram usernames listed on Fragment.
 ```python
 await client.search_usernames(
     query: str = "",
-    sort: str | None = None,
-    filter: str | None = None,
+    sort: AuctionSort | str | None = None,
+    filter: AuctionFilter | str | None = None,
     offset_id: str | None = None,
 ) -> UsernamesResult
 ```
@@ -16,16 +16,17 @@ await client.search_usernames(
 ## Parameters
 
 - `query`: search text (empty string means broad listing)
-- `sort`: optional sort key passed to Fragment
-- `filter`: optional listing filter passed to Fragment
+- `sort`: optional `AuctionSort` (or its string value); unknown values raise `ConfigurationError`
+- `filter`: optional `AuctionFilter` (or its string value); unknown values raise `ConfigurationError`
 - `offset_id`: page cursor for next page
 
 For broad browsing, use empty `query` and set sorting only.
 
 ## Sorting values
 
-Common values accepted by Fragment:
+Values of `AuctionSort` (Fragment silently ignores unknown values, so the library rejects them):
 
+- `price` (default)
 - `price_desc`
 - `price_asc`
 - `listed`
@@ -33,9 +34,9 @@ Common values accepted by Fragment:
 
 ## Filter values
 
-Common values accepted by Fragment:
+Values of `AuctionFilter`:
 
-- empty string
+- empty string (`AuctionFilter.AVAILABLE`, default)
 - `auction`
 - `sale`
 - `sold`
@@ -44,7 +45,7 @@ Common values accepted by Fragment:
 
 `UsernamesResult` contains:
 
-- `items: list[dict[str, Any]]`
+- `items: list[AuctionItem]` — a `TypedDict` with `slug`, `name`, `status`, `price`, `date`
 - `next_offset_id: str | None`
 
 ## Pagination

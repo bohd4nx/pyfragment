@@ -14,13 +14,13 @@ Available methods:
 
 - All methods are async.
 - All methods call Fragment `searchAuctions` under the hood.
-- `sort` and `filter` are optional passthrough strings.
+- `sort` and `filter` are optional `AuctionSort` / `AuctionFilter` values (plain strings work too); unknown values raise `ConfigurationError`.
 
 **These values are passed to Fragment as-is.** If Fragment changes accepted values, behavior can change too.
 
 Common values used by Fragment pages:
 
-- `sort`: `price_desc`, `price_asc`, `listed`, `ending`
+- `sort`: `price` (default), `price_desc`, `price_asc`, `listed`, `ending`
 - `filter`: empty string, `auction`, `sale`, `sold`
 
 ## Pagination model

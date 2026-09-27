@@ -8,8 +8,8 @@ This endpoint is the most flexible marketplace search and supports collection, t
 await client.search_gifts(
     query: str = "",
     collection: str | None = None,
-    sort: str | None = None,
-    filter: str | None = None,
+    sort: AuctionSort | str | None = None,
+    filter: AuctionFilter | str | None = None,
     view: str | None = None,
     attr: dict[str, list[str]] | None = None,
     offset: int | None = None,
@@ -20,8 +20,8 @@ await client.search_gifts(
 
 - `query`: search text (empty string for broad listing)
 - `collection`: collection slug (for example `plushpepe`, `swisswatch`)
-- `sort`: optional sort key passed to Fragment
-- `filter`: optional listing filter passed to Fragment
+- `sort`: optional `AuctionSort` (or its string value); unknown values raise `ConfigurationError`
+- `filter`: optional `AuctionFilter` (or its string value); unknown values raise `ConfigurationError`
 - `view`: optional UI/view mode passed to Fragment
 - `attr`: optional trait filters where key is trait name and value is list of allowed values
 - `offset`: page offset for next page

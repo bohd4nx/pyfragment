@@ -14,7 +14,7 @@ Signature:
 
 ```python
 await client.call(
-    method: str,
+    method: ApiMethod | str,
     data: dict[str, Any] | None = None,
     *,
     page_url: str = "https://fragment.com",
@@ -23,13 +23,15 @@ await client.call(
 
 ## Parameters
 
-- `method`: Fragment API method name
+- `method`: Fragment API method name — an `ApiMethod` member or a plain string
 - `data`: optional request payload as dictionary
 - `page_url`: page URL used for referer/hash context (defaults to `https://fragment.com`)
 
 ## Return
 
 - `dict[str, Any]`: raw Fragment API response
+
+Fragment reports API errors as HTTP 200 with an `error` field, so check `result.get("error")` (see `ApiError` for known messages).
 
 Use this carefully:
 

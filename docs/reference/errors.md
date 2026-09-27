@@ -11,6 +11,7 @@ Good error handling is the difference between a stable integration and random pr
   - `FragmentAPIError`
     - `FragmentPageError`
     - `UserNotFoundError`
+      - `ChannelNotFoundError`
     - `AlreadySubscribedError`
     - `AnonymousNumberError`
     - `TransactionError`
@@ -47,7 +48,7 @@ except FragmentError:
 
 - Stars purchase: `ConfigurationError`, `UserNotFoundError`, `WalletError`, `VerificationError`
 - Premium purchase: `ConfigurationError`, `UserNotFoundError`, `AlreadySubscribedError`, `WalletError`, `VerificationError`
-- Stars/Premium giveaway: `ConfigurationError`, `UserNotFoundError`, `WalletError`, `VerificationError`
+- Stars/Premium giveaway: `ConfigurationError`, `ChannelNotFoundError`, `WalletError`, `VerificationError`
 - Ads operations: `ConfigurationError`, `UserNotFoundError`, `WalletError`, `VerificationError`
 - Cookies/auth setup: `CookieError`, `ConfigurationError`, `FragmentPageError`
 
