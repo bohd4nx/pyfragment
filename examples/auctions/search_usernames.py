@@ -3,13 +3,14 @@ Example: search the Fragment marketplace for Telegram usernames.
 
 sort is an AuctionSort: PRICE (default), PRICE_DESC, PRICE_ASC, LISTED or ENDING.
 filter is an AuctionFilter: AVAILABLE (default), AUCTION, SALE or SOLD.
-Use next_offset_id for pagination.
+Fragment returns at most 500 items per query and does not page past that — narrow the query instead.
 """
 
 import asyncio
 import json
 
 from pyfragment import AuctionFilter, AuctionSort, FragmentClient, UsernamesResult
+from pyfragment.enums import ApiProvider, WalletVersion
 
 SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_API_KEY"  # tonconsole.com (tonapi, default) or t.me/toncenter
@@ -35,16 +36,13 @@ async def main() -> None:
         seed=SEED,
         api_key=API_KEY,
         cookies=COOKIES,
-        wallet_version="V5R1",  # or "V4R2", "HighloadV2", "HighloadV3R1"
-        api_provider="tonapi",  # or "toncenter"
+        wallet_version=WalletVersion.V5R1,  # or V4R2, HighloadV2, HighloadV3R1
+        api_provider=ApiProvider.TONAPI,  # or ApiProvider.TONCENTER
     ) as client:
         result: UsernamesResult = await client.search_usernames(QUERY, sort=SORT, filter=FILTER)
 
         print(f"Found {len(result.items)} result(s):")
         print(json.dumps(result.items, indent=2))
-
-        if result.next_offset_id:
-            print(f"\nMore results available — next page offset: {result.next_offset_id}")
 
 
 if __name__ == "__main__":

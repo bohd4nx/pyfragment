@@ -9,6 +9,7 @@ api_provider defaults to "tonapi" (tonconsole.com) — pass "toncenter" to use t
 import asyncio
 
 from pyfragment import FragmentClient
+from pyfragment.enums import ApiProvider, WalletVersion
 
 SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_API_KEY"  # tonconsole.com (tonapi, default) or t.me/toncenter
@@ -30,13 +31,14 @@ async def main() -> None:
         seed=SEED,
         api_key=API_KEY,
         cookies=COOKIES,
-        wallet_version="V5R1",  # or "V4R2", "HighloadV2", "HighloadV3R1"
-        api_provider="tonapi",  # or "toncenter"
+        wallet_version=WalletVersion.V5R1,  # or V4R2, HighloadV2, HighloadV3R1
+        api_provider=ApiProvider.TONAPI,  # or ApiProvider.TONCENTER
     ) as client:
         wallet = await client.get_wallet()
         print(f"Address: {wallet.address}")
         print(f"State:   {wallet.state}")
         print(f"Balance: {wallet.gram_balance} GRAM (ex TON)")
+        # usdt_balance is None when the USDT lookup failed: the balance is unknown, not zero.
         print(f"Balance: {wallet.usdt_balance} USDT")
 
 
