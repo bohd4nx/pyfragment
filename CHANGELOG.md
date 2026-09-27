@@ -11,13 +11,19 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ### Added
 
+- Enums for what used to be string literals: `ApiMethod` (Fragment `/api` method names), `ApiError` (known error texts), `StateMode`, `MarketplaceType`, `AuctionSort` and `AuctionFilter`, all exported from `pyfragment` and `pyfragment.enums`. `client.call()` accepts an `ApiMethod` or any string.
+- `AuctionItem`, a `TypedDict` describing marketplace items (`slug`, `name`, `status`, `price`, `date`). Items are still plain dicts at runtime.
+- `ChannelNotFoundError` (a `UserNotFoundError` subclass) for giveaways whose channel doesn't exist.
+- `pyfragment.schemas`: typed views of Fragment's response bodies (`RecipientSearch`, `InvoiceRequest`, `TransactionLink`, `PageState`) plus `error_text()` / `has_error()`.
 - `SUPPORTED_PAYMENT_METHODS` is now exported from the package root alongside `PaymentMethod`.
-
 - `FragmentClient.aclose()` closes the HTTP session explicitly; `async with FragmentClient(...)` calls it on exit.
 - Weekly `Contract` workflow and `tests/018_test_contract.py` (opt-in via `FRAGMENT_LIVE=1`) verify against fragment.com that the API hash is still discoverable and that the built-in limits and payment methods still match.
 
 ### Changed
 
+- Stars, Premium, both giveaways, GRAM topup and Ads recharge now run through a single purchase engine (`domains.payments.run_purchase` driven by a `PurchaseFlow`) instead of six copies of the same search/init/sign/broadcast/confirm code. `recharge_ads()` now also feeds Fragment's invoice amount into the balance check, like every other flow. `topup_gram()` reports a channel/bot recipient as `UserNotFoundError.NOT_A_USER`, like Stars and Premium.
+- `sort` / `filter` of `search_usernames()` / `search_numbers()` / `search_gifts()` accept `AuctionSort` / `AuctionFilter` (plain strings still work) and are validated: Fragment silently ignores unknown values and returns the default listing, so a typo used to give quietly wrong results. Unknown values now raise `ConfigurationError`. `"price"` (Fragment's default order) is a valid sort.
+- Magic numbers moved to `core.constants` (`NANO_PER_GRAM`, `USDT_UNITS`, `MAINNET_CHAIN_ID`, `FRAGMENT_API_URL`, retry limits); HTTP codes use `http.HTTPStatus`.
 - The HTTP layer moved from `pyfragment.core.transport` to the `pyfragment.transport` package (`page`, `api`, `session`); `FragmentTransport`, `fragment_request`, `get_fragment_hash` and `parse_json_response` are importable from `pyfragment.transport`. `raw_api_call()` remains available in `pyfragment.domains.base` as a one-shot call on a throwaway session.
 - The client now keeps one HTTP session (connection pool, TLS session, cookie jar) and caches the API hash per page instead of opening a new connection and loading the page before every call. A Fragment call is now a single POST; a stale cached hash (Fragment answers `200 {"error": "Bad request"}`) is refreshed and retried once. Calls to Fragment are roughly 8x faster after the first one and issue far fewer requests per purchase, which also reduces the chance of rate limiting.
 - `WalletInfo.usdt_balance` is now `float | None`: `None` means the USDT balance lookup failed (previously the failure was reported as `0.0`, indistinguishable from an empty balance). The GRAM balance is still returned.
@@ -26,10 +32,10 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 ### Fixed
 
 - The "not a user" error (`UserNotFoundError.NOT_A_USER`) now says the username may simply not exist: Fragment returns the identical `Please enter a username assigned to a user.` for unknown usernames and for channels/bots.
+- `giveaway_stars()`/`giveaway_premium()` reported an unknown channel as "Telegram user ... was not found"; they now raise `ChannelNotFoundError` naming the channel.
 - `giveaway_stars()` accepted 1–15 winners, but Fragment only allows 1–5; values above 5 passed local validation and failed remotely after the invoice flow had started. `STARS_WINNERS_MAX` is now 5.
 - `wallet_version="HighloadV2"` / `"HighloadV3R1"` were documented and defined in `WalletVersion`, but always rejected because the value was upper-cased before matching. Wallet versions are now matched case-insensitively.
 - `True`/`False` passed the integer checks for amounts, winner counts and Stars per winner (`topup_gram("@user", True)` topped up 1 GRAM). Booleans are now rejected.
-- `giveaway_stars()`/`giveaway_premium()` reported an unknown channel as "Telegram user ... was not found"; the message now names the channel.
 - `purchase_stars()`/`purchase_premium()`/`giveaway_stars()`/`giveaway_premium()` now reject `PaymentMethod` values that aren't actually broadcastable yet (`usdt_eth`, `usdt_pol`, `usdc_eth`, `usdc_base`, `usdc_pol`) before making any network call. The balance check for all of these always validates the TON-chain USDT jetton balance regardless of which one was selected, so picking one of them would silently check the wrong currency on the wrong chain.
 - `check_gram_payment_balance()` computed the required balance as `max(payment, MIN_GRAM_BALANCE)` instead of `payment + MIN_GRAM_BALANCE`, so a wallet with a balance exactly equal to the payment amount passed the check but had nothing left over to cover the transfer's own network fee.
 - `get_fragment_hash()`'s referer derivation mangled the root Fragment URL (`https://fragment.com` → `https:/`) by blindly stripping the last `/`-separated segment. Affects `search_usernames()`, which queries the root page.
