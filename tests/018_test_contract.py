@@ -13,6 +13,7 @@ from curl_cffi.requests import AsyncSession
 
 from pyfragment.core.constants import (
     ADS_TOPUP_PAGE,
+    BASE_HEADERS,
     GIFTS_PAGE,
     NUMBERS_PAGE,
     PREMIUM_GIVEAWAY_PAGE,
@@ -27,8 +28,9 @@ from pyfragment.core.constants import (
     STARS_WINNERS_MAX,
     STARS_WINNERS_MIN,
 )
-from pyfragment.enums import PaymentMethod
-from pyfragment.transport import get_fragment_hash
+from pyfragment.enums import ApiError, ApiMethod, AuctionFilter, AuctionSort, PaymentMethod
+from pyfragment.schemas import has_error
+from pyfragment.transport import FragmentTransport, get_fragment_hash
 
 pytestmark = pytest.mark.skipif(os.environ.get("FRAGMENT_LIVE") != "1", reason="FRAGMENT_LIVE=1 not set")
 
@@ -79,3 +81,23 @@ async def test_payment_methods_match_enum(session: AsyncSession) -> None:
     html = await _page(session, PREMIUM_PAGE)
     offered = set(re.findall(r'name="payment_method"[^>]*value="(\w+)"', html))
     assert offered == {m.value for m in PaymentMethod}
+
+
+async def test_marketplace_sort_and_filter_values(session: AsyncSession) -> None:
+    html = await _page(session, NUMBERS_PAGE)
+    assert set(re.findall(r"[?&]sort=([a-z_]+)", html)) == {m.value for m in AuctionSort}
+    # The default listing (AuctionFilter.AVAILABLE) is the page without a filter parameter.
+    assert set(re.findall(r"[?&]filter=([a-z_]+)", html)) == {m.value for m in AuctionFilter if m.value}
+
+
+async def test_api_error_messages() -> None:
+    transport = FragmentTransport({}, 30.0, dict(BASE_HEADERS))
+    try:
+        assert has_error(await transport.call("nonexistentMethod", None, STARS_PAGE), ApiError.INVALID_METHOD)
+        # An unknown hash is rejected with HTTP 200 and a "Bad request" body.
+        transport._hashes[STARS_PAGE] = "deadbeef"
+        assert has_error(
+            await transport.call(ApiMethod.SEARCH_STARS_RECIPIENT, {"query": "zzzzzzzzzzzq1"}, STARS_PAGE), ApiError.NOT_A_USER
+        )
+    finally:
+        await transport.aclose()

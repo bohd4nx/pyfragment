@@ -1,10 +1,13 @@
-"""Check numeric input validation for amounts, counts, and giveaway limits."""
+"""Check input validation (amounts, counts, giveaway limits, sort/filter) and error normalization."""
+
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from pyfragment import ConfigurationError, FragmentClient
+from pyfragment import ChannelNotFoundError, ConfigurationError, FragmentClient, UnexpectedError, UserNotFoundError
 from pyfragment.core.constants import STARS_WINNERS_MAX
 from pyfragment.core.validation import is_int_in_range
+from pyfragment.enums import AuctionFilter, AuctionSort
 
 # is_int_in_range
 
@@ -53,3 +56,58 @@ async def test_giveaway_stars_rejects_invalid_amount(client: FragmentClient, amo
 async def test_giveaway_premium_rejects_invalid_winners(client: FragmentClient, winners: int) -> None:
     with pytest.raises(ConfigurationError, match="winners"):
         await client.giveaway_premium("@channel", winners)
+
+
+# Marketplace sort/filter: Fragment silently ignores unknown values, so we validate them up front
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("search", ["search_usernames", "search_numbers", "search_gifts"])
+async def test_search_rejects_unknown_sort(client: FragmentClient, search: str) -> None:
+    with pytest.raises(ConfigurationError, match="Invalid sort order"):
+        await getattr(client, search)(sort="cheapest")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("search", ["search_usernames", "search_numbers", "search_gifts"])
+async def test_search_rejects_unknown_filter(client: FragmentClient, search: str) -> None:
+    with pytest.raises(ConfigurationError, match="Invalid filter"):
+        await getattr(client, search)(filter="cheap")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("sort", "filter", "sent_sort", "sent_filter"),
+    [
+        (AuctionSort.PRICE_ASC, AuctionFilter.SOLD, "price_asc", "sold"),
+        ("Price_Desc", "SALE", "price_desc", "sale"),
+        (None, "", None, ""),
+    ],
+)
+async def test_search_sends_normalized_sort_and_filter(
+    client: FragmentClient, sort: str | None, filter: str, sent_sort: str | None, sent_filter: str
+) -> None:
+    call_mock = AsyncMock(return_value={"html": ""})
+    with patch.object(client, "call", call_mock):
+        await client.search_usernames("ton", sort=sort, filter=filter)
+
+    sent = call_mock.await_args.args[1]
+    assert sent.get("sort") == sent_sort
+    assert sent["filter"] == sent_filter
+    assert sent["type"] == "usernames"
+
+
+@pytest.mark.asyncio
+async def test_giveaway_channel_not_found_raises_channel_error(client: FragmentClient) -> None:
+    with patch.object(client, "call", AsyncMock(return_value={"found": {}})):
+        with pytest.raises(ChannelNotFoundError, match="channel") as exc_info:
+            await client.giveaway_stars("@nochannel", 1, 500)
+
+    assert isinstance(exc_info.value, UserNotFoundError)
+
+
+@pytest.mark.asyncio
+async def test_unexpected_errors_are_wrapped(client: FragmentClient) -> None:
+    with patch.object(client, "call", AsyncMock(side_effect=RuntimeError("boom"))):
+        with pytest.raises(UnexpectedError, match="boom"):
+            await client.search_usernames("ton")

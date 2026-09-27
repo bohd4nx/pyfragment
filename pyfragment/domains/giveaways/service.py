@@ -1,14 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from pyfragment.domains.base import BaseService
 from pyfragment.domains.giveaways.giveaway import giveaway_premium, giveaway_stars
 from pyfragment.domains.giveaways.models import PremiumGiveawayResult, StarsGiveawayResult
 from pyfragment.enums import PaymentMethod
-
-if TYPE_CHECKING:
-    pass
 
 
 class GiveawaysService(BaseService):

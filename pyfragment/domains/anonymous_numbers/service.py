@@ -1,13 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from pyfragment.domains.anonymous_numbers.models import LoginCodeResult, TerminateSessionsResult
 from pyfragment.domains.anonymous_numbers.number import get_login_code, terminate_sessions, toggle_login_codes
 from pyfragment.domains.base import BaseService
-
-if TYPE_CHECKING:
-    pass
 
 
 class AnonymousNumbersService(BaseService):

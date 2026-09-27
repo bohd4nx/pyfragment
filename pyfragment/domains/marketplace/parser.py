@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import re
-from typing import Any
+
+from pyfragment.domains.marketplace.models import AuctionItem
 
 ROW_BLOCK_RE = re.compile(r'<tr\b[^>]*class="[^"]*tm-row-selectable[^"]*"[^>]*>(.*?)</tr>', re.DOTALL)
 HREF_RE = re.compile(r'href="(/(?:username|number|nft)/([^"]+))"')
@@ -23,8 +24,18 @@ GRID_STATUS_RE = re.compile(r'class="[^"]*tm-grid-item-status[^"]*"[^>]*>\s*([^<
 GRID_DATETIME_RE = re.compile(r'<time[^>]+datetime="([^"]+)"')
 
 
-def parse_auction_rows(html: str) -> tuple[list[dict[str, Any]], str | None]:
-    items: list[dict[str, Any]] = []
+def _normalize_price(price_match: re.Match[str] | None) -> str | None:
+    if not price_match:
+        return None
+    raw_price = price_match.group(1).strip().replace(",", "")
+    try:
+        return f"{float(raw_price):.2f}"
+    except ValueError:
+        return raw_price
+
+
+def parse_auction_rows(html: str) -> tuple[list[AuctionItem], str | None]:
+    items: list[AuctionItem] = []
     for row_match in ROW_BLOCK_RE.finditer(html):
         row = row_match.group(1)
 
@@ -42,14 +53,7 @@ def parse_auction_rows(html: str) -> tuple[list[dict[str, Any]], str | None]:
                 status = v
                 break
 
-        price_m = PRICE_RE.search(row)
-        price: str | None = None
-        if price_m:
-            raw_price = price_m.group(1).strip().replace(",", "")
-            try:
-                price = f"{float(raw_price):.2f}"
-            except ValueError:
-                price = raw_price
+        price = _normalize_price(PRICE_RE.search(row))
 
         # Prefer the auction countdown timestamp; fall back to the plain sold/listed date,
         # which Fragment renders without a data-relative attribute.
@@ -64,8 +68,8 @@ def parse_auction_rows(html: str) -> tuple[list[dict[str, Any]], str | None]:
     return items, next_offset_id
 
 
-def parse_gift_items(html: str) -> tuple[list[dict[str, Any]], int | None]:
-    items: list[dict[str, Any]] = []
+def parse_gift_items(html: str) -> tuple[list[AuctionItem], int | None]:
+    items: list[AuctionItem] = []
     for item_match in GRID_ITEM_RE.finditer(html):
         block = item_match.group(0)
 
@@ -83,14 +87,7 @@ def parse_gift_items(html: str) -> tuple[list[dict[str, Any]], int | None]:
         status_m = GRID_STATUS_RE.search(block)
         status: str | None = status_m.group(1).strip() if status_m else None
 
-        price_m = GRID_PRICE_RE.search(block)
-        price: str | None = None
-        if price_m:
-            raw_price = price_m.group(1).strip().replace(",", "")
-            try:
-                price = f"{float(raw_price):.2f}"
-            except ValueError:
-                price = raw_price
+        price = _normalize_price(GRID_PRICE_RE.search(block))
 
         time_m = GRID_DATETIME_RE.search(block)
         date: str | None = time_m.group(1) if time_m else None

@@ -1,12 +1,22 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import TypedDict
+
+
+class AuctionItem(TypedDict):
+    """One marketplace listing. ``slug`` is the Fragment path (e.g. ``username/durov``); ``price`` is in GRAM."""
+
+    slug: str
+    name: str
+    status: str | None
+    price: str | None
+    date: str | None
 
 
 @dataclass
 class UsernamesResult:
-    items: list[dict[str, Any]]
+    items: list[AuctionItem]
     next_offset_id: str | None
 
     def __repr__(self) -> str:
@@ -15,7 +25,7 @@ class UsernamesResult:
 
 @dataclass
 class NumbersResult:
-    items: list[dict[str, Any]]
+    items: list[AuctionItem]
     next_offset_id: str | None
 
     def __repr__(self) -> str:
@@ -24,7 +34,7 @@ class NumbersResult:
 
 @dataclass
 class GiftsResult:
-    items: list[dict[str, Any]]
+    items: list[AuctionItem]
     next_offset: int | None
 
     def __repr__(self) -> str:

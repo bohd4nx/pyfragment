@@ -20,7 +20,7 @@ from pyfragment.domains.marketplace.models import GiftsResult, NumbersResult, Us
 from pyfragment.domains.marketplace.service import MarketplaceService
 from pyfragment.domains.purchases.models import PremiumResult, StarsResult
 from pyfragment.domains.purchases.service import PurchasesService
-from pyfragment.enums import ApiProvider, PaymentMethod, WalletVersion
+from pyfragment.enums import ApiMethod, ApiProvider, AuctionFilter, AuctionSort, PaymentMethod, WalletVersion
 from pyfragment.services.tonapi.models import WalletInfo
 from pyfragment.services.tonapi.service import TonapiService
 from pyfragment.transport import FragmentTransport
@@ -260,16 +260,18 @@ class FragmentClient:
     async def search_usernames(
         self,
         query: str = "",
-        sort: str | None = None,
-        filter: str | None = None,
+        sort: AuctionSort | str | None = None,
+        filter: AuctionFilter | str | None = None,
         offset_id: str | None = None,
     ) -> UsernamesResult:
         """Search the Fragment marketplace for Telegram usernames.
 
         Args:
             query: Search text. Omit or pass ``""`` to browse all.
-            sort: ``"price_desc"``, ``"price_asc"``, ``"listed"``, or ``"ending"``.
-            filter: ``"auction"``, ``"sale"``, ``"sold"``, or ``""`` (available).
+            sort: An :class:`AuctionSort` or its value: ``"price"`` (default), ``"price_desc"``,
+                ``"price_asc"``, ``"listed"``, or ``"ending"``.
+            filter: An :class:`AuctionFilter` or its value: ``""`` (available, default), ``"auction"``,
+                ``"sale"``, or ``"sold"``.
             offset_id: Pass :attr:`UsernamesResult.next_offset_id` to fetch the next page.
 
         Returns:
@@ -280,16 +282,18 @@ class FragmentClient:
     async def search_numbers(
         self,
         query: str = "",
-        sort: str | None = None,
-        filter: str | None = None,
+        sort: AuctionSort | str | None = None,
+        filter: AuctionFilter | str | None = None,
         offset_id: str | None = None,
     ) -> NumbersResult:
         """Search the Fragment marketplace for anonymous Telegram numbers.
 
         Args:
             query: Search text. Omit or pass ``""`` to browse all.
-            sort: ``"price_desc"``, ``"price_asc"``, ``"listed"``, or ``"ending"``.
-            filter: ``"auction"``, ``"sale"``, ``"sold"``, or ``""`` (available).
+            sort: An :class:`AuctionSort` or its value: ``"price"`` (default), ``"price_desc"``,
+                ``"price_asc"``, ``"listed"``, or ``"ending"``.
+            filter: An :class:`AuctionFilter` or its value: ``""`` (available, default), ``"auction"``,
+                ``"sale"``, or ``"sold"``.
             offset_id: Pass :attr:`NumbersResult.next_offset_id` to fetch the next page.
 
         Returns:
@@ -301,8 +305,8 @@ class FragmentClient:
         self,
         query: str = "",
         collection: str | None = None,
-        sort: str | None = None,
-        filter: str | None = None,
+        sort: AuctionSort | str | None = None,
+        filter: AuctionFilter | str | None = None,
         view: str | None = None,
         attr: dict[str, list[str]] | None = None,
         offset: int | None = None,
@@ -312,8 +316,10 @@ class FragmentClient:
         Args:
             query: Search text. Omit or pass ``""`` to browse all.
             collection: Gift collection slug (e.g. ``"artisanbrick"``).
-            sort: ``"price_desc"``, ``"price_asc"``, ``"listed"``, or ``"ending"``.
-            filter: ``"auction"``, ``"sale"``, ``"sold"``, or ``""`` (available).
+            sort: An :class:`AuctionSort` or its value: ``"price"`` (default), ``"price_desc"``,
+                ``"price_asc"``, ``"listed"``, or ``"ending"``.
+            filter: An :class:`AuctionFilter` or its value: ``""`` (available, default), ``"auction"``,
+                ``"sale"``, or ``"sold"``.
             view: Active attribute tab name (e.g. ``"Model"``).
             attr: Attribute filters — e.g. ``{"Model": ["Foosball"], "Backdrop": ["Celtic Blue"]}``.
             offset: Pass :attr:`GiftsResult.next_offset` to fetch the next page.
@@ -326,7 +332,7 @@ class FragmentClient:
         )
 
     async def call(
-        self, method: str, data: dict[str, Any] | None = None, *, page_url: str = FRAGMENT_BASE_URL
+        self, method: ApiMethod | str, data: dict[str, Any] | None = None, *, page_url: str = FRAGMENT_BASE_URL
     ) -> dict[str, Any]:
         """Send a raw request to the Fragment API.
 
