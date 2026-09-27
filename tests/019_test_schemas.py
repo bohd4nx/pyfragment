@@ -57,6 +57,14 @@ def test_invoice_request_parses_id_and_amount() -> None:
     assert (invoice.req_id, invoice.amount) == ("r1", 1000.5)
 
 
+@pytest.mark.parametrize(
+    ("raw_amount", "expected"),
+    [("0.326", 0.326), ("0.00075", 0.00075), ("1,000,000,000", 1_000_000_000.0), (None, None), ("n/a", None)],
+)
+def test_invoice_request_amount_parsing(raw_amount: str | None, expected: float | None) -> None:
+    assert InvoiceRequest.from_response({"req_id": "r1", "amount": raw_amount}).amount == expected
+
+
 def test_invoice_request_missing_fields() -> None:
     invoice = InvoiceRequest.from_response({"error": "nope"})
     assert (invoice.req_id, invoice.amount) == (None, None)

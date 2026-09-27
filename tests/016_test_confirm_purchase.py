@@ -105,7 +105,7 @@ async def test_confirm_purchase_polls_until_done(client: FragmentClient) -> None
     )
     with (
         patch.object(client, "call", call_mock),
-        patch("pyfragment.domains.payments.CONFIRM_STATE_POLL_INTERVAL", 0),
+        patch("pyfragment.domains.payments.confirmation.CONFIRM_STATE_POLL_INTERVAL", 0),
     ):
         response = await confirm_purchase(client, FAKE_ACCOUNT, FAKE_TX_BOC, {}, STATE_METHOD, PAGE_URL)
 
@@ -123,8 +123,8 @@ async def test_confirm_purchase_times_out_and_returns_last_response(client: Frag
     # A short timeout with a longer poll interval guarantees exactly one poll before the deadline passes.
     with (
         patch.object(client, "call", call_mock),
-        patch("pyfragment.domains.payments.CONFIRM_STATE_TIMEOUT", 0.02),
-        patch("pyfragment.domains.payments.CONFIRM_STATE_POLL_INTERVAL", 0.2),
+        patch("pyfragment.domains.payments.confirmation.CONFIRM_STATE_TIMEOUT", 0.02),
+        patch("pyfragment.domains.payments.confirmation.CONFIRM_STATE_POLL_INTERVAL", 0.2),
     ):
         response = await confirm_purchase(client, FAKE_ACCOUNT, FAKE_TX_BOC, {}, STATE_METHOD, PAGE_URL)
 

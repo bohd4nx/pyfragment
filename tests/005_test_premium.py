@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-import pyfragment.domains.payments as _payments_mod
+import pyfragment.domains.payments.flow as _flow_mod
 from pyfragment import ConfigurationError, FragmentClient, PremiumGiveawayResult, PremiumResult, UserNotFoundError
 from pyfragment.core.constants import PREMIUM_MONTHS_VALID, PREMIUM_WINNERS_MAX, PREMIUM_WINNERS_MIN
 from pyfragment.enums import PaymentMethod
@@ -56,8 +56,8 @@ async def test_purchase_premium_success(client: FragmentClient) -> None:
                 ]
             ),
         ),
-        patch.object(_payments_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch.object(_payments_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
     ):
         result = await client.purchase_premium("@user", months=3)
 
@@ -80,8 +80,8 @@ async def test_purchase_premium_passes_payment_method(client: FragmentClient) ->
     proc_mock = AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))
     with (
         patch.object(client, "call", call_mock),
-        patch.object(_payments_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch.object(_payments_mod, "process_transaction", proc_mock),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "process_transaction", proc_mock),
     ):
         await client.purchase_premium("@user", months=6, payment_method=PaymentMethod.USDT_GRAM)
 
@@ -189,8 +189,8 @@ async def test_giveaway_premium_success(client: FragmentClient) -> None:
                 ]
             ),
         ),
-        patch.object(_payments_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch.object(_payments_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
     ):
         result = await client.giveaway_premium("@channel", winners=10, months=3)
 
@@ -215,8 +215,8 @@ async def test_giveaway_premium_passes_payment_method(client: FragmentClient) ->
     proc_mock = AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))
     with (
         patch.object(client, "call", call_mock),
-        patch.object(_payments_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch.object(_payments_mod, "process_transaction", proc_mock),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "process_transaction", proc_mock),
     ):
         await client.giveaway_premium("@channel", winners=10, months=6, payment_method=PaymentMethod.USDT_GRAM)
 
@@ -273,7 +273,7 @@ async def test_purchase_premium_missing_req_id_raises(client: FragmentClient) ->
                 ]
             ),
         ),
-        patch.object(_payments_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
     ):
         with pytest.raises(FragmentAPIError):
             await client.purchase_premium("@user", months=3)
@@ -296,7 +296,7 @@ async def test_purchase_premium_need_verify_raises(client: FragmentClient) -> No
                 ]
             ),
         ),
-        patch.object(_payments_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
     ):
         with pytest.raises(VerificationError):
             await client.purchase_premium("@user", months=3)
@@ -322,7 +322,7 @@ async def test_giveaway_premium_missing_req_id_raises(client: FragmentClient) ->
                 ]
             ),
         ),
-        patch.object(_payments_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
     ):
         with pytest.raises(FragmentAPIError):
             await client.giveaway_premium("@channel", winners=10, months=3)
@@ -346,7 +346,7 @@ async def test_giveaway_premium_need_verify_raises(client: FragmentClient) -> No
                 ]
             ),
         ),
-        patch.object(_payments_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
     ):
         with pytest.raises(VerificationError):
             await client.giveaway_premium("@channel", winners=10, months=3)

@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-import pyfragment.domains.payments as _payments_mod
+import pyfragment.domains.payments.flow as _flow_mod
 from pyfragment import AdsRechargeResult, ConfigurationError, FragmentClient
 from pyfragment.core.constants import GRAM_TOPUP_MAX, GRAM_TOPUP_MIN
 from tests.shared import FAKE_ACCOUNT, FAKE_ADS_ACCOUNT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_BOC, FAKE_TX_HASH
@@ -47,8 +47,8 @@ async def test_recharge_ads_success(client: FragmentClient) -> None:
                 ]
             ),
         ),
-        patch.object(_payments_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch.object(_payments_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
     ):
         result = await client.recharge_ads(FAKE_ADS_ACCOUNT, amount=10)
 
@@ -71,11 +71,9 @@ async def test_recharge_ads_confirmed_reflects_fragment_state(client: FragmentCl
                 ]
             ),
         ),
-        patch.object(_payments_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch.object(_payments_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
-        patch.object(
-            _payments_mod, "confirm_purchase", AsyncMock(return_value={"ok": True, "need_update": False, "mode": "done"})
-        ),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
+        patch.object(_flow_mod, "confirm_purchase", AsyncMock(return_value={"ok": True, "need_update": False, "mode": "done"})),
     ):
         result = await client.recharge_ads(FAKE_ADS_ACCOUNT, amount=10)
 
@@ -100,7 +98,7 @@ async def test_recharge_ads_missing_req_id_raises(client: FragmentClient) -> Non
                 ]
             ),
         ),
-        patch.object(_payments_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
     ):
         with pytest.raises(FragmentAPIError):
             await client.recharge_ads(FAKE_ADS_ACCOUNT, amount=10)
@@ -122,7 +120,7 @@ async def test_recharge_ads_need_verify_raises(client: FragmentClient) -> None:
                 ]
             ),
         ),
-        patch.object(_payments_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
     ):
         with pytest.raises(VerificationError):
             await client.recharge_ads(FAKE_ADS_ACCOUNT, amount=10)
