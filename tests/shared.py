@@ -6,7 +6,22 @@ run giveaways, manage anonymous numbers, and explore the marketplace for usernam
 numbers, and gifts.
 """
 
+import json
+from pathlib import Path
 from typing import Any
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def fixture_html(name: str) -> str:
+    """Real fragment.com markup captured for the parser tests (see tests/fixtures/README.md)."""
+    return (FIXTURES / name).read_text()
+
+
+def fixture_json(name: str) -> dict[str, Any]:
+    result: dict[str, Any] = json.loads((FIXTURES / name).read_text())
+    return result
+
 
 # Credentials and config
 VALID_SEED: str = "abandon " * 23 + "about"

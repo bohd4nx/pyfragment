@@ -4,97 +4,90 @@ import re
 
 from pyfragment.domains.marketplace.models import AuctionItem
 
-ROW_BLOCK_RE = re.compile(r'<tr\b[^>]*class="[^"]*tm-row-selectable[^"]*"[^>]*>(.*?)</tr>', re.DOTALL)
-HREF_RE = re.compile(r'href="(/(?:username|number|nft)/([^"]+))"')
-VALUE_RE = re.compile(r'class="[^"]*tm-value[^"]*"[^>]*>\s*([^<]+?)\s*<')
-PRICE_RE = re.compile(r"icon-before\s+icon-ton[^>]*>\s*([0-9][^<]*?)\s*<")
-DATETIME_RE = re.compile(r'<time[^>]+datetime="([^"]+)"[^>]*data-relative="text"[^>]*>')
-DATETIME_SHORT_RE = re.compile(r'<time[^>]+datetime="([^"]+)"[^>]*data-relative="short-text"[^>]*>')
-# Sold/plain listings render a bare <time> with no data-relative attribute at all.
-DATETIME_PLAIN_RE = re.compile(r'<time[^>]+datetime="([^"]+)"[^>]*>')
-NUMERIC_RE = re.compile(r"^\+?[\d,. ]+$")
+# Row listings (usernames, numbers): one <tr class="tm-row-selectable"> per item.
+ROW_RE = re.compile(r'<tr\b[^>]*class="[^"]*tm-row-selectable[^"]*"[^>]*>(.*?)</tr>', re.DOTALL)
+ROW_HREF_RE = re.compile(r'href="/((?:username|number)/[^"]+)"')
+ROW_NAME_RE = re.compile(r'class="[^"]*\btm-value\b[^"]*"[^>]*>\s*([^<]+?)\s*<')
+ROW_PRICE_RE = re.compile(r'class="[^"]*\btm-value\b[^"]*\bicon-ton\b[^"]*"[^>]*>\s*([0-9][^<]*?)\s*<')
+ROW_STATUS_RE = re.compile(r'class="[^"]*\btm-value\b[^"]*\btm-status-\w+[^"]*"[^>]*>\s*([^<]+?)\s*<')
+
+# Grid listings (gifts): one <a class="tm-grid-item"> card per item.
+CARD_RE = re.compile(r'(<a\b[^>]*class="[^"]*\btm-grid-item\b[^"]*"[^>]*>.*?</a>)', re.DOTALL)
+CARD_HREF_RE = re.compile(r'href="/(gift/[^?"]+)')
+CARD_NAME_RE = re.compile(r'class="item-name">([^<]+)<')
+CARD_NUMBER_RE = re.compile(r'class="item-num">[^#]*#(\w+)<')
+CARD_PRICE_RE = re.compile(r'class="[^"]*\btm-grid-item-value\b[^"]*\bicon-ton\b[^"]*"[^>]*>\s*([0-9][^<]*?)\s*<')
+CARD_STATUS_RE = re.compile(r'class="[^"]*\btm-grid-item-status\b[^"]*"[^>]*>(.*?)</div>', re.DOTALL)
+# Some statuses ("On auction") are split into a short mobile and a full desktop <span>; prefer the full one.
+WIDE_TEXT_RE = re.compile(r'<span class="wide-only">([^<]*)</span>')
+TAG_RE = re.compile(r"<[^>]+>")
+
+TIME_RE = re.compile(r'<time[^>]+datetime="([^"]+)"')
 NEXT_OFFSET_RE = re.compile(r'data-next-offset="(\d+)"')
 
-GRID_ITEM_RE = re.compile(r'<a\b[^>]*class="[^"]*tm-grid-item[^"]*"[^>]*>(.*?)</a>', re.DOTALL)
-GRID_HREF_RE = re.compile(r'href="(/gift/([^?"]+))')
-GRID_NAME_RE = re.compile(r'class="item-name">([^<]+)<')
-GRID_NUM_RE = re.compile(r'class="item-num">[^#]*#(\w+)<')
-GRID_PRICE_RE = re.compile(r'class="[^"]*tm-grid-item-value[^"]*icon-ton[^"]*"[^>]*>\s*([0-9][^<]*?)\s*<')
-GRID_STATUS_RE = re.compile(r'class="[^"]*tm-grid-item-status[^"]*"[^>]*>\s*([^<]+?)\s*<')
-GRID_DATETIME_RE = re.compile(r'<time[^>]+datetime="([^"]+)"')
+
+def _first(pattern: re.Pattern[str], html: str) -> str | None:
+    match = pattern.search(html)
+    return match.group(1).strip() if match else None
 
 
-def _normalize_price(price_match: re.Match[str] | None) -> str | None:
-    if not price_match:
+def _normalize_price(raw_price: str | None) -> str | None:
+    """``"24,740"`` -> ``"24740.00"``; anything that isn't a number is returned as is."""
+    if raw_price is None:
         return None
-    raw_price = price_match.group(1).strip().replace(",", "")
+    digits = raw_price.replace(",", "")
     try:
-        return f"{float(raw_price):.2f}"
+        return f"{float(digits):.2f}"
     except ValueError:
-        return raw_price
+        return digits
 
 
 def parse_auction_rows(html: str) -> tuple[list[AuctionItem], str | None]:
+    """Parse a usernames/numbers listing into items plus the ``offset_id`` of the next page, if any."""
     items: list[AuctionItem] = []
-    for row_match in ROW_BLOCK_RE.finditer(html):
-        row = row_match.group(1)
-
-        href_m = HREF_RE.search(row)
-        if not href_m:
+    for row in ROW_RE.findall(html):
+        slug = _first(ROW_HREF_RE, row)
+        if slug is None:
+            # The "Show more" footer is a row without a link.
             continue
-        slug = href_m.group(1).lstrip("/")
+        items.append(
+            AuctionItem(
+                slug=slug,
+                name=_first(ROW_NAME_RE, row) or slug,
+                status=_first(ROW_STATUS_RE, row),
+                price=_normalize_price(_first(ROW_PRICE_RE, row)),
+                date=_first(TIME_RE, row),
+            )
+        )
+    return items, _first(NEXT_OFFSET_RE, html)
 
-        values = [m.group(1).strip() for m in VALUE_RE.finditer(row)]
-        name = values[0] if values else slug
 
-        status: str | None = None
-        for v in values[1:]:
-            if v and v not in ("Unknown",) and not v.startswith("@") and not NUMERIC_RE.match(v):
-                status = v
-                break
-
-        price = _normalize_price(PRICE_RE.search(row))
-
-        # Prefer the auction countdown timestamp; fall back to the plain sold/listed date,
-        # which Fragment renders without a data-relative attribute.
-        time_m = DATETIME_RE.search(row) or DATETIME_SHORT_RE.search(row) or DATETIME_PLAIN_RE.search(row)
-        date: str | None = time_m.group(1) if time_m else None
-
-        items.append({"slug": slug, "name": name, "status": status, "price": price, "date": date})
-
-    next_offset_m = NEXT_OFFSET_RE.search(html)
-    next_offset_id = next_offset_m.group(1) if next_offset_m else None
-
-    return items, next_offset_id
+def _card_status(card: str) -> str | None:
+    match = CARD_STATUS_RE.search(card)
+    if not match:
+        return None
+    inner = match.group(1)
+    wide = WIDE_TEXT_RE.search(inner)
+    return (wide.group(1) if wide else TAG_RE.sub("", inner)).strip() or None
 
 
 def parse_gift_items(html: str) -> tuple[list[AuctionItem], int | None]:
+    """Parse a gifts listing into items plus the ``offset`` of the next page, if any."""
     items: list[AuctionItem] = []
-    for item_match in GRID_ITEM_RE.finditer(html):
-        block = item_match.group(0)
-
-        href_m = GRID_HREF_RE.search(block)
-        if not href_m:
+    for card in CARD_RE.findall(html):
+        slug = _first(CARD_HREF_RE, card)
+        if slug is None:
             continue
-        slug = href_m.group(1).lstrip("/")
-
-        name_m = GRID_NAME_RE.search(block)
-        num_m = GRID_NUM_RE.search(block)
-        item_name = name_m.group(1).strip() if name_m else slug
-        item_num = f" #{num_m.group(1)}" if num_m else ""
-        name = f"{item_name}{item_num}"
-
-        status_m = GRID_STATUS_RE.search(block)
-        status: str | None = status_m.group(1).strip() if status_m else None
-
-        price = _normalize_price(GRID_PRICE_RE.search(block))
-
-        time_m = GRID_DATETIME_RE.search(block)
-        date: str | None = time_m.group(1) if time_m else None
-
-        items.append({"slug": slug, "name": name, "status": status, "price": price, "date": date})
-
-    next_offset_m = NEXT_OFFSET_RE.search(html)
-    next_offset = int(next_offset_m.group(1)) if next_offset_m else None
-
-    return items, next_offset
+        name = _first(CARD_NAME_RE, card) or slug
+        number = _first(CARD_NUMBER_RE, card)
+        items.append(
+            AuctionItem(
+                slug=slug,
+                name=f"{name} #{number}" if number else name,
+                status=_card_status(card),
+                price=_normalize_price(_first(CARD_PRICE_RE, card)),
+                date=_first(TIME_RE, card),
+            )
+        )
+    next_offset = _first(NEXT_OFFSET_RE, html)
+    return items, int(next_offset) if next_offset else None
