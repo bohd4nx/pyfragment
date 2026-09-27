@@ -45,6 +45,8 @@ class ConfigurationError(ClientError):
     INVALID_STARS_PER_WINNER = (
         f"Invalid Stars per winner: must be an integer between {STARS_GIVEAWAY_MIN:,} and {STARS_GIVEAWAY_MAX:,}."
     )
+    INVALID_SORT = "Invalid sort order '{sort}'. Supported values: {supported}."
+    INVALID_FILTER = "Invalid filter '{filter}'. Supported values: {supported}."
     INVALID_PAYMENT_METHOD = "Invalid payment method '{method}'. Supported values: {supported}."
 
 
@@ -86,12 +88,17 @@ class UserNotFoundError(FragmentAPIError):
     NOT_FOUND = (
         "Telegram user '{username}' was not found on Fragment. Double-check the username and make sure the account exists."
     )
-    CHANNEL_NOT_FOUND = (
-        "Telegram channel '{channel}' was not found on Fragment. Double-check the channel username and make sure it exists."
-    )
     NOT_A_USER = (
         "'{username}' does not belong to a user account: it either doesn't exist or is a channel or bot. "
         "Make sure the username is assigned to a personal Telegram account."
+    )
+
+
+class ChannelNotFoundError(UserNotFoundError):
+    """Raised when the target Telegram channel is not found on Fragment."""
+
+    NOT_FOUND = (
+        "Telegram channel '{channel}' was not found on Fragment. Double-check the channel username and make sure it exists."
     )
 
 
@@ -176,6 +183,7 @@ __all__ = [
     "AnonymousNumberError",
     "AlreadySubscribedError",
     "UserNotFoundError",
+    "ChannelNotFoundError",
     "TransactionError",
     "ParseError",
     "VerificationError",

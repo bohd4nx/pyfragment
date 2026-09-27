@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-import pyfragment.domains.ads.tonup as _topup_gram_mod
+import pyfragment.domains.payments as _payments_mod
 from pyfragment import AdsTopupResult, ConfigurationError, FragmentClient, UserNotFoundError
 from pyfragment.core.constants import GRAM_TOPUP_MAX, GRAM_TOPUP_MIN
 from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_BOC, FAKE_TX_HASH
@@ -48,8 +48,8 @@ async def test_topup_gram_success(client: FragmentClient) -> None:
                 ]
             ),
         ),
-        patch.object(_topup_gram_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch.object(_topup_gram_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
+        patch.object(_payments_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_payments_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
     ):
         result = await client.topup_gram("@user", amount=10)
 
@@ -94,7 +94,7 @@ async def test_topup_gram_missing_req_id_raises(client: FragmentClient) -> None:
                 ]
             ),
         ),
-        patch.object(_topup_gram_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_payments_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
     ):
         with pytest.raises(FragmentAPIError):
             await client.topup_gram("@user", amount=10)
@@ -116,7 +116,7 @@ async def test_topup_gram_missing_req_id_surfaces_fragment_error(client: Fragmen
                 ]
             ),
         ),
-        patch.object(_topup_gram_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_payments_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
     ):
         with pytest.raises(FragmentAPIError, match="Amount is invalid"):
             await client.topup_gram("@user", amount=10)
@@ -139,7 +139,7 @@ async def test_topup_gram_need_verify_raises(client: FragmentClient) -> None:
                 ]
             ),
         ),
-        patch.object(_topup_gram_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_payments_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
     ):
         with pytest.raises(VerificationError):
             await client.topup_gram("@user", amount=10)

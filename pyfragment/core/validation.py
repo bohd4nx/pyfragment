@@ -4,7 +4,7 @@ import json
 from typing import Any, cast
 
 from pyfragment.core.constants import MNEMONIC_WORD_COUNTS_VALID, REQUIRED_COOKIE_KEYS
-from pyfragment.enums import ApiProvider, WalletVersion
+from pyfragment.enums import ApiProvider, AuctionFilter, AuctionSort, WalletVersion
 from pyfragment.exceptions import ConfigurationError, CookieError
 
 
@@ -46,6 +46,28 @@ def normalize_wallet_version(wallet_version: str) -> WalletVersion:
             supported=", ".join(sorted(m.value for m in WalletVersion)),
         )
     )
+
+
+def normalize_sort(sort: str | None) -> AuctionSort | None:
+    if sort is None:
+        return None
+    try:
+        return AuctionSort(sort.strip().lower())
+    except ValueError:
+        raise ConfigurationError(
+            ConfigurationError.INVALID_SORT.format(sort=sort, supported=", ".join(m.value for m in AuctionSort))
+        ) from None
+
+
+def normalize_filter(filter: str | None) -> AuctionFilter | None:
+    if filter is None:
+        return None
+    try:
+        return AuctionFilter(filter.strip().lower())
+    except ValueError:
+        raise ConfigurationError(
+            ConfigurationError.INVALID_FILTER.format(filter=filter, supported=", ".join(repr(m.value) for m in AuctionFilter))
+        ) from None
 
 
 def is_int_in_range(value: object, low: int, high: int) -> bool:

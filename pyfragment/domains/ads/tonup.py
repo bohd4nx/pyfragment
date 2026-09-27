@@ -1,24 +1,16 @@
 from __future__ import annotations
 
-import json
 import logging
 from typing import TYPE_CHECKING
 
-from pyfragment.core.constants import ADS_TOPUP_PAGE, DEVICE_INFO, GRAM_TOPUP_MAX, GRAM_TOPUP_MIN
+from pyfragment.core.constants import ADS_TOPUP_PAGE, GRAM_TOPUP_MAX, GRAM_TOPUP_MIN
 from pyfragment.core.validation import is_int_in_range
 from pyfragment.domains.ads.models import AdsTopupResult
-from pyfragment.domains.payments import cancel_invoice, confirm_purchase, is_confirmed, parse_required_payment_amount
-from pyfragment.exceptions import (
-    ConfigurationError,
-    FragmentAPIError,
-    FragmentError,
-    TransactionError,
-    UnexpectedError,
-    UserNotFoundError,
-    VerificationError,
-)
-from pyfragment.services.tonapi.account import get_account_info
-from pyfragment.services.tonapi.transaction import process_transaction
+from pyfragment.domains.base import operation
+from pyfragment.domains.payments import PurchaseFlow, run_purchase
+from pyfragment.domains.recipients import find_user
+from pyfragment.enums import ApiMethod, StateMode
+from pyfragment.exceptions import ConfigurationError
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
@@ -26,60 +18,30 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+TOPUP_FLOW = PurchaseFlow(
+    page_url=ADS_TOPUP_PAGE,
+    state_method=ApiMethod.UPDATE_ADS_TOPUP_STATE,
+    init_method=ApiMethod.INIT_ADS_TOPUP_REQUEST,
+    link_method=ApiMethod.GET_ADS_TOPUP_LINK,
+    label="GRAM (ex TON) topup",
+)
+
 
 async def topup_gram(client: FragmentClient, username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
     if not is_int_in_range(amount, GRAM_TOPUP_MIN, GRAM_TOPUP_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_GRAM_AMOUNT)
 
-    try:
-        await client.call("updateAdsTopupState", {"mode": "new"}, page_url=ADS_TOPUP_PAGE)
-
-        result = await client.call("searchAdsTopupRecipient", {"query": username}, page_url=ADS_TOPUP_PAGE)
-        recipient = result.get("found", {}).get("recipient")
-        if not recipient:
-            raise UserNotFoundError(UserNotFoundError.NOT_FOUND.format(username=username))
-
-        result = await client.call("initAdsTopupRequest", {"recipient": recipient, "amount": amount}, page_url=ADS_TOPUP_PAGE)
-        required_payment_amount = parse_required_payment_amount(result)
-        req_id = result.get("req_id")
-        if not req_id:
-            if result.get("error"):
-                raise FragmentAPIError(str(result["error"]))
-            raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="GRAM (ex TON) topup"))
-
-        try:
-            account = await get_account_info(client)
-            transaction = await client.call(
-                "getAdsTopupLink",
-                {
-                    "account": json.dumps(account),
-                    "device": json.dumps(DEVICE_INFO),
-                    "transaction": 1,
-                    "id": req_id,
-                    "show_sender": int(show_sender),
-                },
-                page_url=ADS_TOPUP_PAGE,
-            )
-            if transaction.get("need_verify"):
-                raise VerificationError(VerificationError.KYC_REQUIRED)
-
-            tx_hash, tx_boc = await process_transaction(client, transaction, required_payment_amount=required_payment_amount)
-        except TransactionError:
-            # The broadcast itself may or may not have reached the chain; leave the invoice alone.
-            raise
-        except Exception:
-            await cancel_invoice(client, req_id, ADS_TOPUP_PAGE)
-            raise
-        state_response = await confirm_purchase(client, account, tx_boc, transaction, "updateAdsTopupState", ADS_TOPUP_PAGE)
-        return AdsTopupResult(transaction_id=tx_hash, username=username, amount=amount, confirmed=is_confirmed(state_response))
-
-    except FragmentError as exc:
-        logger.error(
-            "Failed to top up GRAM (ex TON) for user '%s' with %s GRAM (ex TON): %s", username, amount, exc, exc_info=True
+    with operation(logger, "top up GRAM (ex TON) for user '%s' with %s GRAM (ex TON)", username, amount):
+        await client.call(TOPUP_FLOW.state_method, {"mode": StateMode.NEW}, page_url=TOPUP_FLOW.page_url)
+        recipient = await find_user(
+            client, ApiMethod.SEARCH_ADS_TOPUP_RECIPIENT, TOPUP_FLOW.page_url, {"query": username}, username
         )
-        raise
-    except Exception as exc:
-        logger.exception(
-            "Failed to top up GRAM (ex TON) for user '%s' with %s GRAM (ex TON) due to an unexpected error", username, amount
+        receipt = await run_purchase(
+            client,
+            TOPUP_FLOW,
+            {"recipient": recipient, "amount": amount},
+            {"show_sender": int(show_sender)},
         )
-        raise UnexpectedError(UnexpectedError.UNEXPECTED.format(exc=exc)) from exc
+        return AdsTopupResult(
+            transaction_id=receipt.transaction_id, username=username, amount=amount, confirmed=receipt.confirmed
+        )
