@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 from pyfragment.core.constants import FRAGMENT_BASE_URL, GIFTS_PAGE, NUMBERS_PAGE
 from pyfragment.core.validation import normalize_filter, normalize_gift_attributes, normalize_sort
 from pyfragment.domains.base import operation
-from pyfragment.domains.marketplace.models import GiftsResult, NumbersResult, UsernamesResult
+from pyfragment.domains.marketplace.models import AuctionItem, GiftsResult, NumbersResult, UsernamesResult
 from pyfragment.domains.marketplace.parser import parse_auction_rows, parse_gift_items
 from pyfragment.enums import ApiMethod, AuctionFilter, AuctionSort, MarketplaceType
 from pyfragment.exceptions import FragmentAPIError
@@ -44,6 +44,23 @@ async def _fetch_listing(client: FragmentClient, page_url: str, data: dict[str, 
     return str(html)
 
 
+async def _search_rows(
+    client: FragmentClient,
+    kind: MarketplaceType,
+    page_url: str,
+    query: str,
+    sort: str | None,
+    filter: str | None,
+    offset_id: str | None,
+) -> tuple[list[AuctionItem], str | None]:
+    """Run a usernames/numbers search and parse its rows."""
+    data = _listing_query(kind, query, sort, filter, offset_id=offset_id)
+    with operation(
+        logger, "search %s (query='%s', sort='%s', filter='%s', offset_id='%s')", kind, query, sort, filter, offset_id
+    ):
+        return parse_auction_rows(await _fetch_listing(client, page_url, data))
+
+
 async def search_usernames(
     client: FragmentClient,
     query: str = "",
@@ -51,13 +68,10 @@ async def search_usernames(
     filter: AuctionFilter | str | None = None,
     offset_id: str | None = None,
 ) -> UsernamesResult:
-    data = _listing_query(MarketplaceType.USERNAMES, query, sort, filter, offset_id=offset_id)
-    with operation(
-        logger, "search usernames (query='%s', sort='%s', filter='%s', offset_id='%s')", query, sort, filter, offset_id
-    ):
-        html = await _fetch_listing(client, FRAGMENT_BASE_URL, data)
-        items, next_offset_id = parse_auction_rows(html)
-        return UsernamesResult(items=items, next_offset_id=next_offset_id)
+    items, next_offset_id = await _search_rows(
+        client, MarketplaceType.USERNAMES, FRAGMENT_BASE_URL, query, sort, filter, offset_id
+    )
+    return UsernamesResult(items=items, next_offset_id=next_offset_id)
 
 
 async def search_numbers(
@@ -67,13 +81,8 @@ async def search_numbers(
     filter: AuctionFilter | str | None = None,
     offset_id: str | None = None,
 ) -> NumbersResult:
-    data = _listing_query(MarketplaceType.NUMBERS, query, sort, filter, offset_id=offset_id)
-    with operation(
-        logger, "search numbers (query='%s', sort='%s', filter='%s', offset_id='%s')", query, sort, filter, offset_id
-    ):
-        html = await _fetch_listing(client, NUMBERS_PAGE, data)
-        items, next_offset_id = parse_auction_rows(html)
-        return NumbersResult(items=items, next_offset_id=next_offset_id)
+    items, next_offset_id = await _search_rows(client, MarketplaceType.NUMBERS, NUMBERS_PAGE, query, sort, filter, offset_id)
+    return NumbersResult(items=items, next_offset_id=next_offset_id)
 
 
 async def search_gifts(

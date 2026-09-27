@@ -20,7 +20,7 @@ def _rows(items: list[AuctionItem]) -> list[Row]:
 
 
 def test_parse_usernames_one_row_per_status() -> None:
-    items, next_offset_id = parse_auction_rows(fixture_html("usernames_statuses.html"))
+    items, next_offset_id = parse_auction_rows(fixture_html("usernames_one_per_status.html"))
 
     assert next_offset_id is None
     assert _rows(items) == [
@@ -35,20 +35,20 @@ def test_parse_usernames_one_row_per_status() -> None:
 
 
 def test_parse_usernames_search_skips_show_more_footer_and_reports_offset() -> None:
-    items, next_offset_id = parse_auction_rows(fixture_html("usernames_search_durov.html"))
+    items, next_offset_id = parse_auction_rows(fixture_html("usernames_search_result.html"))
 
     assert [i["name"] for i in items] == ["@durov", "@durovbro", "@durovsay", "@durovcap", "@durov69"]
     assert next_offset_id == "500"
 
 
 def test_parse_taken_username_has_no_price_even_though_the_cell_says_unknown() -> None:
-    items, _ = parse_auction_rows(fixture_html("usernames_search_durov.html"))
+    items, _ = parse_auction_rows(fixture_html("usernames_search_result.html"))
 
     assert (items[0]["status"], items[0]["price"], items[0]["date"]) == ("Taken", None, None)
 
 
 def test_parse_numbers_one_row_per_status() -> None:
-    items, next_offset_id = parse_auction_rows(fixture_html("numbers_statuses.html"))
+    items, next_offset_id = parse_auction_rows(fixture_html("numbers_one_per_status.html"))
 
     assert next_offset_id is None
     assert _rows(items) == [
@@ -59,7 +59,7 @@ def test_parse_numbers_one_row_per_status() -> None:
 
 
 def test_parse_numbers_search() -> None:
-    items, next_offset_id = parse_auction_rows(fixture_html("numbers_search.html"))
+    items, next_offset_id = parse_auction_rows(fixture_html("numbers_search_result.html"))
 
     assert _rows(items) == [
         ("number/88809888888", "+888 0988 8888", "For sale", "888888888.00", "2027-08-02T10:41:11+00:00"),
@@ -76,7 +76,7 @@ def test_parse_auction_rows_empty_html() -> None:
 
 
 def test_parse_gifts_one_card_per_status() -> None:
-    items, next_offset = parse_gift_items(fixture_html("gifts_statuses.html"))
+    items, next_offset = parse_gift_items(fixture_html("gifts_one_per_status.html"))
 
     assert next_offset == 60
     assert _rows(items) == [
@@ -90,7 +90,7 @@ def test_parse_gifts_one_card_per_status() -> None:
 
 
 def test_parse_gifts_drops_the_link_query_string_from_the_slug() -> None:
-    items, _ = parse_gift_items(fixture_html("gifts_statuses.html"))
+    items, _ = parse_gift_items(fixture_html("gifts_one_per_status.html"))
 
     assert all("?" not in i["slug"] for i in items)
 
@@ -101,7 +101,7 @@ def test_parse_gifts_empty_html() -> None:
 
 @pytest.mark.asyncio
 async def test_search_gifts_paginated_response(client: FragmentClient) -> None:
-    page = fixture_json("gifts_page2.json")
+    page = fixture_json("gifts_next_page_response.json")
 
     with patch.object(client, "call", AsyncMock(return_value=page)):
         result = await client.search_gifts(offset=60)

@@ -29,11 +29,18 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _make_ton_client(client: FragmentClient) -> Any:
+def make_ton_client(client: FragmentClient) -> Any:
     """Return the appropriate tonutils client based on the configured api_provider."""
     if client.api_provider == ApiProvider.TONCENTER:
         return ToncenterClient(network=NetworkGlobalID.MAINNET, api_key=client.api_key)
     return TonapiClient(network=NetworkGlobalID.MAINNET, api_key=client.api_key)
+
+
+def load_wallet(client: FragmentClient, ton: Any) -> tuple[Any, Any]:
+    """Derive the configured wallet and its public key from the client's seed."""
+    wallet_cls = WALLET_CLASSES[client.wallet_version]
+    wallet, public_key, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)
+    return wallet, public_key
 
 
 async def get_usdt_balance(ton: Any, wallet_address: str) -> float:
@@ -109,14 +116,13 @@ async def check_usdt_payment_balance(
 
 async def get_account_info(client: FragmentClient) -> dict[str, Any]:
     """Build the wallet payload Fragment needs to prepare a transaction."""
-    async with _make_ton_client(client) as ton:
+    async with make_ton_client(client) as ton:
         try:
-            wallet_cls = WALLET_CLASSES[client.wallet_version]
-            wallet, pub_key, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)
+            wallet, public_key = load_wallet(client, ton)
             boc = wallet.state_init.serialize().to_boc()
             return {
                 "address": wallet.address.to_str(False, False),
-                "publicKey": pub_key.as_hex,
+                "publicKey": public_key.as_hex,
                 "chain": MAINNET_CHAIN_ID,
                 "walletStateInit": base64.b64encode(boc).decode(),
             }
@@ -127,10 +133,9 @@ async def get_account_info(client: FragmentClient) -> dict[str, Any]:
 
 async def get_wallet_info(client: FragmentClient) -> WalletInfo:
     """Fetch the wallet address, chain state, and GRAM (ex TON)/USDT balances."""
-    async with _make_ton_client(client) as ton:
+    async with make_ton_client(client) as ton:
         try:
-            wallet_cls = WALLET_CLASSES[client.wallet_version]
-            wallet, _, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)
+            wallet, _ = load_wallet(client, ton)
             await wallet.refresh()
             wallet_address = wallet.address.to_str(False, False)
             try:

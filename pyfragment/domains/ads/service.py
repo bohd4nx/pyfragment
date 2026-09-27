@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pyfragment.domains.ads.models import AdsRechargeResult, AdsTopupResult
 from pyfragment.domains.ads.recharge import recharge_ads
-from pyfragment.domains.ads.tonup import topup_gram
+from pyfragment.domains.ads.topup import topup_gram
 from pyfragment.domains.base import BaseService
 
 

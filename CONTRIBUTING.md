@@ -55,7 +55,7 @@ examples/             — runnable usage examples (excluded from CI)
 
 - All public async methods live on `FragmentClient` and delegate to a domain service.
 - Domain functions receive a `FragmentClient` instance, never raw HTTP clients.
-- Patch targets in tests use the module where the name is **defined**, e.g. `pyfragment.services.tonapi.account._make_ton_client` or `pyfragment.domains.payments.flow.process_transaction`.
+- Patch targets in tests use the module where the name is **defined**, e.g. `pyfragment.services.tonapi.account.make_ton_client` or `pyfragment.domains.payments.flow.process_transaction`.
 - Fragment method names and error texts are enums (`ApiMethod`, `ApiError`); response bodies are read through `pyfragment.schemas`.
 - Parser changes are checked against real markup: add or refresh a trimmed response under `tests/fixtures/` (see its README).
 - Versioning follows [CalVer](https://calver.org/): `YYYY.MINOR.MICRO`. Bump in `pyproject.toml`; tag as `vYYYY.MINOR.MICRO`.

@@ -12,9 +12,14 @@ from ton_core import Cell
 from tonutils.exceptions import ProviderResponseError
 
 from pyfragment.core.constants import MAX_BROADCAST_ATTEMPTS, NANO_PER_GRAM
-from pyfragment.enums import WALLET_CLASSES, PaymentMethod
+from pyfragment.enums import PaymentMethod
 from pyfragment.exceptions import ParseError, TransactionError, WalletError
-from pyfragment.services.tonapi.account import _make_ton_client, check_gram_payment_balance, check_usdt_payment_balance
+from pyfragment.services.tonapi.account import (
+    check_gram_payment_balance,
+    check_usdt_payment_balance,
+    load_wallet,
+    make_ton_client,
+)
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
@@ -121,6 +126,23 @@ async def _broadcast_with_retry(wallet: Any, message: dict[str, Any], payload: s
     raise TransactionError(TransactionError.BROADCAST_FAILED.format(exc="transfer loop exited without result"))
 
 
+def _broadcast_error(exc: Exception, message: dict[str, Any], payment_method: PaymentMethod) -> TransactionError:
+    """Turn an unexpected broadcast failure into a ``TransactionError``, with a hint for SSL problems."""
+    cause: BaseException | None = exc
+    while cause is not None:
+        if isinstance(cause, ssl.SSLError):
+            logger.exception("Failed to broadcast transaction due to SSL error")
+            return TransactionError(TransactionError.BROADCAST_FAILED_SSL.format(exc=exc))
+        cause = cause.__cause__ or cause.__context__
+    logger.exception(
+        "Failed to broadcast transaction to '%s' for %s nanograms using payment method '%s'",
+        message["address"],
+        message["amount"],
+        payment_method,
+    )
+    return TransactionError(TransactionError.BROADCAST_FAILED.format(exc=exc))
+
+
 async def process_transaction(
     client: FragmentClient,
     transaction_data: dict[str, Any],
@@ -142,9 +164,8 @@ async def process_transaction(
     message = _extract_message(transaction_data)
     amount_gram = int(message["amount"]) / NANO_PER_GRAM
 
-    async with _make_ton_client(client) as ton:
-        wallet_cls = WALLET_CLASSES[client.wallet_version]
-        wallet, _, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)
+    async with make_ton_client(client) as ton:
+        wallet, _ = load_wallet(client, ton)
 
         await _check_payment_balances(wallet, payment_method, amount_gram, required_payment_amount, transaction_data, ton)
 
@@ -152,20 +173,8 @@ async def process_transaction(
 
         try:
             result = await _broadcast_with_retry(wallet, message, payload)
-            return str(result.normalized_hash), result.as_b64
         except (WalletError, TransactionError):
             raise
         except Exception as exc:
-            cause: BaseException | None = exc
-            while cause is not None:
-                if isinstance(cause, ssl.SSLError):
-                    logger.exception("Failed to broadcast transaction due to SSL error")
-                    raise TransactionError(TransactionError.BROADCAST_FAILED_SSL.format(exc=exc)) from exc
-                cause = cause.__cause__ or cause.__context__
-            logger.exception(
-                "Failed to broadcast transaction to '%s' for %s nanograms using payment method '%s'",
-                message["address"],
-                message["amount"],
-                payment_method,
-            )
-            raise TransactionError(TransactionError.BROADCAST_FAILED.format(exc=exc)) from exc
+            raise _broadcast_error(exc, message, payment_method) from exc
+        return str(result.normalized_hash), result.as_b64

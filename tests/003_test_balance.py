@@ -52,8 +52,8 @@ def _patch_wallet(wallet: MagicMock) -> Generator[None, None, None]:
     mock_ton_ctx.__aenter__ = AsyncMock(return_value=MagicMock())
     mock_ton_ctx.__aexit__ = AsyncMock(return_value=False)
     with (
-        patch("pyfragment.services.tonapi.transaction._make_ton_client", return_value=mock_ton_ctx),
-        patch("pyfragment.services.tonapi.transaction.WALLET_CLASSES") as mock_classes,
+        patch("pyfragment.services.tonapi.transaction.make_ton_client", return_value=mock_ton_ctx),
+        patch("pyfragment.services.tonapi.account.WALLET_CLASSES") as mock_classes,
     ):
         mock_classes["V5R1"].from_mnemonic.return_value = (wallet, MagicMock(), None, None)
         yield

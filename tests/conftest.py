@@ -8,7 +8,7 @@ from typing import cast
 import pytest
 
 import pyfragment.domains.ads.recharge  # noqa: F401
-import pyfragment.domains.ads.tonup  # noqa: F401
+import pyfragment.domains.ads.topup  # noqa: F401
 import pyfragment.domains.giveaways.giveaway  # noqa: F401
 import pyfragment.domains.purchases.purchase  # noqa: F401
 import pyfragment.services.tonapi.account  # noqa: F401
