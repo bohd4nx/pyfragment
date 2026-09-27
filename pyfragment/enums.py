@@ -105,9 +105,6 @@ class ApiMethod(StrEnum):
     INIT_ADS_RECHARGE_REQUEST = "initAdsRechargeRequest"
     GET_ADS_RECHARGE_LINK = "getAdsRechargeLink"
 
-    # Shared by all purchase flows
-    CANCEL_INVOICE = "cancelInvoice"
-
     # Marketplace
     SEARCH_AUCTIONS = "searchAuctions"
 
@@ -124,7 +121,7 @@ class ApiError(StrEnum):
     case-insensitive substrings of the response's error text.
     """
 
-    BAD_REQUEST = "Bad request"  # unknown or stale `hash` query parameter
+    BAD_REQUEST = "Bad request"  # unknown or stale `hash` query parameter, or a malformed request
     INVALID_METHOD = "Invalid method"
     ACCESS_DENIED = "Access denied"
     NOT_A_USER = "assigned to a user"  # "Please enter a username assigned to a user."

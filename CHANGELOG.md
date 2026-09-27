@@ -31,8 +31,8 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 - **Much faster and lighter on Fragment.** The client keeps one HTTP session and caches the API hash per page, so a
   call is a single POST instead of a page load plus a POST on a fresh connection (about 8x faster after the first
-  call, far fewer requests per purchase, less risk of rate limiting). A stale hash (Fragment answers
-  `200 {"error": "Bad request"}`) is refreshed and retried once.
+  call, far fewer requests per purchase, less risk of rate limiting). A rejected hash (Fragment answers
+  `200 {"error": "Bad request"}`) is refreshed and the call retried once.
 - **Marketplace searches are validated.** Fragment silently ignores unknown `sort`, `filter` and gift trait names
   and returns the default listing, so a typo used to give quietly wrong results. They now raise
   `ConfigurationError`. `"price"`, Fragment's default order, is a valid `sort`.
@@ -60,6 +60,10 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ### Removed
 
+- **Invoice cancellation.** After a failed purchase the client called Fragment's `cancelInvoice`, but Fragment
+  answers "Bad request" to it for every GRAM/USDT invoice (checked on a live invoice with a connected wallet), so it
+  never did anything. Abandoned invoices expire on their own; the extra request and the `ApiMethod.CANCEL_INVOICE`
+  member are gone.
 - `pyfragment.core.transport`: use `pyfragment.transport`. `raw_api_call()` stays in `pyfragment.domains.base`
   as a one-shot call on a throwaway session.
 - `parse_required_payment_amount()`: use `pyfragment.schemas.InvoiceRequest.amount`.

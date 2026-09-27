@@ -4,6 +4,7 @@ import pytest
 
 from pyfragment.enums import ApiError, StateMode
 from pyfragment.schemas import InvoiceRequest, PageState, RecipientSearch, TransactionLink, error_text, has_error
+from tests.shared import fixture_json
 
 # error_text / has_error
 
@@ -98,3 +99,18 @@ def test_page_state_not_done_by_default() -> None:
 
 def test_page_state_keeps_the_previous_mode_when_response_has_none() -> None:
     assert PageState.from_response({"need_update": True}, default_mode=StateMode.PROCESSING).mode == "processing"
+
+
+# Real Fragment responses (tests/fixtures)
+
+
+def test_invoice_request_from_real_init_response() -> None:
+    invoice = InvoiceRequest.from_response(fixture_json("stars_invoice_response.json"))
+
+    assert (invoice.req_id, invoice.amount) == ("REQ_ID", 0.4609)
+
+
+def test_transaction_link_from_real_link_response() -> None:
+    link = TransactionLink.from_response(fixture_json("stars_transaction_link_response.json"))
+
+    assert (link.need_verify, link.confirm_method, link.confirm_params) == (False, "confirmReq", {"id": "REQ_ID"})

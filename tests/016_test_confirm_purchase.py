@@ -1,11 +1,11 @@
-"""Cover cancel_invoice, confirm_purchase, and the is_confirmed helper in pyfragment.domains.payments."""
+"""Cover state_nonce, confirm_purchase and is_confirmed from pyfragment.domains.payments."""
 
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from pyfragment import FragmentClient
-from pyfragment.domains.payments import cancel_invoice, confirm_purchase, is_confirmed, state_nonce
+from pyfragment.domains.payments import confirm_purchase, is_confirmed, state_nonce
 from tests.shared import FAKE_ACCOUNT, FAKE_REQ_ID, FAKE_TX_BOC
 
 STATE_METHOD = "updateStarsBuyState"
@@ -18,24 +18,6 @@ def test_state_nonce_in_range() -> None:
     for _ in range(20):
         value = int(state_nonce())
         assert 100_000_000 <= value <= 2_147_483_647
-
-
-# cancel_invoice
-
-
-@pytest.mark.asyncio
-async def test_cancel_invoice_calls_cancel_invoice_method(client: FragmentClient) -> None:
-    call_mock = AsyncMock(return_value={"ok": True})
-    with patch.object(client, "call", call_mock):
-        await cancel_invoice(client, FAKE_REQ_ID, PAGE_URL)
-
-    call_mock.assert_awaited_once_with("cancelInvoice", {"req_id": FAKE_REQ_ID}, page_url=PAGE_URL)
-
-
-@pytest.mark.asyncio
-async def test_cancel_invoice_swallows_errors(client: FragmentClient) -> None:
-    with patch.object(client, "call", AsyncMock(side_effect=RuntimeError("network down"))):
-        await cancel_invoice(client, FAKE_REQ_ID, PAGE_URL)  # must not raise
 
 
 # is_confirmed
