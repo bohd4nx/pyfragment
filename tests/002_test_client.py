@@ -169,3 +169,9 @@ async def test_async_context_manager() -> None:
     async with FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES) as client:
         assert isinstance(client, FragmentClient)
 
+
+@pytest.mark.asyncio
+async def test_aclose_is_idempotent() -> None:
+    client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
+    await client.aclose()
+    await client.aclose()

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from pyfragment.core.constants import BASE_HEADERS, DEFAULT_TIMEOUT, FRAGMENT_BASE_URL
+from pyfragment.core.transport import FragmentTransport
 from pyfragment.core.validation import (
     normalize_provider,
     normalize_wallet_version,
@@ -14,7 +15,6 @@ from pyfragment.domains.ads.models import AdsRechargeResult, AdsTopupResult
 from pyfragment.domains.ads.service import AdsService
 from pyfragment.domains.anonymous_numbers.models import LoginCodeResult, TerminateSessionsResult
 from pyfragment.domains.anonymous_numbers.service import AnonymousNumbersService
-from pyfragment.domains.base import raw_api_call
 from pyfragment.domains.giveaways.models import PremiumGiveawayResult, StarsGiveawayResult
 from pyfragment.domains.giveaways.service import GiveawaysService
 from pyfragment.domains.marketplace.models import GiftsResult, NumbersResult, UsernamesResult
@@ -43,6 +43,9 @@ class FragmentClient:
             or ``"toncenter"`` (t.me/toncenter).
         timeout: HTTP request timeout in seconds. Defaults to ``30.0``.
         headers: Custom HTTP request headers. If omitted, :data:`BASE_HEADERS` is used.
+
+    The client keeps one HTTP session and reuses it across calls. Use ``async with`` (or call
+    :meth:`aclose`) to release it when you are done.
 
     Raises:
         ConfigurationError: If ``seed``, ``api_key``, ``wallet_version``, or ``api_provider``
@@ -84,6 +87,7 @@ class FragmentClient:
         self.wallet_version: WalletVersion = version
         self.timeout: float = timeout
         self.headers: dict[str, str | None] = dict(headers) if headers is not None else dict(BASE_HEADERS)
+        self._transport = FragmentTransport(parsed_cookies, timeout, self.headers)
         self.marketplace = MarketplaceService(self)
         self.purchases = PurchasesService(self)
         self.giveaways = GiveawaysService(self)
@@ -95,7 +99,11 @@ class FragmentClient:
         return self
 
     async def __aexit__(self, *_: object) -> None:
-        pass
+        await self.aclose()
+
+    async def aclose(self) -> None:
+        """Close the underlying HTTP session. Called automatically when leaving ``async with``."""
+        await self._transport.aclose()
 
     def __repr__(self) -> str:
         return f"FragmentClient(wallet_version='{self.wallet_version}', api_provider='{self.api_provider}', cookies={len(self.cookies)} keys)"
@@ -185,7 +193,7 @@ class FragmentClient:
 
         Args:
             channel: Channel identifier — ``@channel``, ``channel``, or ``https://t.me/channel``.
-            winners: Number of winners — integer from ``1`` to ``15``.
+            winners: Number of winners — integer from ``1`` to ``5``.
             amount: Stars each winner receives — integer from ``500`` to ``1 000 000``.
             payment_method: Payment currency — defaults to ``PaymentMethod.GRAM``.
 
@@ -330,4 +338,4 @@ class FragmentClient:
         Returns:
             Raw parsed JSON response as a dict.
         """
-        return await raw_api_call(self.cookies, self.timeout, method, data, page_url, self.headers)
+        return await self._transport.call(method, data, page_url)
