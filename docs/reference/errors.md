@@ -47,7 +47,7 @@ except FragmentError:
 ## Method-to-error mapping
 
 - Stars purchase: `ConfigurationError`, `UserNotFoundError`, `WalletError`, `VerificationError`
-- Premium purchase: `ConfigurationError`, `UserNotFoundError`, `AlreadySubscribedError`, `WalletError`, `VerificationError`
+- Premium purchase: `ConfigurationError`, `UserNotFoundError`, `AlreadySubscribedError` (raised as soon as Fragment reports it at recipient lookup), `WalletError`, `VerificationError`
 - Stars/Premium giveaway: `ConfigurationError`, `ChannelNotFoundError`, `WalletError`, `VerificationError`
 - Ads operations: `ConfigurationError`, `UserNotFoundError`, `WalletError`, `VerificationError`
 - Cookies/auth setup: `CookieError`, `ConfigurationError`, `FragmentPageError`

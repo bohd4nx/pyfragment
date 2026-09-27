@@ -14,9 +14,7 @@ Exported result models:
 - `WalletInfo(address, state, gram_balance, usdt_balance)` — `usdt_balance` is `None` if the USDT lookup failed (the balance is unknown, not zero)
 - `LoginCodeResult(number, code, active_sessions)`
 - `TerminateSessionsResult(number, message)`
-- `UsernamesResult(items, next_offset_id)`
-- `NumbersResult(items, next_offset_id)`
-- `GiftsResult(items, next_offset)`
+- `UsernamesResult(items, next_offset_id)`, `NumbersResult(items, next_offset_id)`, `GiftsResult(items, next_offset)` — `items` is a list of `AuctionItem` (`slug`, `name`, `status`, `price`, `date`)
 
 Most high-level methods return one of these dataclasses.
 

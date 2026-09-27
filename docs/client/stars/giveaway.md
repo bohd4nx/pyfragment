@@ -31,7 +31,7 @@ await client.giveaway_stars(
 ## Typical errors
 
 - `ConfigurationError`
-- `UserNotFoundError`
+- `ChannelNotFoundError`
 - `WalletError`
 - `VerificationError`
 

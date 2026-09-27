@@ -31,7 +31,7 @@ await client.purchase_stars(
 ## Typical errors
 
 - `ConfigurationError`: invalid amount or payment method
-- `UserNotFoundError`: target user not found
+- `UserNotFoundError`: the username doesn't exist, or belongs to a channel or bot
 - `WalletError`: insufficient balance or wallet-side issue
 - `VerificationError`: verification/KYC required for operation
 

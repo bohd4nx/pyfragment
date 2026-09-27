@@ -19,19 +19,20 @@ await client.search_gifts(
 ## Parameters
 
 - `query`: search text (empty string for broad listing)
-- `collection`: collection slug (for example `plushpepe`, `swisswatch`)
+- `collection`: collection slug, the last part of its Fragment URL (`bowtie` for `fragment.com/gifts/bowtie`). Unknown slugs are silently ignored by Fragment and return every collection
 - `sort`: optional `AuctionSort` (or its string value); unknown values raise `ConfigurationError`
 - `filter`: optional `AuctionFilter` (or its string value); unknown values raise `ConfigurationError`
-- `view`: optional UI/view mode passed to Fragment
-- `attr`: optional trait filters where key is trait name and value is list of allowed values
+- `view`: optional view name passed to Fragment as-is
+- `attr`: optional trait filters: key is a `GiftAttribute` (`Model`, `Backdrop` or `Symbol`, any casing), value is a list of allowed values. Unknown trait names raise `ConfigurationError`
 - `offset`: page offset for next page
 
 **`attr` is ideal for narrowing results by visual or rarity traits.**
 
 ## Sorting values
 
-Common values accepted by Fragment:
+Values of `AuctionSort` (Fragment silently ignores unknown values, so the library rejects them):
 
+- `price` (default)
 - `price_desc`
 - `price_asc`
 - `listed`
@@ -39,9 +40,9 @@ Common values accepted by Fragment:
 
 ## Filter values
 
-Common values accepted by Fragment:
+Values of `AuctionFilter`:
 
-- empty string
+- empty string (`AuctionFilter.AVAILABLE`, default)
 - `auction`
 - `sale`
 - `sold`
@@ -55,8 +56,8 @@ Example:
 
 ```python
 attr={
-    "model": ["gold", "silver"],
-    "rarity": ["rare"],
+    "Model": ["Bordeaux", "Red Rose"],
+    "Backdrop": ["Onyx Black"],
 }
 ```
 
@@ -64,19 +65,25 @@ attr={
 
 `GiftsResult` contains:
 
-- `items: list[dict[str, Any]]`
+- `items: list[AuctionItem]` — a `TypedDict` with `slug`, `name` (including the `#number`), `status`, `price`, `date`
 - `next_offset: int | None`
 
-## Pagination
+## Result size and pagination
 
-If `next_offset` is not `None`, pass it back as `offset` to load the next page.
+Gifts are paged 60 at a time. If `next_offset` is not `None`, pass it back as `offset` to load the next page. Fragment stops after **1 200 items** per query (20 pages), so narrow the query (`collection`, `attr`, `filter`) for more.
+
+## Item format
+
+Each item is an `AuctionItem` dict: `slug` (Fragment path, e.g. `username/durov`), `name`, `status`, `price` (in GRAM, two decimals, or `None`) and `date` (ISO 8601, UTC, or `None`).
+
+`status` is the label Fragment shows: `For sale`, `Sold`, `Available`, `Taken`, `On auction`, ... Plain auction rows in the *auction* listing carry no label, so `status` is `None` there. Gift statuses also include `Not for sale` and `On auction`.
 
 ## Example
 
 ```python
 result: GiftsResult = await client.search_gifts(
     query="",
-    collection="plushpepe",
+    collection="bowtie",
     sort="price_desc",
     filter="auction",
 )

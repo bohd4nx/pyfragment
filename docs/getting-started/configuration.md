@@ -67,6 +67,10 @@ async with FragmentClient(
 
 Both providers work identically — the correct `tonutils` client is selected automatically based on `api_provider`.
 
+## Lifecycle
+
+The client keeps one HTTP session and reuses it across calls. Use `async with FragmentClient(...) as client:` (or call `await client.aclose()`) to release it.
+
 ## Validation behavior
 
 At initialization, library validates:

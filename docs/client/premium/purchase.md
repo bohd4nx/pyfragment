@@ -31,7 +31,8 @@ await client.purchase_premium(
 ## Typical errors
 
 - `ConfigurationError`
-- `UserNotFoundError`
+- `UserNotFoundError`: the username doesn't exist, or belongs to a channel or bot
+- `AlreadySubscribedError`: the recipient already has Telegram Premium
 - `WalletError`
 - `VerificationError`
 

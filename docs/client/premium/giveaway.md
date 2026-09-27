@@ -31,7 +31,7 @@ await client.giveaway_premium(
 ## Typical errors
 
 - `ConfigurationError`
-- `UserNotFoundError`
+- `ChannelNotFoundError`
 - `WalletError`
 - `VerificationError`
 

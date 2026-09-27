@@ -18,7 +18,7 @@ await client.search_usernames(
 - `query`: search text (empty string means broad listing)
 - `sort`: optional `AuctionSort` (or its string value); unknown values raise `ConfigurationError`
 - `filter`: optional `AuctionFilter` (or its string value); unknown values raise `ConfigurationError`
-- `offset_id`: page cursor for next page
+- `offset_id`: page cursor returned as `next_offset_id`
 
 For broad browsing, use empty `query` and set sorting only.
 
@@ -48,11 +48,17 @@ Values of `AuctionFilter`:
 - `items: list[AuctionItem]` — a `TypedDict` with `slug`, `name`, `status`, `price`, `date`
 - `next_offset_id: str | None`
 
-## Pagination
+## Result size and pagination
 
-If `next_offset_id` is not `None`, pass it back as `offset_id` to load the next page.
+Fragment returns at most **500 items** per query and does not page past that: `offset_id=500` always comes back empty. To see more, narrow the query (`query`, `filter`, `sort`).
 
-This is cursor pagination, so do not try to calculate offsets manually.
+`next_offset_id` is the "Show more" cursor of a text search and can be set even when the page is complete, so an empty follow-up page is normal.
+
+## Item format
+
+Each item is an `AuctionItem` dict: `slug` (Fragment path, e.g. `username/durov`), `name`, `status`, `price` (in GRAM, two decimals, or `None`) and `date` (ISO 8601, UTC, or `None`).
+
+`status` is the label Fragment shows: `For sale`, `Sold`, `Available`, `Taken`, `On auction`, ... Plain auction rows in the *auction* listing carry no label, so `status` is `None` there.
 
 ## Example
 

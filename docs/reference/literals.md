@@ -59,7 +59,7 @@ Every Fragment `/api` method the library calls (`ApiMethod.SEARCH_STARS_RECIPIEN
 
 Error texts Fragment returns in the `error` field of an HTTP 200 response (`BAD_REQUEST`, `INVALID_METHOD`, `ACCESS_DENIED`, `NOT_A_USER`, `ALREADY_SUBSCRIBED`). Fragment reports failures in the body, not in the HTTP status.
 
-## AuctionSort / AuctionFilter / MarketplaceType
+## AuctionSort / AuctionFilter / MarketplaceType / GiftAttribute
 
 ```python
 from pyfragment import AuctionFilter, AuctionSort
@@ -70,6 +70,7 @@ await client.search_usernames("ton", sort=AuctionSort.PRICE_ASC, filter=AuctionF
 - `AuctionSort`: `PRICE` (default), `PRICE_DESC`, `PRICE_ASC`, `LISTED`, `ENDING`
 - `AuctionFilter`: `AVAILABLE` (`""`, default), `AUCTION`, `SALE`, `SOLD`
 - `MarketplaceType`: `USERNAMES`, `NUMBERS`, `GIFTS`
+- `GiftAttribute`: `MODEL`, `BACKDROP`, `SYMBOL` — the trait names accepted by `search_gifts(attr=...)`
 
 ## StateMode
 
