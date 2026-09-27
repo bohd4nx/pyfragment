@@ -39,6 +39,8 @@ Most high-level methods return one of these dataclasses.
 
 `StarsResult`, `PremiumResult`, `AdsTopupResult`, `AdsRechargeResult`, `StarsGiveawayResult`, and `PremiumGiveawayResult` all carry a `confirmed: bool` field. `transaction_id` is set as soon as the GRAM (ex TON)/USDT transfer is broadcast to the chain — the purchase itself already happened at that point. `confirmed` reflects a separate, best-effort step: after broadcasting, the client reports the transaction to Fragment and waits (up to ~60s) for Fragment's own backend to acknowledge it. If that wait times out or the report call fails, `confirmed` is `False` even though the payment went through — the method does not raise in that case. Treat `confirmed` as a UI/observability signal, not as the source of truth for whether the purchase happened.
 
+**Never retry a purchase just because `confirmed` is `False`** — that would pay twice. If you need to check whether it went through, look the `transaction_id` up on-chain (e.g. in a TON explorer) first.
+
 ## Methods without dataclass return
 
 - `toggle_login_codes()`: returns `None`

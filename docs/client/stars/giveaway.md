@@ -16,7 +16,7 @@ await client.giveaway_stars(
 ## Parameters
 
 - `channel`: accepts `@channel`, `channel`, or `https://t.me/channel`
-- `winners`: integer from `1` to `15`
+- `winners`: integer from `1` to `5`
 - `amount`: integer from `500` to `1_000_000` (per winner)
 - `payment_method`: `PaymentMethod.GRAM` (default) or `PaymentMethod.USDT_GRAM` — other `PaymentMethod` values aren't broadcastable yet and raise `ConfigurationError`
 

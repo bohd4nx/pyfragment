@@ -4,6 +4,8 @@
 
 You can call methods directly on the client or use grouped services.
 
+The client keeps one HTTP session and reuses it across calls, so use it as `async with FragmentClient(...) as client:` (or call `await client.aclose()`) to release the connection when you are done.
+
 Grouped service wrappers:
 
 - `client.purchases`
