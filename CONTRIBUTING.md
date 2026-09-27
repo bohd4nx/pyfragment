@@ -23,6 +23,8 @@ pytest
 
 All three must pass before opening a PR.
 
+`tests/018_test_contract.py` checks the live fragment.com and is skipped by default; run it with `FRAGMENT_LIVE=1 pytest tests/018_test_contract.py`.
+
 ## Project structure
 
 ```
