@@ -30,19 +30,24 @@ All three must pass before opening a PR.
 ```
 pyfragment/
   client.py           — FragmentClient (public entry point)
-  enums.py            — ApiProvider, PaymentMethod, WalletVersion
-  exceptions.py       — exception hierarchy
-  core/               — constants, validation helpers
+  enums.py            — PaymentMethod, WalletVersion, ApiProvider, ApiMethod, ApiError, marketplace enums
+  exceptions.py       — exception hierarchy and canonical messages
+  schemas.py          — typed views of Fragment's response bodies
+  core/               — constants, input validation helpers
+  transport/          — HTTP layer: page (API hash), api (requests, 429 retry), session (reusable transport)
   domains/            — one package per feature domain
     ads/              — recharge_ads, topup_gram
     anonymous_numbers/— get_login_code, toggle_login_codes, terminate_sessions
     giveaways/        — giveaway_stars, giveaway_premium
-    marketplace/      — search_usernames, search_numbers, search_gifts
+    marketplace/      — search_usernames, search_numbers, search_gifts (+ HTML parsers)
+    payments/         — the shared purchase flow: run_purchase, confirmation, state helpers
     purchases/        — purchase_stars, purchase_premium
+    base.py           — BaseService, raw_api_call, operation() error guard
+    recipients.py     — recipient lookup shared by the purchase flows
   services/           — shared infrastructure services
     cookies/          — browser cookie extraction (models + service)
     tonapi/           — wallet info, transaction signing (tonapi/toncenter)
-tests/                — unit tests (pytest)
+tests/                — unit tests (pytest); tests/fixtures holds real fragment.com markup
 examples/             — runnable usage examples (excluded from CI)
 ```
 
@@ -50,7 +55,9 @@ examples/             — runnable usage examples (excluded from CI)
 
 - All public async methods live on `FragmentClient` and delegate to a domain service.
 - Domain functions receive a `FragmentClient` instance, never raw HTTP clients.
-- Patch targets in tests use the module where the name is **defined**, e.g. `pyfragment.services.tonapi.transaction._make_ton_client`.
+- Patch targets in tests use the module where the name is **defined**, e.g. `pyfragment.services.tonapi.account._make_ton_client` or `pyfragment.domains.payments.flow.process_transaction`.
+- Fragment method names and error texts are enums (`ApiMethod`, `ApiError`); response bodies are read through `pyfragment.schemas`.
+- Parser changes are checked against real markup: add or refresh a trimmed response under `tests/fixtures/` (see its README).
 - Versioning follows [CalVer](https://calver.org/): `YYYY.MINOR.MICRO`. Bump in `pyproject.toml`; tag as `vYYYY.MINOR.MICRO`.
 
 ## Pull requests

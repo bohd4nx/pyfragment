@@ -11,7 +11,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ### Added
 
-- Enums for what used to be string literals: `ApiMethod` (Fragment `/api` method names), `ApiError` (known error texts), `StateMode`, `MarketplaceType`, `AuctionSort` and `AuctionFilter`, all exported from `pyfragment` and `pyfragment.enums`. `client.call()` accepts an `ApiMethod` or any string.
+- Enums for what used to be string literals: `ApiMethod` (Fragment `/api` method names), `ApiError` (known error texts), `StateMode`, `MarketplaceType`, `AuctionSort` and `AuctionFilter`, `GiftAttribute`, all exported from `pyfragment` and `pyfragment.enums`. `client.call()` accepts an `ApiMethod` or any string.
 - `AuctionItem`, a `TypedDict` describing marketplace items (`slug`, `name`, `status`, `price`, `date`). Items are still plain dicts at runtime.
 - `ChannelNotFoundError` (a `UserNotFoundError` subclass) for giveaways whose channel doesn't exist.
 - `pyfragment.schemas`: typed views of Fragment's response bodies (`RecipientSearch`, `InvoiceRequest`, `TransactionLink`, `PageState`) plus `error_text()` / `has_error()`.
@@ -21,6 +21,9 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ### Changed
 
+- `search_gifts(attr=...)` takes any `Mapping[str, Sequence[str]]` and validates the trait names against `GiftAttribute` (`Model`, `Backdrop`, `Symbol`; matched case-insensitively and sent in Fragment's casing). Fragment ignores unknown or wrongly cased names and returns the whole collection, so `{"model": [...]}` used to filter nothing.
+- `domains.payments` is now a package (`validation`, `state`, `confirmation`, `flow`); the public names are still importable from `pyfragment.domains.payments`. `parse_required_payment_amount()` is gone: `pyfragment.schemas.InvoiceRequest.amount` replaces it.
+- The marketplace parsers were re-checked against ~17 600 real listings from fragment.com and simplified: an item's `status` is read from the `tm-status-*` element instead of being guessed from the `.tm-value` texts, and one regex replaces three for the date.
 - Stars, Premium, both giveaways, GRAM topup and Ads recharge now run through a single purchase engine (`domains.payments.run_purchase` driven by a `PurchaseFlow`) instead of six copies of the same search/init/sign/broadcast/confirm code. `recharge_ads()` now also feeds Fragment's invoice amount into the balance check, like every other flow. `topup_gram()` reports a channel/bot recipient as `UserNotFoundError.NOT_A_USER`, like Stars and Premium.
 - `sort` / `filter` of `search_usernames()` / `search_numbers()` / `search_gifts()` accept `AuctionSort` / `AuctionFilter` (plain strings still work) and are validated: Fragment silently ignores unknown values and returns the default listing, so a typo used to give quietly wrong results. Unknown values now raise `ConfigurationError`. `"price"` (Fragment's default order) is a valid sort.
 - Magic numbers moved to `core.constants` (`NANO_PER_GRAM`, `USDT_UNITS`, `MAINNET_CHAIN_ID`, `FRAGMENT_API_URL`, retry limits); HTTP codes use `http.HTTPStatus`.
@@ -31,6 +34,9 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ### Fixed
 
+- Gifts on auction reported `status=None`: Fragment splits their status into a short and a full `<span>`. It is now `"On auction"`.
+- Premium's "already subscribed" answer arrives at the recipient lookup, where it surfaced as `UserNotFoundError`; it now raises `AlreadySubscribedError` there.
+- An unrelated error during recipient lookup (session expired, rate limit, ...) no longer masquerades as `UserNotFoundError`/`ChannelNotFoundError`; the error text is raised as `FragmentAPIError`.
 - The "not a user" error (`UserNotFoundError.NOT_A_USER`) now says the username may simply not exist: Fragment returns the identical `Please enter a username assigned to a user.` for unknown usernames and for channels/bots.
 - `giveaway_stars()`/`giveaway_premium()` reported an unknown channel as "Telegram user ... was not found"; they now raise `ChannelNotFoundError` naming the channel.
 - `giveaway_stars()` accepted 1–15 winners, but Fragment only allows 1–5; values above 5 passed local validation and failed remotely after the invoice flow had started. `STARS_WINNERS_MAX` is now 5.

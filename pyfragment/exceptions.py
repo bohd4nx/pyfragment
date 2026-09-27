@@ -29,7 +29,10 @@ class ConfigurationError(ClientError):
 
     MISSING_VARS = "Missing required parameter(s): {keys}."
     UNSUPPORTED_VERSION = "Unsupported wallet version '{version}'. Supported values: {supported}."
-    INVALID_MNEMONIC = f"Invalid mnemonic phrase: expected {', '.join(str(n) for n in sorted(MNEMONIC_WORD_COUNTS_VALID))} words, got {{count}}."
+    INVALID_MNEMONIC = (
+        f"Invalid mnemonic phrase: expected {', '.join(str(n) for n in sorted(MNEMONIC_WORD_COUNTS_VALID))} words, "
+        "got {count}."
+    )
     UNSUPPORTED_PROVIDER = "Unsupported API provider '{provider}'. Supported values: {supported}."
     INVALID_MONTHS = f"Invalid Premium duration: choose {', '.join(str(m) for m in sorted(PREMIUM_MONTHS_VALID))} months."
     INVALID_STARS_AMOUNT = (
@@ -73,14 +76,23 @@ class CookieError(ClientError):
 class FragmentAPIError(FragmentError):
     """Raised for errors returned by Fragment's API responses."""
 
-    NO_REQUEST_ID = "Fragment did not return a request ID for '{context}'. Your session may have expired. Refresh your cookies and try again."
+    NO_REQUEST_ID = (
+        "Fragment did not return a request ID for '{context}'. "
+        "Your session may have expired. Refresh your cookies and try again."
+    )
 
 
 class FragmentPageError(FragmentAPIError):
     """Raised when the Fragment page cannot be fetched or the API hash is not found."""
 
-    BAD_STATUS = "Fragment returned HTTP {status} when loading {url}. Your cookies may be invalid or expired. Refresh them and try again."
-    NOT_FOUND = "Could not extract the API hash from {url}. The page structure may have changed, or you may not be logged in. Refresh your cookies."
+    BAD_STATUS = (
+        "Fragment returned HTTP {status} when loading {url}. "
+        "Your cookies may be invalid or expired. Refresh them and try again."
+    )
+    NOT_FOUND = (
+        "Could not extract the API hash from {url}. "
+        "The page structure may have changed, or you may not be logged in. Refresh your cookies."
+    )
 
 
 class UserNotFoundError(FragmentAPIError):

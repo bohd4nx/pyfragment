@@ -107,7 +107,10 @@ class FragmentClient:
         await self._transport.aclose()
 
     def __repr__(self) -> str:
-        return f"FragmentClient(wallet_version='{self.wallet_version}', api_provider='{self.api_provider}', cookies={len(self.cookies)} keys)"
+        return (
+            f"FragmentClient(wallet_version='{self.wallet_version}', api_provider='{self.api_provider}', "
+            f"cookies={len(self.cookies)} keys)"
+        )
 
     async def purchase_premium(
         self,
