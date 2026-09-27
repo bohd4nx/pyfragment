@@ -75,6 +75,12 @@ def test_wallet_version_is_case_insensitive() -> None:
     assert client.wallet_version == "V5R1"
 
 
+@pytest.mark.parametrize("version", ["HighloadV2", "highloadv2", "HighloadV3R1", "HIGHLOADV3R1"])
+def test_wallet_version_highload_variants(version: str) -> None:
+    client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES, wallet_version=version)
+    assert client.wallet_version.lower() == version.lower()
+
+
 def test_unsupported_wallet_version_raises() -> None:
     with pytest.raises(ConfigurationError):
         FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES, wallet_version="V3R2")
@@ -162,3 +168,4 @@ def test_repr() -> None:
 async def test_async_context_manager() -> None:
     async with FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES) as client:
         assert isinstance(client, FragmentClient)
+

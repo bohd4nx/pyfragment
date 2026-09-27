@@ -67,7 +67,7 @@ STARS_GIVEAWAY_MAX: int = 1_000_000
 
 # Stars giveaway winner count
 STARS_WINNERS_MIN: int = 1
-STARS_WINNERS_MAX: int = 15
+STARS_WINNERS_MAX: int = 5
 
 # Premium giveaway winner count
 PREMIUM_WINNERS_MIN: int = 1

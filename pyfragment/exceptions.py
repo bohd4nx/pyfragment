@@ -76,6 +76,10 @@ class FragmentAPIError(FragmentError):
 class FragmentPageError(FragmentAPIError):
     """Raised when the Fragment page cannot be fetched or the API hash is not found."""
 
+    def __init__(self, message: str, status_code: int | None = None) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+
     BAD_STATUS = "Fragment returned HTTP {status} when loading {url}. Your cookies may be invalid or expired. Refresh them and try again."
     NOT_FOUND = "Could not extract the API hash from {url}. The page structure may have changed, or you may not be logged in. Refresh your cookies."
 
@@ -85,6 +89,9 @@ class UserNotFoundError(FragmentAPIError):
 
     NOT_FOUND = (
         "Telegram user '{username}' was not found on Fragment. Double-check the username and make sure the account exists."
+    )
+    CHANNEL_NOT_FOUND = (
+        "Telegram channel '{channel}' was not found on Fragment. Double-check the channel username and make sure it exists."
     )
     NOT_A_USER = "'{username}' does not belong to a user account. Make sure the username is assigned to a personal Telegram account, not a channel or bot."
 

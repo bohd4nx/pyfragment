@@ -36,16 +36,21 @@ def normalize_provider(api_provider: str) -> ApiProvider:
 
 
 def normalize_wallet_version(wallet_version: str) -> WalletVersion:
-    version = wallet_version.strip().upper()
-    try:
-        return WalletVersion(version)
-    except ValueError:
-        raise ConfigurationError(
-            ConfigurationError.UNSUPPORTED_VERSION.format(
-                version=version,
-                supported=", ".join(sorted(m.value for m in WalletVersion)),
-            )
+    version = wallet_version.strip()
+    for member in WalletVersion:
+        if member.value.lower() == version.lower():
+            return member
+    raise ConfigurationError(
+        ConfigurationError.UNSUPPORTED_VERSION.format(
+            version=version,
+            supported=", ".join(sorted(m.value for m in WalletVersion)),
         )
+    )
+
+
+def is_int_in_range(value: object, low: int, high: int) -> bool:
+    # bool is a subclass of int, but `True` is never a meaningful amount or count.
+    return isinstance(value, int) and not isinstance(value, bool) and low <= value <= high
 
 
 def validate_credentials(seed: str, api_key: str) -> None:

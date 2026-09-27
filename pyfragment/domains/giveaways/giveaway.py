@@ -16,6 +16,7 @@ from pyfragment.core.constants import (
     STARS_WINNERS_MAX,
     STARS_WINNERS_MIN,
 )
+from pyfragment.core.validation import is_int_in_range
 from pyfragment.domains.giveaways.models import PremiumGiveawayResult, StarsGiveawayResult
 from pyfragment.domains.payments import (
     cancel_invoice,
@@ -52,9 +53,9 @@ async def giveaway_stars(
     amount: int,
     payment_method: PaymentMethod = PaymentMethod.GRAM,
 ) -> StarsGiveawayResult:
-    if not isinstance(winners, int) or not (STARS_WINNERS_MIN <= winners <= STARS_WINNERS_MAX):
+    if not is_int_in_range(winners, STARS_WINNERS_MIN, STARS_WINNERS_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_WINNERS_STARS)
-    if not isinstance(amount, int) or not (STARS_GIVEAWAY_MIN <= amount <= STARS_GIVEAWAY_MAX):
+    if not is_int_in_range(amount, STARS_GIVEAWAY_MIN, STARS_GIVEAWAY_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_STARS_PER_WINNER)
     validate_payment_method(payment_method)
 
@@ -62,7 +63,7 @@ async def giveaway_stars(
         result = await client.call("searchStarsGiveawayRecipient", {"query": channel}, page_url=STARS_GIVEAWAY_PAGE)
         recipient = result.get("found", {}).get("recipient")
         if not recipient:
-            raise UserNotFoundError(UserNotFoundError.NOT_FOUND.format(username=channel))
+            raise UserNotFoundError(UserNotFoundError.CHANNEL_NOT_FOUND.format(channel=channel))
 
         await client.call(
             "updateStarsGiveawayState",
@@ -155,7 +156,7 @@ async def giveaway_premium(
     months: int = 3,
     payment_method: PaymentMethod = PaymentMethod.GRAM,
 ) -> PremiumGiveawayResult:
-    if not isinstance(winners, int) or not (PREMIUM_WINNERS_MIN <= winners <= PREMIUM_WINNERS_MAX):
+    if not is_int_in_range(winners, PREMIUM_WINNERS_MIN, PREMIUM_WINNERS_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_WINNERS_PREMIUM)
     if months not in PREMIUM_MONTHS_VALID:
         raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
@@ -169,7 +170,7 @@ async def giveaway_premium(
         )
         recipient = result.get("found", {}).get("recipient")
         if not recipient:
-            raise UserNotFoundError(UserNotFoundError.NOT_FOUND.format(username=channel))
+            raise UserNotFoundError(UserNotFoundError.CHANNEL_NOT_FOUND.format(channel=channel))
 
         await client.call(
             "updatePremiumGiveawayState",

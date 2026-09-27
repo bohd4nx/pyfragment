@@ -5,6 +5,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from pyfragment.core.constants import ADS_TOPUP_PAGE, DEVICE_INFO, GRAM_TOPUP_MAX, GRAM_TOPUP_MIN
+from pyfragment.core.validation import is_int_in_range
 from pyfragment.domains.ads.models import AdsRechargeResult
 from pyfragment.domains.payments import cancel_invoice, confirm_purchase, is_confirmed
 from pyfragment.exceptions import (
@@ -26,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 async def recharge_ads(client: FragmentClient, account: str, amount: int) -> AdsRechargeResult:
-    if not isinstance(amount, int) or not (GRAM_TOPUP_MIN <= amount <= GRAM_TOPUP_MAX):
+    if not is_int_in_range(amount, GRAM_TOPUP_MIN, GRAM_TOPUP_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_GRAM_AMOUNT)
 
     try:

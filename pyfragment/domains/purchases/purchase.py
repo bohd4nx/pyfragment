@@ -12,6 +12,7 @@ from pyfragment.core.constants import (
     STARS_PURCHASE_MAX,
     STARS_PURCHASE_MIN,
 )
+from pyfragment.core.validation import is_int_in_range
 from pyfragment.domains.payments import (
     cancel_invoice,
     confirm_purchase,
@@ -49,7 +50,7 @@ async def purchase_stars(
     show_sender: bool = True,
     payment_method: PaymentMethod = PaymentMethod.GRAM,
 ) -> StarsResult:
-    if not isinstance(amount, int) or not (STARS_PURCHASE_MIN <= amount <= STARS_PURCHASE_MAX):
+    if not is_int_in_range(amount, STARS_PURCHASE_MIN, STARS_PURCHASE_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_STARS_AMOUNT)
     validate_payment_method(payment_method)
 
