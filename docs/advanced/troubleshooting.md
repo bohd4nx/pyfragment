@@ -39,7 +39,8 @@ Actions:
 
 Symptoms:
 
-- low TON/USDT balance errors,
+- low TON/USDT balance errors (if the balance looks impossibly low, check the API key: a rejected key now raises
+  `WalletError` with the provider's message, e.g. `401 invalid token`),
 - broadcast failures,
 - duplicate seqno retries.
 
