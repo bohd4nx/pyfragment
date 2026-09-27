@@ -7,7 +7,7 @@ import pytest
 import pyfragment.domains.payments.flow as _flow_mod
 from pyfragment import ConfigurationError, FragmentClient, PremiumGiveawayResult, PremiumResult, UserNotFoundError
 from pyfragment.core.constants import PREMIUM_MONTHS_VALID, PREMIUM_WINNERS_MAX, PREMIUM_WINNERS_MIN
-from pyfragment.enums import PaymentMethod
+from pyfragment.enums import ApiMethod, PaymentMethod
 from pyfragment.exceptions import AlreadySubscribedError
 from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_BOC, FAKE_TX_HASH
 
@@ -86,10 +86,10 @@ async def test_purchase_premium_passes_payment_method(client: FragmentClient) ->
         await client.purchase_premium("@user", months=6, payment_method=PaymentMethod.USDT_GRAM)
 
     init_call = call_mock.await_args_list[2]
-    assert init_call.args[0] == "initGiftPremiumRequest"
-    assert init_call.args[1]["payment_method"] == "usdt_ton"
+    assert init_call.args[0] == ApiMethod.INIT_GIFT_PREMIUM_REQUEST
+    assert init_call.args[1]["payment_method"] == PaymentMethod.USDT_GRAM
     assert proc_mock.await_args is not None
-    assert proc_mock.await_args.kwargs["payment_method"] == "usdt_ton"
+    assert proc_mock.await_args.kwargs["payment_method"] == PaymentMethod.USDT_GRAM
 
 
 @pytest.mark.asyncio
@@ -120,7 +120,7 @@ async def test_purchase_premium_accepts_query_formats(client: FragmentClient, qu
             await client.purchase_premium(query, months=6)
 
     search_call = call_mock.await_args_list[0]
-    assert search_call.args[0] == "searchPremiumGiftRecipient"
+    assert search_call.args[0] == ApiMethod.SEARCH_PREMIUM_GIFT_RECIPIENT
     assert search_call.args[1]["query"] == query
 
 
@@ -221,10 +221,10 @@ async def test_giveaway_premium_passes_payment_method(client: FragmentClient) ->
         await client.giveaway_premium("@channel", winners=10, months=6, payment_method=PaymentMethod.USDT_GRAM)
 
     init_call = call_mock.await_args_list[3]
-    assert init_call.args[0] == "initGiveawayPremiumRequest"
-    assert init_call.args[1]["payment_method"] == "usdt_ton"
+    assert init_call.args[0] == ApiMethod.INIT_GIVEAWAY_PREMIUM_REQUEST
+    assert init_call.args[1]["payment_method"] == PaymentMethod.USDT_GRAM
     assert proc_mock.await_args is not None
-    assert proc_mock.await_args.kwargs["payment_method"] == "usdt_ton"
+    assert proc_mock.await_args.kwargs["payment_method"] == PaymentMethod.USDT_GRAM
 
 
 @pytest.mark.asyncio
@@ -236,7 +236,7 @@ async def test_giveaway_premium_accepts_query_formats(client: FragmentClient, qu
             await client.giveaway_premium(query, winners=10, months=3)
 
     search_call = call_mock.await_args_list[0]
-    assert search_call.args[0] == "searchPremiumGiveawayRecipient"
+    assert search_call.args[0] == ApiMethod.SEARCH_PREMIUM_GIVEAWAY_RECIPIENT
     assert search_call.args[1]["query"] == query
 
 

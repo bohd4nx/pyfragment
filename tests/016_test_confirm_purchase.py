@@ -5,11 +5,13 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from pyfragment import FragmentClient
+from pyfragment.core.constants import STARS_PAGE
 from pyfragment.domains.payments import confirm_purchase, is_confirmed, state_nonce
-from tests.shared import FAKE_ACCOUNT, FAKE_REQ_ID, FAKE_TX_BOC
+from pyfragment.enums import ApiMethod
+from tests.shared import FAKE_ACCOUNT, FAKE_CONFIRM_METHOD, FAKE_REQ_ID, FAKE_TX_BOC
 
-STATE_METHOD = "updateStarsBuyState"
-PAGE_URL = "https://fragment.com/stars/buy"
+STATE_METHOD = ApiMethod.UPDATE_STARS_BUY_STATE
+PAGE_URL = STARS_PAGE
 
 # state_nonce
 
@@ -44,7 +46,7 @@ def test_is_confirmed_false_when_none() -> None:
 
 @pytest.mark.asyncio
 async def test_confirm_purchase_posts_boc_to_confirm_method(client: FragmentClient) -> None:
-    transaction_data = {"confirm_method": "confirmReq", "confirm_params": {"id": FAKE_REQ_ID}}
+    transaction_data = {"confirm_method": FAKE_CONFIRM_METHOD, "confirm_params": {"id": FAKE_REQ_ID}}
     call_mock = AsyncMock(
         side_effect=[
             {"ok": True},  # confirmReq
@@ -56,7 +58,7 @@ async def test_confirm_purchase_posts_boc_to_confirm_method(client: FragmentClie
 
     assert response == {"ok": True, "need_update": False, "mode": "done"}
     confirm_call = call_mock.await_args_list[0]
-    assert confirm_call.args[0] == "confirmReq"
+    assert confirm_call.args[0] == FAKE_CONFIRM_METHOD
     assert confirm_call.args[1]["boc"] == FAKE_TX_BOC
     assert confirm_call.args[1]["id"] == FAKE_REQ_ID
 

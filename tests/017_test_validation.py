@@ -15,7 +15,7 @@ from pyfragment import (
 )
 from pyfragment.core.constants import STARS_WINNERS_MAX
 from pyfragment.core.validation import is_int_in_range
-from pyfragment.enums import AuctionFilter, AuctionSort, GiftAttribute
+from pyfragment.enums import AuctionFilter, AuctionSort, GiftAttribute, MarketplaceType
 
 # is_int_in_range
 
@@ -102,7 +102,7 @@ async def test_search_sends_normalized_sort_and_filter(
     sent = call_mock.await_args.args[1]
     assert sent.get("sort") == sent_sort
     assert sent["filter"] == sent_filter
-    assert sent["type"] == "usernames"
+    assert sent["type"] == MarketplaceType.USERNAMES
 
 
 @pytest.mark.asyncio

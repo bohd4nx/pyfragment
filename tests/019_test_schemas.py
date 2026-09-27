@@ -4,7 +4,7 @@ import pytest
 
 from pyfragment.enums import ApiError, StateMode
 from pyfragment.schemas import InvoiceRequest, PageState, RecipientSearch, TransactionLink, error_text, has_error
-from tests.shared import fixture_json
+from tests.shared import FAKE_CONFIRM_METHOD, fixture_json
 
 # error_text / has_error
 
@@ -80,8 +80,10 @@ def test_transaction_link_defaults() -> None:
 
 
 def test_transaction_link_reads_confirm_details() -> None:
-    link = TransactionLink.from_response({"need_verify": True, "confirm_method": "confirmReq", "confirm_params": {"id": "r1"}})
-    assert (link.need_verify, link.confirm_method, link.confirm_params) == (True, "confirmReq", {"id": "r1"})
+    link = TransactionLink.from_response(
+        {"need_verify": True, "confirm_method": FAKE_CONFIRM_METHOD, "confirm_params": {"id": "r1"}}
+    )
+    assert (link.need_verify, link.confirm_method, link.confirm_params) == (True, FAKE_CONFIRM_METHOD, {"id": "r1"})
 
 
 # PageState
@@ -113,4 +115,4 @@ def test_invoice_request_from_real_init_response() -> None:
 def test_transaction_link_from_real_link_response() -> None:
     link = TransactionLink.from_response(fixture_json("stars_transaction_link_response.json"))
 
-    assert (link.need_verify, link.confirm_method, link.confirm_params) == (False, "confirmReq", {"id": "REQ_ID"})
+    assert (link.need_verify, link.confirm_method, link.confirm_params) == (False, FAKE_CONFIRM_METHOD, {"id": "REQ_ID"})

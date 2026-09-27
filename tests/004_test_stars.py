@@ -14,7 +14,7 @@ from pyfragment.core.constants import (
     STARS_WINNERS_MAX,
     STARS_WINNERS_MIN,
 )
-from pyfragment.enums import PaymentMethod
+from pyfragment.enums import ApiMethod, PaymentMethod
 from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_BOC, FAKE_TX_HASH
 
 # Stars purchase validation tests
@@ -145,10 +145,10 @@ async def test_purchase_stars_passes_payment_method(client: FragmentClient) -> N
         await client.purchase_stars("@user", amount=500, payment_method=PaymentMethod.USDT_GRAM)
 
     init_call = call_mock.await_args_list[2]
-    assert init_call.args[0] == "initBuyStarsRequest"
-    assert init_call.args[1]["payment_method"] == "usdt_ton"
+    assert init_call.args[0] == ApiMethod.INIT_BUY_STARS_REQUEST
+    assert init_call.args[1]["payment_method"] == PaymentMethod.USDT_GRAM
     assert proc_mock.await_args is not None
-    assert proc_mock.await_args.kwargs["payment_method"] == "usdt_ton"
+    assert proc_mock.await_args.kwargs["payment_method"] == PaymentMethod.USDT_GRAM
 
 
 @pytest.mark.asyncio
@@ -160,7 +160,7 @@ async def test_purchase_stars_accepts_query_formats(client: FragmentClient, quer
             await client.purchase_stars(query, amount=500)
 
     search_call = call_mock.await_args_list[0]
-    assert search_call.args[0] == "searchStarsRecipient"
+    assert search_call.args[0] == ApiMethod.SEARCH_STARS_RECIPIENT
     assert search_call.args[1]["query"] == query
 
 
@@ -298,10 +298,10 @@ async def test_giveaway_stars_passes_payment_method(client: FragmentClient) -> N
         await client.giveaway_stars("@channel", winners=3, amount=1000, payment_method=PaymentMethod.USDT_GRAM)
 
     init_call = call_mock.await_args_list[3]
-    assert init_call.args[0] == "initGiveawayStarsRequest"
-    assert init_call.args[1]["payment_method"] == "usdt_ton"
+    assert init_call.args[0] == ApiMethod.INIT_GIVEAWAY_STARS_REQUEST
+    assert init_call.args[1]["payment_method"] == PaymentMethod.USDT_GRAM
     assert proc_mock.await_args is not None
-    assert proc_mock.await_args.kwargs["payment_method"] == "usdt_ton"
+    assert proc_mock.await_args.kwargs["payment_method"] == PaymentMethod.USDT_GRAM
 
 
 @pytest.mark.asyncio
@@ -313,7 +313,7 @@ async def test_giveaway_stars_accepts_query_formats(client: FragmentClient, quer
             await client.giveaway_stars(query, winners=1, amount=500)
 
     search_call = call_mock.await_args_list[0]
-    assert search_call.args[0] == "searchStarsGiveawayRecipient"
+    assert search_call.args[0] == ApiMethod.SEARCH_STARS_GIVEAWAY_RECIPIENT
     assert search_call.args[1]["query"] == query
 
 

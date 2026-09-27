@@ -6,6 +6,7 @@ import pytest
 
 from pyfragment import ConfigurationError, CookieError, FragmentClient
 from pyfragment.core.constants import BASE_HEADERS, MNEMONIC_WORD_COUNTS_VALID
+from pyfragment.enums import ApiProvider, WalletVersion
 from tests.shared import VALID_API_KEY, VALID_COOKIES, VALID_SEED
 
 # Client init tests
@@ -15,8 +16,8 @@ def test_valid_init() -> None:
     client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
     assert client.seed == VALID_SEED.strip()
     assert client.api_key == VALID_API_KEY
-    assert client.wallet_version == "V5R1"
-    assert client.api_provider == "tonapi"
+    assert client.wallet_version == WalletVersion.V5R1
+    assert client.api_provider == ApiProvider.TONAPI
 
 
 def test_default_headers_are_a_copy_not_shared_across_clients() -> None:
@@ -44,17 +45,17 @@ def test_custom_headers_are_copied_not_referenced() -> None:
 
 def test_api_provider_default_is_tonapi() -> None:
     client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
-    assert client.api_provider == "tonapi"
+    assert client.api_provider == ApiProvider.TONAPI
 
 
 def test_api_provider_toncenter() -> None:
     client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES, api_provider="toncenter")
-    assert client.api_provider == "toncenter"
+    assert client.api_provider == ApiProvider.TONCENTER
 
 
 def test_api_provider_is_case_insensitive() -> None:
     client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES, api_provider="TONAPI")
-    assert client.api_provider == "tonapi"
+    assert client.api_provider == ApiProvider.TONAPI
 
 
 def test_unsupported_api_provider_raises() -> None:
@@ -67,12 +68,12 @@ def test_unsupported_api_provider_raises() -> None:
 
 def test_wallet_version_v4r2() -> None:
     client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES, wallet_version="V4R2")
-    assert client.wallet_version == "V4R2"
+    assert client.wallet_version == WalletVersion.V4R2
 
 
 def test_wallet_version_is_case_insensitive() -> None:
     client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES, wallet_version="v5r1")
-    assert client.wallet_version == "V5R1"
+    assert client.wallet_version == WalletVersion.V5R1
 
 
 @pytest.mark.parametrize("version", ["HighloadV2", "highloadv2", "HighloadV3R1", "HIGHLOADV3R1"])
