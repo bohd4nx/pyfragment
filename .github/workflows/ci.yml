@@ -23,6 +23,8 @@ jobs:
 
     - run: ruff check . && ruff format --check . && mypy pyfragment --explicit-package-bases
 
+    - run: mypy $(git ls-files 'examples/*.py') --explicit-package-bases
+
   test:
     name: Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest

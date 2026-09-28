@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 from pyfragment.core.constants import BASE_HEADERS, DEFAULT_TIMEOUT, FRAGMENT_BASE_URL
 from pyfragment.core.validation import (
     normalize_provider,
+    normalize_seed,
     normalize_wallet_version,
     parse_cookies,
     validate_cookie_keys,
@@ -14,16 +16,16 @@ from pyfragment.domains.ads.models import AdsRechargeResult, AdsTopupResult
 from pyfragment.domains.ads.service import AdsService
 from pyfragment.domains.anonymous_numbers.models import LoginCodeResult, TerminateSessionsResult
 from pyfragment.domains.anonymous_numbers.service import AnonymousNumbersService
-from pyfragment.domains.base import raw_api_call
 from pyfragment.domains.giveaways.models import PremiumGiveawayResult, StarsGiveawayResult
 from pyfragment.domains.giveaways.service import GiveawaysService
 from pyfragment.domains.marketplace.models import GiftsResult, NumbersResult, UsernamesResult
 from pyfragment.domains.marketplace.service import MarketplaceService
 from pyfragment.domains.purchases.models import PremiumResult, StarsResult
 from pyfragment.domains.purchases.service import PurchasesService
-from pyfragment.enums import ApiProvider, PaymentMethod, WalletVersion
+from pyfragment.enums import ApiMethod, ApiProvider, AuctionFilter, AuctionSort, PaymentMethod, WalletVersion
 from pyfragment.services.tonapi.models import WalletInfo
 from pyfragment.services.tonapi.service import TonapiService
+from pyfragment.transport import FragmentTransport
 
 
 class FragmentClient:
@@ -43,6 +45,9 @@ class FragmentClient:
             or ``"toncenter"`` (t.me/toncenter).
         timeout: HTTP request timeout in seconds. Defaults to ``30.0``.
         headers: Custom HTTP request headers. If omitted, :data:`BASE_HEADERS` is used.
+
+    The client keeps one HTTP session and reuses it across calls. Use ``async with`` (or call
+    :meth:`aclose`) to release it when you are done.
 
     Raises:
         ConfigurationError: If ``seed``, ``api_key``, ``wallet_version``, or ``api_provider``
@@ -77,13 +82,14 @@ class FragmentClient:
         validate_cookie_keys(parsed_cookies)
         version = normalize_wallet_version(wallet_version)
 
-        self.seed: str = seed.strip()
+        self.seed: str = normalize_seed(seed)
         self.api_key: str = api_key.strip()
         self.api_provider: ApiProvider = provider
         self.cookies: dict[str, Any] = parsed_cookies
         self.wallet_version: WalletVersion = version
         self.timeout: float = timeout
-        self.headers: dict[str, str | None] = headers if headers is not None else BASE_HEADERS
+        self.headers: dict[str, str | None] = dict(headers) if headers is not None else dict(BASE_HEADERS)
+        self._transport = FragmentTransport(parsed_cookies, timeout, self.headers)
         self.marketplace = MarketplaceService(self)
         self.purchases = PurchasesService(self)
         self.giveaways = GiveawaysService(self)
@@ -95,10 +101,17 @@ class FragmentClient:
         return self
 
     async def __aexit__(self, *_: object) -> None:
-        pass
+        await self.aclose()
+
+    async def aclose(self) -> None:
+        """Close the underlying HTTP session. Called automatically when leaving ``async with``."""
+        await self._transport.aclose()
 
     def __repr__(self) -> str:
-        return f"FragmentClient(wallet_version='{self.wallet_version}', api_provider='{self.api_provider}', cookies={len(self.cookies)} keys)"
+        return (
+            f"FragmentClient(wallet_version='{self.wallet_version}', api_provider='{self.api_provider}', "
+            f"cookies={len(self.cookies)} keys)"
+        )
 
     async def purchase_premium(
         self,
@@ -169,7 +182,8 @@ class FragmentClient:
         """Return the address, state, and balances of the wallet.
 
         Returns:
-            :class:`WalletInfo` with ``address``, ``state``, ``gram_balance``, and ``usdt_balance``.
+            :class:`WalletInfo` with ``address``, ``state``, ``gram_balance``, and ``usdt_balance``
+            (``None`` if the USDT lookup failed).
         """
         return await self.tonapi.get_wallet()
 
@@ -184,7 +198,7 @@ class FragmentClient:
 
         Args:
             channel: Channel identifier — ``@channel``, ``channel``, or ``https://t.me/channel``.
-            winners: Number of winners — integer from ``1`` to ``15``.
+            winners: Number of winners — integer from ``1`` to ``5``.
             amount: Stars each winner receives — integer from ``500`` to ``1 000 000``.
             payment_method: Payment currency — defaults to ``PaymentMethod.GRAM``.
 
@@ -251,16 +265,18 @@ class FragmentClient:
     async def search_usernames(
         self,
         query: str = "",
-        sort: str | None = None,
-        filter: str | None = None,
+        sort: AuctionSort | str | None = None,
+        filter: AuctionFilter | str | None = None,
         offset_id: str | None = None,
     ) -> UsernamesResult:
         """Search the Fragment marketplace for Telegram usernames.
 
         Args:
             query: Search text. Omit or pass ``""`` to browse all.
-            sort: ``"price_desc"``, ``"price_asc"``, ``"listed"``, or ``"ending"``.
-            filter: ``"auction"``, ``"sale"``, ``"sold"``, or ``""`` (available).
+            sort: An :class:`AuctionSort` or its value: ``"price"`` (default), ``"price_desc"``,
+                ``"price_asc"``, ``"listed"``, or ``"ending"``.
+            filter: An :class:`AuctionFilter` or its value: ``""`` (available, default), ``"auction"``,
+                ``"sale"``, or ``"sold"``.
             offset_id: Pass :attr:`UsernamesResult.next_offset_id` to fetch the next page.
 
         Returns:
@@ -271,16 +287,18 @@ class FragmentClient:
     async def search_numbers(
         self,
         query: str = "",
-        sort: str | None = None,
-        filter: str | None = None,
+        sort: AuctionSort | str | None = None,
+        filter: AuctionFilter | str | None = None,
         offset_id: str | None = None,
     ) -> NumbersResult:
         """Search the Fragment marketplace for anonymous Telegram numbers.
 
         Args:
             query: Search text. Omit or pass ``""`` to browse all.
-            sort: ``"price_desc"``, ``"price_asc"``, ``"listed"``, or ``"ending"``.
-            filter: ``"auction"``, ``"sale"``, ``"sold"``, or ``""`` (available).
+            sort: An :class:`AuctionSort` or its value: ``"price"`` (default), ``"price_desc"``,
+                ``"price_asc"``, ``"listed"``, or ``"ending"``.
+            filter: An :class:`AuctionFilter` or its value: ``""`` (available, default), ``"auction"``,
+                ``"sale"``, or ``"sold"``.
             offset_id: Pass :attr:`NumbersResult.next_offset_id` to fetch the next page.
 
         Returns:
@@ -292,10 +310,10 @@ class FragmentClient:
         self,
         query: str = "",
         collection: str | None = None,
-        sort: str | None = None,
-        filter: str | None = None,
+        sort: AuctionSort | str | None = None,
+        filter: AuctionFilter | str | None = None,
         view: str | None = None,
-        attr: dict[str, list[str]] | None = None,
+        attr: Mapping[str, Sequence[str]] | None = None,
         offset: int | None = None,
     ) -> GiftsResult:
         """Search the Fragment gifts marketplace.
@@ -303,10 +321,13 @@ class FragmentClient:
         Args:
             query: Search text. Omit or pass ``""`` to browse all.
             collection: Gift collection slug (e.g. ``"artisanbrick"``).
-            sort: ``"price_desc"``, ``"price_asc"``, ``"listed"``, or ``"ending"``.
-            filter: ``"auction"``, ``"sale"``, ``"sold"``, or ``""`` (available).
+            sort: An :class:`AuctionSort` or its value: ``"price"`` (default), ``"price_desc"``,
+                ``"price_asc"``, ``"listed"``, or ``"ending"``.
+            filter: An :class:`AuctionFilter` or its value: ``""`` (available, default), ``"auction"``,
+                ``"sale"``, or ``"sold"``.
             view: Active attribute tab name (e.g. ``"Model"``).
-            attr: Attribute filters — e.g. ``{"Model": ["Foosball"], "Backdrop": ["Celtic Blue"]}``.
+            attr: Trait filters keyed by :class:`GiftAttribute` name (``Model``, ``Backdrop`` or ``Symbol``,
+                any casing) — e.g. ``{"Model": ["Foosball"], "Backdrop": ["Celtic Blue"]}``.
             offset: Pass :attr:`GiftsResult.next_offset` to fetch the next page.
 
         Returns:
@@ -317,7 +338,7 @@ class FragmentClient:
         )
 
     async def call(
-        self, method: str, data: dict[str, Any] | None = None, *, page_url: str = FRAGMENT_BASE_URL
+        self, method: ApiMethod | str, data: dict[str, Any] | None = None, *, page_url: str = FRAGMENT_BASE_URL
     ) -> dict[str, Any]:
         """Send a raw request to the Fragment API.
 
@@ -329,4 +350,4 @@ class FragmentClient:
         Returns:
             Raw parsed JSON response as a dict.
         """
-        return await raw_api_call(self.cookies, self.timeout, method, data, page_url, self.headers)
+        return await self._transport.call(method, data, page_url)

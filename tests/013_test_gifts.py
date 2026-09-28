@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from pyfragment import FragmentClient, GiftsResult
+from pyfragment.enums import MarketplaceType
 
 FAKE_GIFTS_HTML = """
 <div class="tm-catalog-grid">
@@ -90,7 +91,7 @@ async def test_search_gifts_with_collection_and_sort(client: FragmentClient) -> 
     assert call_data["collection"] == "plushpepe"
     assert call_data["sort"] == "price_desc"
     assert call_data["filter"] == "sold"
-    assert call_data["type"] == "gifts"
+    assert call_data["type"] == MarketplaceType.GIFTS
 
 
 @pytest.mark.asyncio
@@ -153,7 +154,7 @@ async def test_search_gifts_with_attr(client: FragmentClient) -> None:
     assert call_data["collection"] == "artisanbrick"
     assert call_data["sort"] == "listed"
     assert call_data["filter"] == "auction"
-    assert call_data["type"] == "gifts"
+    assert call_data["type"] == MarketplaceType.GIFTS
 
 
 @pytest.mark.asyncio

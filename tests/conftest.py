@@ -2,12 +2,13 @@
 
 import json
 import os
+from collections.abc import AsyncIterator
 from typing import cast
 
 import pytest
 
 import pyfragment.domains.ads.recharge  # noqa: F401
-import pyfragment.domains.ads.tonup  # noqa: F401
+import pyfragment.domains.ads.topup  # noqa: F401
 import pyfragment.domains.giveaways.giveaway  # noqa: F401
 import pyfragment.domains.purchases.purchase  # noqa: F401
 import pyfragment.services.tonapi.account  # noqa: F401
@@ -28,5 +29,6 @@ def cookies() -> dict[str, str]:
 
 
 @pytest.fixture
-def client() -> FragmentClient:
-    return FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
+async def client() -> AsyncIterator[FragmentClient]:
+    async with FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES) as fragment_client:
+        yield fragment_client

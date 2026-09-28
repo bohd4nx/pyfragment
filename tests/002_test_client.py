@@ -5,8 +5,9 @@ import json
 import pytest
 
 from pyfragment import ConfigurationError, CookieError, FragmentClient
-from pyfragment.core.constants import MNEMONIC_WORD_COUNTS_VALID
-from tests.shared import VALID_API_KEY, VALID_COOKIES, VALID_SEED
+from pyfragment.core.constants import BASE_HEADERS
+from pyfragment.enums import ApiProvider, WalletVersion
+from tests.shared import BIP39_SEED, VALID_API_KEY, VALID_COOKIES, VALID_SEED, VALID_SEED_12_WORDS
 
 # Client init tests
 
@@ -15,8 +16,28 @@ def test_valid_init() -> None:
     client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
     assert client.seed == VALID_SEED.strip()
     assert client.api_key == VALID_API_KEY
-    assert client.wallet_version == "V5R1"
-    assert client.api_provider == "tonapi"
+    assert client.wallet_version == WalletVersion.V5R1
+    assert client.api_provider == ApiProvider.TONAPI
+
+
+def test_default_headers_are_a_copy_not_shared_across_clients() -> None:
+    client_a = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
+    client_b = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
+
+    client_a.headers["x-test"] = "client-a"
+
+    assert client_a.headers is not BASE_HEADERS
+    assert "x-test" not in client_b.headers
+    assert "x-test" not in BASE_HEADERS
+
+
+def test_custom_headers_are_copied_not_referenced() -> None:
+    source = {"x-test": "source"}
+    client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES, headers=source)
+
+    client.headers["x-test"] = "changed"
+
+    assert source["x-test"] == "source"
 
 
 # API provider tests
@@ -24,17 +45,17 @@ def test_valid_init() -> None:
 
 def test_api_provider_default_is_tonapi() -> None:
     client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
-    assert client.api_provider == "tonapi"
+    assert client.api_provider == ApiProvider.TONAPI
 
 
 def test_api_provider_toncenter() -> None:
     client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES, api_provider="toncenter")
-    assert client.api_provider == "toncenter"
+    assert client.api_provider == ApiProvider.TONCENTER
 
 
 def test_api_provider_is_case_insensitive() -> None:
     client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES, api_provider="TONAPI")
-    assert client.api_provider == "tonapi"
+    assert client.api_provider == ApiProvider.TONAPI
 
 
 def test_unsupported_api_provider_raises() -> None:
@@ -47,12 +68,18 @@ def test_unsupported_api_provider_raises() -> None:
 
 def test_wallet_version_v4r2() -> None:
     client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES, wallet_version="V4R2")
-    assert client.wallet_version == "V4R2"
+    assert client.wallet_version == WalletVersion.V4R2
 
 
 def test_wallet_version_is_case_insensitive() -> None:
     client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES, wallet_version="v5r1")
-    assert client.wallet_version == "V5R1"
+    assert client.wallet_version == WalletVersion.V5R1
+
+
+@pytest.mark.parametrize("version", ["HighloadV2", "highloadv2", "HighloadV3R1", "HIGHLOADV3R1"])
+def test_wallet_version_highload_variants(version: str) -> None:
+    client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES, wallet_version=version)
+    assert client.wallet_version.lower() == version.lower()
 
 
 def test_unsupported_wallet_version_raises() -> None:
@@ -84,11 +111,30 @@ def test_invalid_mnemonic_length_raises() -> None:
         FragmentClient(seed=bad_seed, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
 
 
-def test_valid_mnemonic_lengths() -> None:
-    for length in sorted(MNEMONIC_WORD_COUNTS_VALID):
-        seed = " ".join(["abandon"] * (length - 1) + ["about"])
-        client = FragmentClient(seed=seed, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
-        assert len(client.seed.split()) == length
+@pytest.mark.parametrize(("seed", "length"), [(VALID_SEED_12_WORDS, 12), (VALID_SEED, 24)])
+def test_valid_mnemonic_lengths(seed: str, length: int) -> None:
+    client = FragmentClient(seed=seed, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
+    assert len(client.seed.split()) == length
+
+
+def test_seed_is_normalized() -> None:
+    messy = "  " + VALID_SEED.upper().replace(" ", "\n ", 3) + "\t"
+    client = FragmentClient(seed=messy, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
+    assert client.seed == VALID_SEED
+
+
+@pytest.mark.parametrize(
+    "seed",
+    [
+        BIP39_SEED,  # right length and words, but not a TON phrase
+        " ".join(VALID_SEED.split()[:-1] + ["abandon"]),  # one word replaced -> wrong checksum
+        " ".join(["notaword"] * 24),
+    ],
+    ids=["bip39", "wrong-word", "not-in-wordlist"],
+)
+def test_invalid_mnemonic_phrase_raises(seed: str) -> None:
+    with pytest.raises(ConfigurationError, match="not a valid TON wallet phrase"):
+        FragmentClient(seed=seed, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
 
 
 # API key validation tests
@@ -142,3 +188,10 @@ def test_repr() -> None:
 async def test_async_context_manager() -> None:
     async with FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES) as client:
         assert isinstance(client, FragmentClient)
+
+
+@pytest.mark.asyncio
+async def test_aclose_is_idempotent() -> None:
+    client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
+    await client.aclose()
+    await client.aclose()

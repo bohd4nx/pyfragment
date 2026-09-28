@@ -4,11 +4,10 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-import pyfragment.domains.giveaways.giveaway as _giveaway_premium_mod
-import pyfragment.domains.purchases.purchase as _purchase_premium_mod
+import pyfragment.domains.payments.flow as _flow_mod
 from pyfragment import ConfigurationError, FragmentClient, PremiumGiveawayResult, PremiumResult, UserNotFoundError
 from pyfragment.core.constants import PREMIUM_MONTHS_VALID, PREMIUM_WINNERS_MAX, PREMIUM_WINNERS_MIN
-from pyfragment.enums import PaymentMethod
+from pyfragment.enums import ApiMethod, PaymentMethod
 from pyfragment.exceptions import AlreadySubscribedError
 from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_BOC, FAKE_TX_HASH
 
@@ -33,6 +32,12 @@ async def test_purchase_premium_invalid_payment_method(client: FragmentClient) -
         await client.purchase_premium("@user", months=3, payment_method="btc")  # type: ignore[arg-type]
 
 
+@pytest.mark.asyncio
+async def test_purchase_premium_rejects_unimplemented_payment_method(client: FragmentClient) -> None:
+    with pytest.raises(ConfigurationError, match="Invalid payment method"):
+        await client.purchase_premium("@user", months=3, payment_method=PaymentMethod.USDC_ETH)
+
+
 # Premium purchase mocked tests
 
 
@@ -51,8 +56,8 @@ async def test_purchase_premium_success(client: FragmentClient) -> None:
                 ]
             ),
         ),
-        patch.object(_purchase_premium_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch.object(_purchase_premium_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
     ):
         result = await client.purchase_premium("@user", months=3)
 
@@ -75,16 +80,16 @@ async def test_purchase_premium_passes_payment_method(client: FragmentClient) ->
     proc_mock = AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))
     with (
         patch.object(client, "call", call_mock),
-        patch.object(_purchase_premium_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch.object(_purchase_premium_mod, "process_transaction", proc_mock),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "process_transaction", proc_mock),
     ):
         await client.purchase_premium("@user", months=6, payment_method=PaymentMethod.USDT_GRAM)
 
     init_call = call_mock.await_args_list[2]
-    assert init_call.args[0] == "initGiftPremiumRequest"
-    assert init_call.args[1]["payment_method"] == "usdt_ton"
+    assert init_call.args[0] == ApiMethod.INIT_GIFT_PREMIUM_REQUEST
+    assert init_call.args[1]["payment_method"] == PaymentMethod.USDT_GRAM
     assert proc_mock.await_args is not None
-    assert proc_mock.await_args.kwargs["payment_method"] == "usdt_ton"
+    assert proc_mock.await_args.kwargs["payment_method"] == PaymentMethod.USDT_GRAM
 
 
 @pytest.mark.asyncio
@@ -115,7 +120,7 @@ async def test_purchase_premium_accepts_query_formats(client: FragmentClient, qu
             await client.purchase_premium(query, months=6)
 
     search_call = call_mock.await_args_list[0]
-    assert search_call.args[0] == "searchPremiumGiftRecipient"
+    assert search_call.args[0] == ApiMethod.SEARCH_PREMIUM_GIFT_RECIPIENT
     assert search_call.args[1]["query"] == query
 
 
@@ -159,6 +164,12 @@ async def test_giveaway_premium_invalid_payment_method(client: FragmentClient) -
         await client.giveaway_premium("@channel", winners=10, months=3, payment_method="btc")  # type: ignore[arg-type]
 
 
+@pytest.mark.asyncio
+async def test_giveaway_premium_rejects_unimplemented_payment_method(client: FragmentClient) -> None:
+    with pytest.raises(ConfigurationError, match="Invalid payment method"):
+        await client.giveaway_premium("@channel", winners=10, months=3, payment_method=PaymentMethod.USDC_BASE)
+
+
 # Premium giveaway mocked tests
 
 
@@ -178,8 +189,8 @@ async def test_giveaway_premium_success(client: FragmentClient) -> None:
                 ]
             ),
         ),
-        patch.object(_giveaway_premium_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch.object(_giveaway_premium_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
     ):
         result = await client.giveaway_premium("@channel", winners=10, months=3)
 
@@ -204,16 +215,16 @@ async def test_giveaway_premium_passes_payment_method(client: FragmentClient) ->
     proc_mock = AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))
     with (
         patch.object(client, "call", call_mock),
-        patch.object(_giveaway_premium_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch.object(_giveaway_premium_mod, "process_transaction", proc_mock),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "process_transaction", proc_mock),
     ):
         await client.giveaway_premium("@channel", winners=10, months=6, payment_method=PaymentMethod.USDT_GRAM)
 
     init_call = call_mock.await_args_list[3]
-    assert init_call.args[0] == "initGiveawayPremiumRequest"
-    assert init_call.args[1]["payment_method"] == "usdt_ton"
+    assert init_call.args[0] == ApiMethod.INIT_GIVEAWAY_PREMIUM_REQUEST
+    assert init_call.args[1]["payment_method"] == PaymentMethod.USDT_GRAM
     assert proc_mock.await_args is not None
-    assert proc_mock.await_args.kwargs["payment_method"] == "usdt_ton"
+    assert proc_mock.await_args.kwargs["payment_method"] == PaymentMethod.USDT_GRAM
 
 
 @pytest.mark.asyncio
@@ -225,7 +236,7 @@ async def test_giveaway_premium_accepts_query_formats(client: FragmentClient, qu
             await client.giveaway_premium(query, winners=10, months=3)
 
     search_call = call_mock.await_args_list[0]
-    assert search_call.args[0] == "searchPremiumGiveawayRecipient"
+    assert search_call.args[0] == ApiMethod.SEARCH_PREMIUM_GIVEAWAY_RECIPIENT
     assert search_call.args[1]["query"] == query
 
 
@@ -262,7 +273,7 @@ async def test_purchase_premium_missing_req_id_raises(client: FragmentClient) ->
                 ]
             ),
         ),
-        patch.object(_purchase_premium_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
     ):
         with pytest.raises(FragmentAPIError):
             await client.purchase_premium("@user", months=3)
@@ -285,7 +296,7 @@ async def test_purchase_premium_need_verify_raises(client: FragmentClient) -> No
                 ]
             ),
         ),
-        patch.object(_purchase_premium_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
     ):
         with pytest.raises(VerificationError):
             await client.purchase_premium("@user", months=3)
@@ -311,7 +322,7 @@ async def test_giveaway_premium_missing_req_id_raises(client: FragmentClient) ->
                 ]
             ),
         ),
-        patch.object(_giveaway_premium_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
     ):
         with pytest.raises(FragmentAPIError):
             await client.giveaway_premium("@channel", winners=10, months=3)
@@ -335,7 +346,7 @@ async def test_giveaway_premium_need_verify_raises(client: FragmentClient) -> No
                 ]
             ),
         ),
-        patch.object(_giveaway_premium_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
     ):
         with pytest.raises(VerificationError):
             await client.giveaway_premium("@channel", winners=10, months=3)

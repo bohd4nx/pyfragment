@@ -4,8 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-import pyfragment.domains.giveaways.giveaway as _giveaway_stars_mod
-import pyfragment.domains.purchases.purchase as _purchase_stars_mod
+import pyfragment.domains.payments.flow as _flow_mod
 from pyfragment import ConfigurationError, FragmentClient, StarsGiveawayResult, StarsResult, UserNotFoundError
 from pyfragment.core.constants import (
     STARS_GIVEAWAY_MAX,
@@ -15,7 +14,7 @@ from pyfragment.core.constants import (
     STARS_WINNERS_MAX,
     STARS_WINNERS_MIN,
 )
-from pyfragment.enums import PaymentMethod
+from pyfragment.enums import ApiMethod, PaymentMethod
 from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_BOC, FAKE_TX_HASH
 
 # Stars purchase validation tests
@@ -45,6 +44,20 @@ async def test_purchase_stars_invalid_payment_method(client: FragmentClient) -> 
         await client.purchase_stars("@user", amount=500, payment_method="btc")  # type: ignore[arg-type]
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "payment_method",
+    [PaymentMethod.USDT_ETH, PaymentMethod.USDT_POL, PaymentMethod.USDC_ETH, PaymentMethod.USDC_BASE, PaymentMethod.USDC_POL],
+)
+async def test_purchase_stars_rejects_unimplemented_payment_method(
+    client: FragmentClient, payment_method: PaymentMethod
+) -> None:
+    # These are real PaymentMethod values, but process_transaction() has no broadcast/balance
+    # logic for non-TON chains yet - reject them before any network call, not deep in a broadcast failure.
+    with pytest.raises(ConfigurationError, match="Invalid payment method"):
+        await client.purchase_stars("@user", amount=500, payment_method=payment_method)
+
+
 # Stars purchase mocked tests
 
 
@@ -60,8 +73,8 @@ async def test_purchase_stars_success(client: FragmentClient) -> None:
     )
     with (
         patch.object(client, "call", call_mock),
-        patch.object(_purchase_stars_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch.object(_purchase_stars_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
     ):
         result = await client.purchase_stars("@user", amount=500)
 
@@ -83,11 +96,9 @@ async def test_purchase_stars_confirmed_reflects_fragment_state(client: Fragment
     )
     with (
         patch.object(client, "call", call_mock),
-        patch.object(_purchase_stars_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch.object(_purchase_stars_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
-        patch.object(
-            _purchase_stars_mod, "confirm_purchase", AsyncMock(return_value={"ok": True, "need_update": False, "mode": "done"})
-        ),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
+        patch.object(_flow_mod, "confirm_purchase", AsyncMock(return_value={"ok": True, "need_update": False, "mode": "done"})),
     ):
         result = await client.purchase_stars("@user", amount=500)
 
@@ -106,9 +117,9 @@ async def test_purchase_stars_not_confirmed_when_fragment_never_confirms(client:
     )
     with (
         patch.object(client, "call", call_mock),
-        patch.object(_purchase_stars_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch.object(_purchase_stars_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
-        patch.object(_purchase_stars_mod, "confirm_purchase", AsyncMock(return_value=None)),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
+        patch.object(_flow_mod, "confirm_purchase", AsyncMock(return_value=None)),
     ):
         result = await client.purchase_stars("@user", amount=500)
 
@@ -128,16 +139,16 @@ async def test_purchase_stars_passes_payment_method(client: FragmentClient) -> N
     proc_mock = AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))
     with (
         patch.object(client, "call", call_mock),
-        patch.object(_purchase_stars_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch.object(_purchase_stars_mod, "process_transaction", proc_mock),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "process_transaction", proc_mock),
     ):
         await client.purchase_stars("@user", amount=500, payment_method=PaymentMethod.USDT_GRAM)
 
     init_call = call_mock.await_args_list[2]
-    assert init_call.args[0] == "initBuyStarsRequest"
-    assert init_call.args[1]["payment_method"] == "usdt_ton"
+    assert init_call.args[0] == ApiMethod.INIT_BUY_STARS_REQUEST
+    assert init_call.args[1]["payment_method"] == PaymentMethod.USDT_GRAM
     assert proc_mock.await_args is not None
-    assert proc_mock.await_args.kwargs["payment_method"] == "usdt_ton"
+    assert proc_mock.await_args.kwargs["payment_method"] == PaymentMethod.USDT_GRAM
 
 
 @pytest.mark.asyncio
@@ -149,7 +160,7 @@ async def test_purchase_stars_accepts_query_formats(client: FragmentClient, quer
             await client.purchase_stars(query, amount=500)
 
     search_call = call_mock.await_args_list[0]
-    assert search_call.args[0] == "searchStarsRecipient"
+    assert search_call.args[0] == ApiMethod.SEARCH_STARS_RECIPIENT
     assert search_call.args[1]["query"] == query
 
 
@@ -205,6 +216,12 @@ async def test_giveaway_stars_invalid_payment_method(client: FragmentClient) -> 
         await client.giveaway_stars("@channel", winners=1, amount=500, payment_method="btc")  # type: ignore[arg-type]
 
 
+@pytest.mark.asyncio
+async def test_giveaway_stars_rejects_unimplemented_payment_method(client: FragmentClient) -> None:
+    with pytest.raises(ConfigurationError, match="Invalid payment method"):
+        await client.giveaway_stars("@channel", winners=1, amount=500, payment_method=PaymentMethod.USDT_POL)
+
+
 # Stars giveaway mocked tests
 
 
@@ -224,8 +241,8 @@ async def test_giveaway_stars_success(client: FragmentClient) -> None:
                 ]
             ),
         ),
-        patch.object(_giveaway_stars_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch.object(_giveaway_stars_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
     ):
         result = await client.giveaway_stars("@channel", winners=3, amount=1000)
 
@@ -252,11 +269,9 @@ async def test_giveaway_stars_confirmed_reflects_fragment_state(client: Fragment
                 ]
             ),
         ),
-        patch.object(_giveaway_stars_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch.object(_giveaway_stars_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
-        patch.object(
-            _giveaway_stars_mod, "confirm_purchase", AsyncMock(return_value={"ok": True, "need_update": False, "mode": "done"})
-        ),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
+        patch.object(_flow_mod, "confirm_purchase", AsyncMock(return_value={"ok": True, "need_update": False, "mode": "done"})),
     ):
         result = await client.giveaway_stars("@channel", winners=3, amount=1000)
 
@@ -277,16 +292,16 @@ async def test_giveaway_stars_passes_payment_method(client: FragmentClient) -> N
     proc_mock = AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))
     with (
         patch.object(client, "call", call_mock),
-        patch.object(_giveaway_stars_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch.object(_giveaway_stars_mod, "process_transaction", proc_mock),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "process_transaction", proc_mock),
     ):
         await client.giveaway_stars("@channel", winners=3, amount=1000, payment_method=PaymentMethod.USDT_GRAM)
 
     init_call = call_mock.await_args_list[3]
-    assert init_call.args[0] == "initGiveawayStarsRequest"
-    assert init_call.args[1]["payment_method"] == "usdt_ton"
+    assert init_call.args[0] == ApiMethod.INIT_GIVEAWAY_STARS_REQUEST
+    assert init_call.args[1]["payment_method"] == PaymentMethod.USDT_GRAM
     assert proc_mock.await_args is not None
-    assert proc_mock.await_args.kwargs["payment_method"] == "usdt_ton"
+    assert proc_mock.await_args.kwargs["payment_method"] == PaymentMethod.USDT_GRAM
 
 
 @pytest.mark.asyncio
@@ -298,7 +313,7 @@ async def test_giveaway_stars_accepts_query_formats(client: FragmentClient, quer
             await client.giveaway_stars(query, winners=1, amount=500)
 
     search_call = call_mock.await_args_list[0]
-    assert search_call.args[0] == "searchStarsGiveawayRecipient"
+    assert search_call.args[0] == ApiMethod.SEARCH_STARS_GIVEAWAY_RECIPIENT
     assert search_call.args[1]["query"] == query
 
 
@@ -333,7 +348,7 @@ async def test_purchase_stars_missing_req_id_raises(client: FragmentClient) -> N
                 ]
             ),
         ),
-        patch.object(_purchase_stars_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
     ):
         from pyfragment.exceptions import FragmentAPIError
 
@@ -356,7 +371,7 @@ async def test_purchase_stars_need_verify_raises(client: FragmentClient) -> None
                 ]
             ),
         ),
-        patch.object(_purchase_stars_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
     ):
         from pyfragment.exceptions import VerificationError
 
@@ -382,7 +397,7 @@ async def test_giveaway_stars_missing_req_id_raises(client: FragmentClient) -> N
                 ]
             ),
         ),
-        patch.object(_giveaway_stars_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
     ):
         from pyfragment.exceptions import FragmentAPIError
 
@@ -406,7 +421,7 @@ async def test_giveaway_stars_need_verify_raises(client: FragmentClient) -> None
                 ]
             ),
         ),
-        patch.object(_giveaway_stars_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
     ):
         from pyfragment.exceptions import VerificationError
 

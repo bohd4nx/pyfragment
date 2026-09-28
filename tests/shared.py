@@ -6,10 +6,34 @@ run giveaways, manage anonymous numbers, and explore the marketplace for usernam
 numbers, and gifts.
 """
 
+import json
+from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
+from unittest.mock import AsyncMock, MagicMock
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def fixture_html(name: str) -> str:
+    """Real fragment.com markup captured for the parser tests (see tests/fixtures/README.md)."""
+    return (FIXTURES / name).read_text()
+
+
+def fixture_json(name: str) -> dict[str, Any]:
+    result: dict[str, Any] = json.loads((FIXTURES / name).read_text())
+    return result
+
 
 # Credentials and config
-VALID_SEED: str = "abandon " * 23 + "about"
+# Throwaway TON mnemonics generated for the tests (the wallets are empty); they must pass the library's phrase check.
+VALID_SEED: str = (
+    "much faith taxi kiss brick siege egg can arrive there because genuine trash virus obtain direct bid liar flash group "
+    "liquid stay mean already"
+)
+VALID_SEED_12_WORDS: str = "range blast planet dove tonight tomato dream must vacuum asthma chimney shrimp"
+# A well-formed BIP39 phrase that is not a TON phrase: tonutils would derive some wallet from it without complaint.
+BIP39_SEED: str = "abandon " * 23 + "about"
 VALID_API_KEY: str = "A" * 68
 VALID_COOKIES: dict[str, str] = {
     "stel_ssid": "x",
@@ -22,6 +46,7 @@ VALID_COOKIES: dict[str, str] = {
 FAKE_HASH: str = "abc123"
 FAKE_RECIPIENT: str = "recipient_token"
 FAKE_REQ_ID: str = "req_42"
+FAKE_CONFIRM_METHOD: str = "confirmReq"  # named by Fragment in the transaction payload, not a fixed API method
 FAKE_TX_HASH: str = "deadbeef" * 8
 FAKE_TX_BOC: str = "te6ccgEBAQEAAgAAAA=="
 FAKE_ACCOUNT: dict[str, Any] = {"address": "0:abc", "publicKey": "pub", "chain": "-239", "walletStateInit": "base64=="}
@@ -29,6 +54,17 @@ FAKE_TRANSACTION: dict[str, Any] = {"transaction": {"messages": [{"address": "0:
 
 # client.call()
 FAKE_RESPONSE: dict[str, Any] = {"status": "ok", "data": {"value": 42}}
+
+
+def ton_client_with_account(balance: int, state: str = "active", error: Exception | None = None) -> MagicMock:
+    """A mocked tonutils client whose ``get_info`` reports the given on-chain account (or raises ``error``)."""
+    ton = MagicMock()
+    if error is not None:
+        ton.get_info = AsyncMock(side_effect=error)
+    else:
+        ton.get_info = AsyncMock(return_value=SimpleNamespace(balance=balance, state=SimpleNamespace(value=state)))
+    return ton
+
 
 # get_wallet()
 FAKE_ADDRESS: str = "UQCppfw5DxWgdVHf3zkmZS8k1mt9oAUYxQLwq2fz3nhO8No5"

@@ -1,21 +1,19 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from collections.abc import Mapping, Sequence
 
 from pyfragment.domains.base import BaseService
 from pyfragment.domains.marketplace.models import GiftsResult, NumbersResult, UsernamesResult
 from pyfragment.domains.marketplace.search import search_gifts, search_numbers, search_usernames
-
-if TYPE_CHECKING:
-    pass
+from pyfragment.enums import AuctionFilter, AuctionSort
 
 
 class MarketplaceService(BaseService):
     async def search_usernames(
         self,
         query: str = "",
-        sort: str | None = None,
-        filter: str | None = None,
+        sort: AuctionSort | str | None = None,
+        filter: AuctionFilter | str | None = None,
         offset_id: str | None = None,
     ) -> UsernamesResult:
         return await search_usernames(self._client, query, sort=sort, filter=filter, offset_id=offset_id)
@@ -23,8 +21,8 @@ class MarketplaceService(BaseService):
     async def search_numbers(
         self,
         query: str = "",
-        sort: str | None = None,
-        filter: str | None = None,
+        sort: AuctionSort | str | None = None,
+        filter: AuctionFilter | str | None = None,
         offset_id: str | None = None,
     ) -> NumbersResult:
         return await search_numbers(self._client, query, sort=sort, filter=filter, offset_id=offset_id)
@@ -33,10 +31,10 @@ class MarketplaceService(BaseService):
         self,
         query: str = "",
         collection: str | None = None,
-        sort: str | None = None,
-        filter: str | None = None,
+        sort: AuctionSort | str | None = None,
+        filter: AuctionFilter | str | None = None,
         view: str | None = None,
-        attr: dict[str, list[str]] | None = None,
+        attr: Mapping[str, Sequence[str]] | None = None,
         offset: int | None = None,
     ) -> GiftsResult:
         return await search_gifts(

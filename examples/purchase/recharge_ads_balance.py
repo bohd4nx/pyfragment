@@ -7,12 +7,8 @@ Your wallet must satisfy the current minimum GRAM (ex TON) threshold and transac
 
 import asyncio
 
-from pyfragment import (
-    AdsRechargeResult,
-    ConfigurationError,
-    FragmentClient,
-    WalletError,
-)
+from pyfragment import AdsRechargeResult, ConfigurationError, FragmentClient, FragmentError, WalletError
+from pyfragment.enums import ApiProvider, WalletVersion
 
 SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_API_KEY"  # tonconsole.com (tonapi, default) or t.me/toncenter
@@ -37,8 +33,8 @@ async def main() -> None:
         seed=SEED,
         api_key=API_KEY,
         cookies=COOKIES,
-        wallet_version="V5R1",  # or "V4R2", "HighloadV2", "HighloadV3R1"
-        api_provider="tonapi",  # or "toncenter"
+        wallet_version=WalletVersion.V5R1,  # or V4R2, HighloadV2, HighloadV3R1
+        api_provider=ApiProvider.TONAPI,  # or ApiProvider.TONCENTER
     ) as client:
         try:
             result: AdsRechargeResult = await client.recharge_ads(ACCOUNT, amount=AMOUNT)
@@ -48,8 +44,13 @@ async def main() -> None:
         except ConfigurationError as e:
             print(f"Invalid argument: {e}")
             return
+        except FragmentError as e:
+            print(f"Request failed: {e}")
+            return
 
-    print(f"{result.amount} GRAM (ex TON) recharged to Ads account {ACCOUNT} | tx: {result.transaction_id}")
+    print(
+        f"{result.amount} GRAM (ex TON) recharged to Ads account {ACCOUNT} | tx: {result.transaction_id} | confirmed: {result.confirmed}"
+    )
 
 
 if __name__ == "__main__":

@@ -1,16 +1,17 @@
 """
 Example: search the Fragment gifts marketplace.
 
-collection filters by gift type slug (e.g. "plushpepe", "swisswatch").
-sort can be "price_desc", "price_asc", "listed", or "ending".
-filter can be "", "auction", "sale", or "sold".
-Use next_offset for pagination.
+collection is a gift collection slug, the last part of its URL (fragment.com/gifts/bowtie -> "bowtie").
+sort is an AuctionSort: PRICE (default), PRICE_DESC, PRICE_ASC, LISTED or ENDING.
+filter is an AuctionFilter: AVAILABLE (default), AUCTION, SALE or SOLD.
+attr narrows a collection by trait: keys are GiftAttribute names (Model, Backdrop, Symbol).
+Gifts come 60 per page; pass next_offset back as offset for the next one (Fragment stops after 1 200 items).
 """
 
 import asyncio
-import json
 
-from pyfragment import FragmentClient, GiftsResult
+from pyfragment import AuctionFilter, AuctionSort, FragmentClient, GiftAttribute
+from pyfragment.enums import ApiProvider, WalletVersion
 
 SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_API_KEY"  # tonconsole.com (tonapi, default) or t.me/toncenter
@@ -27,9 +28,11 @@ COOKIES = {
 }
 
 QUERY = ""  # search text — or omit for all
-COLLECTION = "plushpepe"  # gift collection slug — or omit for all
-SORT = "price_desc"  # "price_desc", "price_asc", "listed", "ending" — or omit
-FILTER = ""  # "", "auction", "sale", "sold" — or omit
+COLLECTION = "bowtie"  # gift collection slug — or omit for all
+ATTR: dict[str, list[str]] = {GiftAttribute.MODEL: ["Bordeaux"]}  # trait filters — or omit
+SORT = AuctionSort.PRICE_DESC  # or omit
+FILTER = AuctionFilter.AVAILABLE  # or omit
+MAX_ITEMS = 120  # stop paging after this many items
 
 
 async def main() -> None:
@@ -37,16 +40,18 @@ async def main() -> None:
         seed=SEED,
         api_key=API_KEY,
         cookies=COOKIES,
-        wallet_version="V5R1",  # or "V4R2", "HighloadV2", "HighloadV3R1"
-        api_provider="tonapi",  # or "toncenter"
+        wallet_version=WalletVersion.V5R1,  # or V4R2, HighloadV2, HighloadV3R1
+        api_provider=ApiProvider.TONAPI,  # or ApiProvider.TONCENTER
     ) as client:
-        result: GiftsResult = await client.search_gifts(QUERY, collection=COLLECTION, sort=SORT, filter=FILTER)
+        offset = None
+        while True:
+            result = await client.search_gifts(QUERY, collection=COLLECTION, sort=SORT, filter=FILTER, attr=ATTR, offset=offset)
+            for gift in result.items:
+                print(f"{gift['name']:<28} {gift['status'] or '-':<12} {gift['price'] or '-':>10} GRAM")
 
-        print(f"Found {len(result.items)} result(s):")
-        print(json.dumps(result.items, indent=2))
-
-        if result.next_offset:
-            print(f"\nMore results available — next page offset: {result.next_offset}")
+            offset = result.next_offset
+            if offset is None or offset >= MAX_ITEMS:
+                break
 
 
 if __name__ == "__main__":

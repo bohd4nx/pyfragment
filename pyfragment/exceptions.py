@@ -29,7 +29,14 @@ class ConfigurationError(ClientError):
 
     MISSING_VARS = "Missing required parameter(s): {keys}."
     UNSUPPORTED_VERSION = "Unsupported wallet version '{version}'. Supported values: {supported}."
-    INVALID_MNEMONIC = f"Invalid mnemonic phrase: expected {', '.join(str(n) for n in sorted(MNEMONIC_WORD_COUNTS_VALID))} words, got {{count}}."
+    INVALID_MNEMONIC = (
+        f"Invalid mnemonic phrase: expected {', '.join(str(n) for n in sorted(MNEMONIC_WORD_COUNTS_VALID))} words, "
+        "got {count}."
+    )
+    INVALID_MNEMONIC_PHRASE = (
+        "Invalid mnemonic phrase: it is not a valid TON wallet phrase. Check for a misspelled or missing word and the word "
+        "order; BIP39 and password-protected phrases are not supported."
+    )
     UNSUPPORTED_PROVIDER = "Unsupported API provider '{provider}'. Supported values: {supported}."
     INVALID_MONTHS = f"Invalid Premium duration: choose {', '.join(str(m) for m in sorted(PREMIUM_MONTHS_VALID))} months."
     INVALID_STARS_AMOUNT = (
@@ -45,6 +52,9 @@ class ConfigurationError(ClientError):
     INVALID_STARS_PER_WINNER = (
         f"Invalid Stars per winner: must be an integer between {STARS_GIVEAWAY_MIN:,} and {STARS_GIVEAWAY_MAX:,}."
     )
+    INVALID_SORT = "Invalid sort order '{sort}'. Supported values: {supported}."
+    INVALID_FILTER = "Invalid filter '{filter}'. Supported values: {supported}."
+    INVALID_GIFT_ATTRIBUTE = "Invalid gift attribute '{attribute}'. Supported values: {supported}."
     INVALID_PAYMENT_METHOD = "Invalid payment method '{method}'. Supported values: {supported}."
 
 
@@ -70,14 +80,23 @@ class CookieError(ClientError):
 class FragmentAPIError(FragmentError):
     """Raised for errors returned by Fragment's API responses."""
 
-    NO_REQUEST_ID = "Fragment did not return a request ID for '{context}'. Your session may have expired. Refresh your cookies and try again."
+    NO_REQUEST_ID = (
+        "Fragment did not return a request ID for '{context}'. "
+        "Your session may have expired. Refresh your cookies and try again."
+    )
 
 
 class FragmentPageError(FragmentAPIError):
     """Raised when the Fragment page cannot be fetched or the API hash is not found."""
 
-    BAD_STATUS = "Fragment returned HTTP {status} when loading {url}. Your cookies may be invalid or expired. Refresh them and try again."
-    NOT_FOUND = "Could not extract the API hash from {url}. The page structure may have changed, or you may not be logged in. Refresh your cookies."
+    BAD_STATUS = (
+        "Fragment returned HTTP {status} when loading {url}. "
+        "Your cookies may be invalid or expired. Refresh them and try again."
+    )
+    NOT_FOUND = (
+        "Could not extract the API hash from {url}. "
+        "The page structure may have changed, or you may not be logged in. Refresh your cookies."
+    )
 
 
 class UserNotFoundError(FragmentAPIError):
@@ -86,7 +105,18 @@ class UserNotFoundError(FragmentAPIError):
     NOT_FOUND = (
         "Telegram user '{username}' was not found on Fragment. Double-check the username and make sure the account exists."
     )
-    NOT_A_USER = "'{username}' does not belong to a user account. Make sure the username is assigned to a personal Telegram account, not a channel or bot."
+    NOT_A_USER = (
+        "'{username}' does not belong to a user account: it either doesn't exist or is a channel or bot. "
+        "Make sure the username is assigned to a personal Telegram account."
+    )
+
+
+class ChannelNotFoundError(UserNotFoundError):
+    """Raised when the target Telegram channel is not found on Fragment."""
+
+    NOT_FOUND = (
+        "Telegram channel '{channel}' was not found on Fragment. Double-check the channel username and make sure it exists."
+    )
 
 
 class AlreadySubscribedError(FragmentAPIError):
@@ -170,6 +200,7 @@ __all__ = [
     "AnonymousNumberError",
     "AlreadySubscribedError",
     "UserNotFoundError",
+    "ChannelNotFoundError",
     "TransactionError",
     "ParseError",
     "VerificationError",

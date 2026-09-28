@@ -1,0 +1,18 @@
+{
+ "ok": true,
+ "transaction": {
+  "validUntil": 1790552821,
+  "from": "0:0000000000000000000000000000000000000000000000000000000000000000",
+  "messages": [
+   {
+    "address": "UQCFJEP4WZ_mpdo0_kMEmsTgvrMHG7K_tWY16pQhKHwoOtFz",
+    "amount": "460900000",
+    "payload": "te6ccgEBAQEAJwAASgAAAAA1MCBUZWxlZ3JhbSBTdGFycyAKClJlZiNrcEo1NWgzQlc="
+   }
+  ]
+ },
+ "confirm_method": "confirmReq",
+ "confirm_params": {
+  "id": "REQ_ID"
+ }
+}

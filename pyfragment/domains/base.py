@@ -1,40 +1,31 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from collections.abc import Iterator
+from contextlib import contextmanager
+from typing import TYPE_CHECKING
 
-from curl_cffi.requests import AsyncSession
-
-from pyfragment.core.constants import BASE_HEADERS
-from pyfragment.core.transport import fragment_request, get_fragment_hash
+from pyfragment.exceptions import FragmentError, UnexpectedError
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
 
-logger = logging.getLogger(__name__)
 
+@contextmanager
+def operation(logger: logging.Logger, description: str, *args: object) -> Iterator[None]:
+    """Log a failed Fragment operation once and normalize its errors.
 
-async def raw_api_call(
-    cookies: dict[str, Any],
-    timeout: float,
-    method: str,
-    data: dict[str, Any] | None,
-    page_url: str,
-    headers: dict[str, str | None] | None = None,
-) -> dict[str, Any]:
-    base = headers if headers is not None else BASE_HEADERS
-    payload = {"method": method, **(data or {})}
-    call_headers = {**base, "referer": page_url}
-    logger.debug("Starting Fragment API call '%s' on %s", method, page_url)
+    ``FragmentError`` subclasses are logged and re-raised untouched; anything else is wrapped in
+    ``UnexpectedError``. ``description`` is a %-style template completing "Failed to ...".
+    """
     try:
-        async with AsyncSession(cookies=cookies, timeout=timeout, impersonate="chrome") as session:
-            fragment_hash = await get_fragment_hash(session, page_url)
-            response = await fragment_request(session, fragment_hash, call_headers, payload)
-            logger.debug("Completed Fragment API call '%s' with response keys: %s", method, sorted(response.keys()))
-            return response
-    except Exception:
-        logger.exception("Failed to call Fragment API method '%s' on %s", method, page_url)
+        yield
+    except FragmentError as exc:
+        logger.error("Failed to " + description + ": %s", *args, exc, exc_info=True)
         raise
+    except Exception as exc:
+        logger.exception("Failed to " + description + " due to an unexpected error", *args)
+        raise UnexpectedError(UnexpectedError.UNEXPECTED.format(exc=exc)) from exc
 
 
 class BaseService:

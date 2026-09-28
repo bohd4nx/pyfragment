@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import json
 import logging
 from typing import TYPE_CHECKING
 
 from pyfragment.core.constants import (
-    DEVICE_INFO,
     PREMIUM_GIVEAWAY_PAGE,
     PREMIUM_MONTHS_VALID,
     PREMIUM_WINNERS_MAX,
@@ -16,32 +14,35 @@ from pyfragment.core.constants import (
     STARS_WINNERS_MAX,
     STARS_WINNERS_MIN,
 )
+from pyfragment.core.validation import is_int_in_range
+from pyfragment.domains.base import operation
 from pyfragment.domains.giveaways.models import PremiumGiveawayResult, StarsGiveawayResult
-from pyfragment.domains.payments import (
-    cancel_invoice,
-    confirm_purchase,
-    is_confirmed,
-    parse_required_payment_amount,
-    state_nonce,
-)
-from pyfragment.enums import PaymentMethod
-from pyfragment.exceptions import (
-    ConfigurationError,
-    FragmentAPIError,
-    FragmentError,
-    TransactionError,
-    UnexpectedError,
-    UserNotFoundError,
-    VerificationError,
-)
-from pyfragment.services.tonapi.account import get_account_info
-from pyfragment.services.tonapi.transaction import process_transaction
+from pyfragment.domains.payments import PurchaseFlow, new_state_params, run_purchase, validate_payment_method
+from pyfragment.domains.recipients import find_channel
+from pyfragment.enums import ApiMethod, PaymentMethod
+from pyfragment.exceptions import ConfigurationError
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
 
 
 logger = logging.getLogger(__name__)
+
+STARS_GIVEAWAY_FLOW = PurchaseFlow(
+    page_url=STARS_GIVEAWAY_PAGE,
+    state_method=ApiMethod.UPDATE_STARS_GIVEAWAY_STATE,
+    init_method=ApiMethod.INIT_GIVEAWAY_STARS_REQUEST,
+    link_method=ApiMethod.GET_GIVEAWAY_STARS_LINK,
+    label="Stars giveaway",
+)
+
+PREMIUM_GIVEAWAY_FLOW = PurchaseFlow(
+    page_url=PREMIUM_GIVEAWAY_PAGE,
+    state_method=ApiMethod.UPDATE_PREMIUM_GIVEAWAY_STATE,
+    init_method=ApiMethod.INIT_GIVEAWAY_PREMIUM_REQUEST,
+    link_method=ApiMethod.GET_GIVEAWAY_PREMIUM_LINK,
+    label="Premium giveaway",
+)
 
 
 async def giveaway_stars(
@@ -51,106 +52,47 @@ async def giveaway_stars(
     amount: int,
     payment_method: PaymentMethod = PaymentMethod.GRAM,
 ) -> StarsGiveawayResult:
-    if not isinstance(winners, int) or not (STARS_WINNERS_MIN <= winners <= STARS_WINNERS_MAX):
+    if not is_int_in_range(winners, STARS_WINNERS_MIN, STARS_WINNERS_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_WINNERS_STARS)
-    if not isinstance(amount, int) or not (STARS_GIVEAWAY_MIN <= amount <= STARS_GIVEAWAY_MAX):
+    if not is_int_in_range(amount, STARS_GIVEAWAY_MIN, STARS_GIVEAWAY_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_STARS_PER_WINNER)
-    if not any(payment_method == m for m in PaymentMethod):
-        raise ConfigurationError(
-            ConfigurationError.INVALID_PAYMENT_METHOD.format(
-                method=payment_method,
-                supported=", ".join(sorted(m.value for m in PaymentMethod)),
-            )
-        )
+    validate_payment_method(payment_method)
 
-    try:
-        result = await client.call("searchStarsGiveawayRecipient", {"query": channel}, page_url=STARS_GIVEAWAY_PAGE)
-        recipient = result.get("found", {}).get("recipient")
-        if not recipient:
-            raise UserNotFoundError(UserNotFoundError.NOT_FOUND.format(username=channel))
-
-        await client.call(
-            "updateStarsGiveawayState",
-            {"mode": "new", "lv": "false", "dh": state_nonce()},
-            page_url=STARS_GIVEAWAY_PAGE,
+    with operation(
+        logger,
+        "run Stars giveaway for channel '%s' (winners=%s, amount=%s, payment_method='%s')",
+        channel,
+        winners,
+        amount,
+        payment_method,
+    ):
+        recipient = await find_channel(
+            client, ApiMethod.SEARCH_STARS_GIVEAWAY_RECIPIENT, STARS_GIVEAWAY_FLOW.page_url, {"query": channel}, channel
         )
+        await client.call(STARS_GIVEAWAY_FLOW.state_method, new_state_params(), page_url=STARS_GIVEAWAY_FLOW.page_url)
         await client.call(
-            "updateStarsGiveawayPrices",
+            ApiMethod.UPDATE_STARS_GIVEAWAY_PRICES,
             {"quantity": winners, "stars": amount},
-            page_url=STARS_GIVEAWAY_PAGE,
+            page_url=STARS_GIVEAWAY_FLOW.page_url,
         )
-
-        result = await client.call(
-            "initGiveawayStarsRequest",
+        receipt = await run_purchase(
+            client,
+            STARS_GIVEAWAY_FLOW,
             {
                 "recipient": recipient,
                 "quantity": str(winners),
                 "stars": str(amount),
                 "payment_method": payment_method,
             },
-            page_url=STARS_GIVEAWAY_PAGE,
-        )
-        required_payment_amount = parse_required_payment_amount(result)
-        req_id = result.get("req_id")
-        if not req_id:
-            if result.get("error"):
-                raise FragmentAPIError(str(result["error"]))
-            raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="Stars giveaway"))
-
-        try:
-            account = await get_account_info(client)
-            transaction = await client.call(
-                "getGiveawayStarsLink",
-                {
-                    "account": json.dumps(account),
-                    "device": json.dumps(DEVICE_INFO),
-                    "transaction": 1,
-                    "id": req_id,
-                },
-                page_url=STARS_GIVEAWAY_PAGE,
-            )
-            if transaction.get("need_verify"):
-                raise VerificationError(VerificationError.KYC_REQUIRED)
-
-            tx_hash, tx_boc = await process_transaction(
-                client,
-                transaction,
-                payment_method=payment_method,
-                required_payment_amount=required_payment_amount,
-            )
-        except TransactionError:
-            # The broadcast itself may or may not have reached the chain; leave the invoice alone.
-            raise
-        except Exception:
-            await cancel_invoice(client, req_id, STARS_GIVEAWAY_PAGE)
-            raise
-        state_response = await confirm_purchase(
-            client, account, tx_boc, transaction, "updateStarsGiveawayState", STARS_GIVEAWAY_PAGE
+            payment_method=payment_method,
         )
         return StarsGiveawayResult(
-            transaction_id=tx_hash, channel=channel, winners=winners, amount=amount, confirmed=is_confirmed(state_response)
+            transaction_id=receipt.transaction_id,
+            channel=channel,
+            winners=winners,
+            amount=amount,
+            confirmed=receipt.confirmed,
         )
-
-    except FragmentError as exc:
-        logger.error(
-            "Failed to run Stars giveaway for channel '%s' (winners=%s, amount=%s, payment_method='%s'): %s",
-            channel,
-            winners,
-            amount,
-            payment_method,
-            exc,
-            exc_info=True,
-        )
-        raise
-    except Exception as exc:
-        logger.exception(
-            "Failed to run Stars giveaway for channel '%s' (winners=%s, amount=%s, payment_method='%s') due to an unexpected error",
-            channel,
-            winners,
-            amount,
-            payment_method,
-        )
-        raise UnexpectedError(UnexpectedError.UNEXPECTED.format(exc=exc)) from exc
 
 
 async def giveaway_premium(
@@ -160,112 +102,52 @@ async def giveaway_premium(
     months: int = 3,
     payment_method: PaymentMethod = PaymentMethod.GRAM,
 ) -> PremiumGiveawayResult:
-    if not isinstance(winners, int) or not (PREMIUM_WINNERS_MIN <= winners <= PREMIUM_WINNERS_MAX):
+    if not is_int_in_range(winners, PREMIUM_WINNERS_MIN, PREMIUM_WINNERS_MAX):
         raise ConfigurationError(ConfigurationError.INVALID_WINNERS_PREMIUM)
     if months not in PREMIUM_MONTHS_VALID:
         raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
-    if not any(payment_method == m for m in PaymentMethod):
-        raise ConfigurationError(
-            ConfigurationError.INVALID_PAYMENT_METHOD.format(
-                method=payment_method,
-                supported=", ".join(sorted(m.value for m in PaymentMethod)),
-            )
-        )
+    validate_payment_method(payment_method)
 
-    try:
-        result = await client.call(
-            "searchPremiumGiveawayRecipient",
+    with operation(
+        logger,
+        "run Premium giveaway for channel '%s' (winners=%s, months=%s, payment_method='%s')",
+        channel,
+        winners,
+        months,
+        payment_method,
+    ):
+        recipient = await find_channel(
+            client,
+            ApiMethod.SEARCH_PREMIUM_GIVEAWAY_RECIPIENT,
+            PREMIUM_GIVEAWAY_FLOW.page_url,
             {"query": channel, "quantity": winners, "months": months},
-            page_url=PREMIUM_GIVEAWAY_PAGE,
-        )
-        recipient = result.get("found", {}).get("recipient")
-        if not recipient:
-            raise UserNotFoundError(UserNotFoundError.NOT_FOUND.format(username=channel))
-
-        await client.call(
-            "updatePremiumGiveawayState",
-            {
-                "mode": "new",
-                "lv": "false",
-                "dh": state_nonce(),
-                "quantity": "",
-            },
-            page_url=PREMIUM_GIVEAWAY_PAGE,
+            channel,
         )
         await client.call(
-            "updatePremiumGiveawayPrices",
+            PREMIUM_GIVEAWAY_FLOW.state_method,
+            new_state_params(quantity=""),
+            page_url=PREMIUM_GIVEAWAY_FLOW.page_url,
+        )
+        await client.call(
+            ApiMethod.UPDATE_PREMIUM_GIVEAWAY_PRICES,
             {"quantity": winners},
-            page_url=PREMIUM_GIVEAWAY_PAGE,
+            page_url=PREMIUM_GIVEAWAY_FLOW.page_url,
         )
-
-        result = await client.call(
-            "initGiveawayPremiumRequest",
+        receipt = await run_purchase(
+            client,
+            PREMIUM_GIVEAWAY_FLOW,
             {
                 "recipient": recipient,
                 "quantity": str(winners),
                 "months": str(months),
                 "payment_method": payment_method,
             },
-            page_url=PREMIUM_GIVEAWAY_PAGE,
-        )
-        required_payment_amount = parse_required_payment_amount(result)
-        req_id = result.get("req_id")
-        if not req_id:
-            if result.get("error"):
-                raise FragmentAPIError(str(result["error"]))
-            raise FragmentAPIError(FragmentAPIError.NO_REQUEST_ID.format(context="Premium giveaway"))
-
-        try:
-            account = await get_account_info(client)
-            transaction = await client.call(
-                "getGiveawayPremiumLink",
-                {
-                    "account": json.dumps(account),
-                    "device": json.dumps(DEVICE_INFO),
-                    "transaction": 1,
-                    "id": req_id,
-                },
-                page_url=PREMIUM_GIVEAWAY_PAGE,
-            )
-            if transaction.get("need_verify"):
-                raise VerificationError(VerificationError.KYC_REQUIRED)
-
-            tx_hash, tx_boc = await process_transaction(
-                client,
-                transaction,
-                payment_method=payment_method,
-                required_payment_amount=required_payment_amount,
-            )
-        except TransactionError:
-            # The broadcast itself may or may not have reached the chain; leave the invoice alone.
-            raise
-        except Exception:
-            await cancel_invoice(client, req_id, PREMIUM_GIVEAWAY_PAGE)
-            raise
-        state_response = await confirm_purchase(
-            client, account, tx_boc, transaction, "updatePremiumGiveawayState", PREMIUM_GIVEAWAY_PAGE
+            payment_method=payment_method,
         )
         return PremiumGiveawayResult(
-            transaction_id=tx_hash, channel=channel, winners=winners, amount=months, confirmed=is_confirmed(state_response)
+            transaction_id=receipt.transaction_id,
+            channel=channel,
+            winners=winners,
+            amount=months,
+            confirmed=receipt.confirmed,
         )
-
-    except FragmentError as exc:
-        logger.error(
-            "Failed to run Premium giveaway for channel '%s' (winners=%s, months=%s, payment_method='%s'): %s",
-            channel,
-            winners,
-            months,
-            payment_method,
-            exc,
-            exc_info=True,
-        )
-        raise
-    except Exception as exc:
-        logger.exception(
-            "Failed to run Premium giveaway for channel '%s' (winners=%s, months=%s, payment_method='%s') due to an unexpected error",
-            channel,
-            winners,
-            months,
-            payment_method,
-        )
-        raise UnexpectedError(UnexpectedError.UNEXPECTED.format(exc=exc)) from exc

@@ -8,8 +8,8 @@ Channel can be "@channel", "channel", or "https://t.me/channel".
 
 import asyncio
 
-from pyfragment import ConfigurationError, FragmentClient, UserNotFoundError
-from pyfragment.enums import PaymentMethod
+from pyfragment import ChannelNotFoundError, ConfigurationError, FragmentClient, FragmentError, WalletError
+from pyfragment.enums import ApiProvider, PaymentMethod, WalletVersion
 
 SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_API_KEY"  # tonconsole.com (tonapi, default) or t.me/toncenter
@@ -28,7 +28,7 @@ COOKIES = {
 CHANNEL = "https://t.me/channel"
 WINNERS = 10  # 1–24 000
 MONTHS = 3  # 3, 6 or 12
-PAYMENT_METHOD = PaymentMethod.GRAM  # GRAM, USDT_GRAM, USDT_ETH, USDT_POL, USDC_ETH, USDC_BASE, USDC_POL
+PAYMENT_METHOD = PaymentMethod.GRAM  # PaymentMethod.GRAM or PaymentMethod.USDT_GRAM
 
 
 async def main() -> None:
@@ -36,8 +36,8 @@ async def main() -> None:
         seed=SEED,
         api_key=API_KEY,
         cookies=COOKIES,
-        wallet_version="V5R1",  # or "V4R2", "HighloadV2", "HighloadV3R1"
-        api_provider="tonapi",  # or "toncenter"
+        wallet_version=WalletVersion.V5R1,  # or V4R2, HighloadV2, HighloadV3R1
+        api_provider=ApiProvider.TONAPI,  # or ApiProvider.TONCENTER
     ) as client:
         try:
             result = await client.giveaway_premium(
@@ -46,15 +46,21 @@ async def main() -> None:
                 months=MONTHS,
                 payment_method=PAYMENT_METHOD,
             )
-        except UserNotFoundError:
+        except ChannelNotFoundError:
             print(f"Channel {CHANNEL} was not found on fragment.com — check the username and try again.")
             return
         except ConfigurationError as e:
             print(f"Invalid argument: {e}")
             return
+        except WalletError as e:
+            print(f"Wallet problem (balance or blockchain provider): {e}")
+            return
+        except FragmentError as e:
+            print(f"Request failed: {e}")
+            return
 
     print(
-        f"Premium giveaway created for {result.channel} — {result.winners} winner(s) × {result.amount} months each | tx: {result.transaction_id}"
+        f"Premium giveaway created for {result.channel} — {result.winners} winner(s) × {result.amount} months each | tx: {result.transaction_id} | confirmed: {result.confirmed}"
     )
 
 

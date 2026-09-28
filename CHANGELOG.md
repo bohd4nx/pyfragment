@@ -11,6 +11,109 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ---
 
+## [2026.4.0] — 2026-09-28
+
+### Added
+
+- **Enums instead of string literals**, exported from `pyfragment` and `pyfragment.enums`:
+  - `AuctionSort`, `AuctionFilter` and `GiftAttribute` for marketplace searches (plain strings are still accepted);
+  - `ApiMethod` (every Fragment `/api` method the library calls), `ApiError` (known Fragment error texts),
+    `StateMode` and `MarketplaceType`. `client.call()` accepts an `ApiMethod` or any method name.
+- **`AuctionItem`**, a `TypedDict` for marketplace items (`slug`, `name`, `status`, `price`, `date`). Items are
+  still plain dicts at runtime.
+- **`ChannelNotFoundError`** (a `UserNotFoundError` subclass), raised by giveaways when the channel doesn't exist.
+- **`FragmentClient.aclose()`** closes the HTTP session; leaving `async with FragmentClient(...)` calls it.
+- **`pyfragment.schemas`**: typed views of Fragment's response bodies (`RecipientSearch`, `InvoiceRequest`,
+  `TransactionLink`, `PageState`) plus `error_text()` and `has_error()`.
+- `SUPPORTED_PAYMENT_METHODS` is exported from the package root.
+- **Live contract checks**: `tests/018_test_contract.py` (opt-in with `FRAGMENT_LIVE=1`) and a weekly `Contract`
+  workflow verify against fragment.com that the API hash is still discoverable and that limits, payment methods,
+  sort/filter values, gift traits and error texts still match what the library assumes.
+- Parser and purchase-flow tests run against real, trimmed fragment.com responses (`tests/fixtures/`).
+- CI type-checks the examples too, so they can't drift from the API. The GitHub Actions in the workflows are
+  up to date (`setup-uv` v10, `action-gh-release` v3.0.3).
+- `tests/021_test_signing.py` signs real Fragment payloads (GRAM and USDT) with a throwaway wallet and verifies the
+  broadcast message: valid signature for the wallet's key, right destination, amount and comment, jetton body untouched.
+
+### Changed
+
+- **The seed phrase is validated when the client is created.** tonutils only rejects words outside the wordlist: a
+  phrase with a wrong checksum, a BIP39-style phrase or a password-protected one silently derives a *different*
+  wallet, which showed up much later as an empty balance. `FragmentClient` now raises `ConfigurationError` for anything
+  that isn't a valid TON phrase. The phrase is also normalized (lower-cased, whitespace collapsed): `Word` used to
+  derive another wallet than `word`.
+- **Much faster and lighter on Fragment.** The client keeps one HTTP session and caches the API hash per page, so a
+  call is a single POST instead of a page load plus a POST on a fresh connection (about 8x faster after the first
+  call, far fewer requests per purchase, less risk of rate limiting). A rejected hash (Fragment answers
+  `200 {"error": "Bad request"}`) is refreshed and the call retried once.
+- **Marketplace searches are validated.** Fragment silently ignores unknown `sort`, `filter` and gift trait names
+  and returns the default listing, so a typo used to give quietly wrong results. They now raise
+  `ConfigurationError`. `"price"`, Fragment's default order, is a valid `sort`.
+- **`search_gifts(attr=...)`** takes any `Mapping[str, Sequence[str]]`; trait names (`Model`, `Backdrop`,
+  `Symbol`) are matched case-insensitively and sent the way Fragment expects. `{"model": [...]}` used to filter nothing.
+- **One purchase engine.** Stars, Premium, both giveaways, GRAM topup and Ads recharge share a single
+  search/init/sign/broadcast/confirm implementation instead of six copies. Two visible consequences: `recharge_ads()`
+  now also checks the wallet against Fragment's invoice amount like every other flow, and `topup_gram()` reports a
+  channel or bot recipient as `UserNotFoundError` like Stars and Premium.
+- **Better recipient errors.** "Already subscribed to Premium" now raises `AlreadySubscribedError` at recipient
+  lookup, where it used to look like a missing user. Unrelated errors (expired session, rate limit, ...) surface as
+  `FragmentAPIError` instead of posing as "not found". `UserNotFoundError.NOT_A_USER` says the username may simply
+  not exist, because Fragment answers unknown usernames and channels/bots identically.
+- `WalletInfo.usdt_balance` is `float | None`: `None` means the USDT lookup failed (it used to be reported as `0.0`).
+  The GRAM balance is still returned.
+- `FragmentClient.headers` is always a copy, so mutating one client's headers no longer leaks into `BASE_HEADERS`
+  and other clients.
+- **Internal layout** (import paths of internals changed, see *Removed*):
+  - the HTTP layer is the `pyfragment.transport` package (`page`, `api`, `session`);
+  - `pyfragment.domains.payments` is a package (`validation`, `state`, `confirmation`, `flow`);
+  - `ads/tonup.py` is now `ads/topup.py`;
+  - magic numbers and codes live in `core.constants` (`NANO_PER_GRAM`, `USDT_UNITS`, `MAINNET_CHAIN_ID`,
+    `FRAGMENT_API_URL`, retry limits) and `http.HTTPStatus`.
+- The marketplace parsers were re-checked against about 17 600 real listings and simplified.
+- Examples use the enums, handle errors the same way (specific errors first, `FragmentError` last) and show `confirmed`;
+  the gifts example pages through results.
+
+### Removed
+
+- **Invoice cancellation.** After a failed purchase the client called Fragment's `cancelInvoice`, but Fragment
+  answers "Bad request" to it for every GRAM/USDT invoice (checked on a live invoice with a connected wallet), so it
+  never did anything. Abandoned invoices expire on their own; the extra request and the `ApiMethod.CANCEL_INVOICE`
+  member are gone.
+- `pyfragment.core.transport`: use `pyfragment.transport`.
+- `pyfragment.domains.base.raw_api_call()`, an internal one-shot helper that nothing used: send raw requests with
+  `FragmentClient.call()`.
+- `parse_required_payment_amount()`: use `pyfragment.schemas.InvoiceRequest.amount`.
+
+### Fixed
+
+- **`get_wallet()` and the pre-broadcast balance check reported an empty wallet when the blockchain provider failed.**
+  tonutils' `wallet.refresh()` answers *any* provider error (invalid API key, outage, timeout) with "nonexistent
+  account, zero balance", so a bad key looked like an empty wallet ("0.0000 GRAM available"). The wallet state is now
+  read with `client.get_info()`, and provider failures surface as `WalletError` with the provider's message.
+- **A zero USDT balance was not recognised on toncenter.** For an owner without a USDT jetton wallet tonapi answers
+  404 but toncenter a TVM exit code -13; only the former counted as `0.0`, so toncenter users got
+  `usdt_balance=None` from `get_wallet()` and a "failed to fetch USDT balance" error instead of "insufficient
+  USDT balance".
+- **`giveaway_stars()` accepted 1-15 winners; Fragment allows 1-5.** Values above 5 passed local validation and
+  failed remotely after the invoice flow had started.
+- **`wallet_version="HighloadV2"` / `"HighloadV3R1"` were always rejected**, although documented: the value was
+  upper-cased before matching. Wallet versions are now matched case-insensitively.
+- **`True`/`False` passed the integer checks** for amounts and counts (`topup_gram("@user", True)` topped up
+  1 GRAM). Booleans are now rejected.
+- **`check_gram_payment_balance()` required `max(payment, reserve)` instead of `payment + reserve`**, so a wallet
+  holding exactly the payment amount passed the check and had nothing left for the network fee.
+- **Payment methods that can't be broadcast yet** (`usdt_eth`, `usdt_pol`, `usdc_eth`, `usdc_base`, `usdc_pol`)
+  are rejected before any network call. Their balance check always looked at the TON-chain USDT balance, i.e. the
+  wrong currency on the wrong chain.
+- Gifts on auction reported `status=None`; Fragment splits that status into two `<span>`s. It is `"On auction"` now.
+- Giveaways reported an unknown channel as "Telegram user ... not found"; they raise `ChannelNotFoundError`.
+- `get_fragment_hash()` built the wrong referer for the root URL (`https://fragment.com` became `https:/`, which
+  affected `search_usernames()`) and for URLs with a trailing slash or a `/` in the query string.
+- `confirm_purchase()` polled with `lv=1`; Fragment's own frontend always sends `lv=false`.
+- The release workflow no longer appends the `---` separator to the GitHub Release body.
+
+---
+
 ## [2026.3.4] — 2026-08-14
 
 ### Added

@@ -8,7 +8,7 @@ class WalletInfo:
     address: str
     state: str
     gram_balance: float
-    usdt_balance: float
+    usdt_balance: float | None  # None when the USDT lookup failed (balance unknown)
 
     def __repr__(self) -> str:
         return (

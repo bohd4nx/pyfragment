@@ -5,14 +5,22 @@ import base64
 import logging
 import random
 import ssl
+from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
 from ton_core import Cell
 from tonutils.exceptions import ProviderResponseError
 
-from pyfragment.enums import WALLET_CLASSES, PaymentMethod
+from pyfragment.core.constants import MAX_BROADCAST_ATTEMPTS, NANO_PER_GRAM
+from pyfragment.enums import PaymentMethod
 from pyfragment.exceptions import ParseError, TransactionError, WalletError
-from pyfragment.services.tonapi.account import _make_ton_client, check_gram_payment_balance, check_usdt_payment_balance
+from pyfragment.services.tonapi.account import (
+    check_gram_payment_balance,
+    check_usdt_payment_balance,
+    fetch_onchain_state,
+    load_wallet,
+    make_ton_client,
+)
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
@@ -66,11 +74,10 @@ async def _check_payment_balances(
     transaction_data: dict[str, Any],
     ton: Any,
 ) -> None:
-    """Refresh wallet and verify sufficient balance before broadcasting."""
+    """Load the wallet's balance and verify it suffices before broadcasting."""
     try:
-        await wallet.refresh()
-        balance_gram = wallet.balance / 1_000_000_000
-        if payment_method == "ton":
+        balance_gram = (await fetch_onchain_state(ton, wallet)).balance / NANO_PER_GRAM
+        if payment_method == PaymentMethod.GRAM:
             await check_gram_payment_balance(balance_gram, amount_gram, required_payment_amount)
         else:
             # USDT is paid from the Fragment-linked wallet, not the signing wallet.
@@ -85,7 +92,7 @@ async def _check_payment_balances(
 
 async def _broadcast_with_retry(wallet: Any, message: dict[str, Any], payload: str | Cell) -> Any:
     """Attempt to broadcast a transaction up to 3 times, handling rate-limit and seqno errors."""
-    for attempt in range(3):
+    for attempt in range(MAX_BROADCAST_ATTEMPTS):
         try:
             return await wallet.transfer(
                 destination=message["address"],
@@ -93,7 +100,7 @@ async def _broadcast_with_retry(wallet: Any, message: dict[str, Any], payload: s
                 body=payload,
             )
         except ProviderResponseError as exc:
-            if exc.code == 429 and attempt == 0:
+            if exc.code == HTTPStatus.TOO_MANY_REQUESTS and attempt == 0:
                 logger.warning(
                     "Broadcast rate-limited (429), retrying transaction once: %s",
                     exc,
@@ -101,8 +108,8 @@ async def _broadcast_with_retry(wallet: Any, message: dict[str, Any], payload: s
                 )
                 await asyncio.sleep(1 + random.uniform(0, 0.5))
                 continue
-            if exc.code == 406 and "seqno" in str(exc).lower():
-                if attempt < 2:
+            if exc.code == HTTPStatus.NOT_ACCEPTABLE and "seqno" in str(exc).lower():
+                if attempt < MAX_BROADCAST_ATTEMPTS - 1:
                     logger.warning(
                         "Broadcast seqno conflict (406), retrying attempt %s: %s",
                         attempt + 2,
@@ -117,6 +124,23 @@ async def _broadcast_with_retry(wallet: Any, message: dict[str, Any], payload: s
 
     logger.error("Failed to broadcast transaction: transfer loop exited without result")
     raise TransactionError(TransactionError.BROADCAST_FAILED.format(exc="transfer loop exited without result"))
+
+
+def _broadcast_error(exc: Exception, message: dict[str, Any], payment_method: PaymentMethod) -> TransactionError:
+    """Turn an unexpected broadcast failure into a ``TransactionError``, with a hint for SSL problems."""
+    cause: BaseException | None = exc
+    while cause is not None:
+        if isinstance(cause, ssl.SSLError):
+            logger.exception("Failed to broadcast transaction due to SSL error")
+            return TransactionError(TransactionError.BROADCAST_FAILED_SSL.format(exc=exc))
+        cause = cause.__cause__ or cause.__context__
+    logger.exception(
+        "Failed to broadcast transaction to '%s' for %s nanograms using payment method '%s'",
+        message["address"],
+        message["amount"],
+        payment_method,
+    )
+    return TransactionError(TransactionError.BROADCAST_FAILED.format(exc=exc))
 
 
 async def process_transaction(
@@ -138,11 +162,10 @@ async def process_transaction(
         The boc is what Fragment's own `confirm_method` (e.g. confirmReq) expects.
     """
     message = _extract_message(transaction_data)
-    amount_gram = int(message["amount"]) / 1_000_000_000
+    amount_gram = int(message["amount"]) / NANO_PER_GRAM
 
-    async with _make_ton_client(client) as ton:
-        wallet_cls = WALLET_CLASSES[client.wallet_version]
-        wallet, _, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)
+    async with make_ton_client(client) as ton:
+        wallet, _ = load_wallet(client, ton)
 
         await _check_payment_balances(wallet, payment_method, amount_gram, required_payment_amount, transaction_data, ton)
 
@@ -150,20 +173,8 @@ async def process_transaction(
 
         try:
             result = await _broadcast_with_retry(wallet, message, payload)
-            return str(result.normalized_hash), result.as_b64
         except (WalletError, TransactionError):
             raise
         except Exception as exc:
-            cause: BaseException | None = exc
-            while cause is not None:
-                if isinstance(cause, ssl.SSLError):
-                    logger.exception("Failed to broadcast transaction due to SSL error")
-                    raise TransactionError(TransactionError.BROADCAST_FAILED_SSL.format(exc=exc)) from exc
-                cause = cause.__cause__ or cause.__context__
-            logger.exception(
-                "Failed to broadcast transaction to '%s' for %s nanograms using payment method '%s'",
-                message["address"],
-                message["amount"],
-                payment_method,
-            )
-            raise TransactionError(TransactionError.BROADCAST_FAILED.format(exc=exc)) from exc
+            raise _broadcast_error(exc, message, payment_method) from exc
+        return str(result.normalized_hash), result.as_b64

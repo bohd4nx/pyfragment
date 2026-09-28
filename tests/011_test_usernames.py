@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from pyfragment import FragmentClient, UsernamesResult
+from pyfragment.enums import MarketplaceType
 
 FAKE_HTML = """
 <tr class="tm-row-selectable">
@@ -79,7 +80,7 @@ async def test_search_usernames_with_sort_and_filter(client: FragmentClient) -> 
 
     assert isinstance(result, UsernamesResult)
     call_data = mock_call.call_args[0][1]
-    assert call_data["type"] == "usernames"
+    assert call_data["type"] == MarketplaceType.USERNAMES
     assert call_data["sort"] == "price_desc"
     assert call_data["filter"] == "auction"
     assert call_data["query"] == "durov"
@@ -120,4 +121,4 @@ async def test_search_usernames_default_query(client: FragmentClient) -> None:
     assert isinstance(result, UsernamesResult)
     call_data = mock_call.call_args[0][1]
     assert call_data["query"] == ""
-    assert call_data["type"] == "usernames"
+    assert call_data["type"] == MarketplaceType.USERNAMES

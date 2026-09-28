@@ -35,26 +35,36 @@ def get_cookies_from_browser(browser: str = "chrome") -> CookieResult:
 
     missing = [k for k in REQUIRED_COOKIE_KEYS if not str(cookie_map.get(k, "")).strip()]
     if missing:
-        raise CookieError(CookieError.MISSING_BROWSER_KEYS.format(browser=browser, keys=missing, url=FRAGMENT_BASE_URL))
+        raise CookieError(
+            CookieError.MISSING_BROWSER_KEYS.format(browser=browser, keys=", ".join(missing), url=FRAGMENT_BASE_URL)
+        )
 
-    expires_iso: str | None = None
+    expires = _session_expiry(jar)
+    if expires is not None and expires < datetime.now(UTC):
+        raise CookieError(CookieError.EXPIRED.format(expires=expires.isoformat()))
+
+    return CookieResult(
+        cookies={k: cookie_map[k] for k in REQUIRED_COOKIE_KEYS},
+        expires=expires.isoformat() if expires is not None else None,
+    )
+
+
+def _session_expiry(jar: list[dict[str, Any]]) -> datetime | None:
+    """When the ``stel_ssid`` session cookie expires, or ``None`` if the browser doesn't say."""
     for cookie in jar:
         if cookie.get("name") == "stel_ssid":
-            raw = cookie.get("expires")
-            if isinstance(raw, (int, float)):
-                expires_iso = datetime.fromtimestamp(raw, tz=UTC).isoformat()
-            elif isinstance(raw, str) and raw:
-                for fmt in ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"):
-                    try:
-                        expires_iso = datetime.strptime(raw, fmt).replace(tzinfo=UTC).isoformat()
-                        break
-                    except ValueError:
-                        continue
-            break
+            return _parse_expiry(cookie.get("expires"))
+    return None
 
-    if expires_iso:
-        expires_dt = datetime.fromisoformat(expires_iso)
-        if expires_dt < datetime.now(UTC):
-            raise CookieError(CookieError.EXPIRED.format(expires=expires_iso))
 
-    return CookieResult(cookies={k: cookie_map[k] for k in REQUIRED_COOKIE_KEYS}, expires=expires_iso)
+def _parse_expiry(raw: object) -> datetime | None:
+    # Browsers report either a UNIX timestamp or an ISO-8601 string.
+    if isinstance(raw, (int, float)):
+        return datetime.fromtimestamp(raw, tz=UTC)
+    if isinstance(raw, str) and raw:
+        for fmt in ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"):
+            try:
+                return datetime.strptime(raw, fmt).replace(tzinfo=UTC)
+            except ValueError:
+                continue
+    return None

@@ -32,3 +32,5 @@ Describe the tests you ran to verify the change and list any relevant details.
 - [ ] I have updated documentation where necessary
 - [ ] I have added tests that prove my fix or feature works
 - [ ] All new and existing tests pass locally
+- [ ] `ruff check .`, `ruff format --check .` and `mypy` pass (see CONTRIBUTING.md)
+- [ ] I have added an entry under `[Unreleased]` in `CHANGELOG.md`

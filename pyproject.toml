@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pyfragment"
-version = "2026.3.4"
+version = "2026.4.0"
 description = "Async Python client for the Fragment.com marketplace API."
 readme = "README.md"
 license = { text = "MIT" }

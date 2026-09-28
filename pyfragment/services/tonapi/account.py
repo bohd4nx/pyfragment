@@ -2,14 +2,23 @@ from __future__ import annotations
 
 import base64
 import logging
+from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
 from ton_core import NetworkGlobalID
 from tonutils.clients import TonapiClient, ToncenterClient
 from tonutils.contracts.jetton import get_wallet_address_get_method, get_wallet_data_get_method
-from tonutils.exceptions import ProviderResponseError
+from tonutils.exceptions import ProviderResponseError, RunGetMethodError
 
-from pyfragment.core.constants import MIN_GRAM_BALANCE, MIN_USDT_BALANCE, USDT_GRAM_MASTER_ADDRESS
+from pyfragment.core.constants import (
+    MAINNET_CHAIN_ID,
+    MIN_GRAM_BALANCE,
+    MIN_USDT_BALANCE,
+    NANO_PER_GRAM,
+    TVM_EXIT_ACCOUNT_NOT_FOUND,
+    USDT_GRAM_MASTER_ADDRESS,
+    USDT_UNITS,
+)
 from pyfragment.enums import WALLET_CLASSES, ApiProvider
 from pyfragment.exceptions import WalletError
 from pyfragment.services.tonapi.models import WalletInfo
@@ -21,11 +30,34 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _make_ton_client(client: FragmentClient) -> Any:
+def make_ton_client(client: FragmentClient) -> Any:
     """Return the appropriate tonutils client based on the configured api_provider."""
     if client.api_provider == ApiProvider.TONCENTER:
         return ToncenterClient(network=NetworkGlobalID.MAINNET, api_key=client.api_key)
     return TonapiClient(network=NetworkGlobalID.MAINNET, api_key=client.api_key)
+
+
+def load_wallet(client: FragmentClient, ton: Any) -> tuple[Any, Any]:
+    """Derive the configured wallet and its public key from the client's seed."""
+    wallet_cls = WALLET_CLASSES[client.wallet_version]
+    wallet, public_key, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)
+    return wallet, public_key
+
+
+async def fetch_onchain_state(ton: Any, wallet: Any) -> Any:
+    """The wallet's on-chain state (``balance`` in nanograms, ``state``).
+
+    ``wallet.refresh()`` is deliberately not used: tonutils answers *any* provider failure (bad API key,
+    outage, timeout) with an empty "nonexistent, zero balance" account, which would show up as an empty wallet.
+    """
+    return await ton.get_info(wallet.address)
+
+
+def _is_missing_jetton_wallet(exc: Exception) -> bool:
+    """Whether the owner simply has no USDT jetton wallet yet: tonapi answers 404, toncenter a TVM exit code -13."""
+    if isinstance(exc, ProviderResponseError):
+        return exc.code == HTTPStatus.NOT_FOUND
+    return isinstance(exc, RunGetMethodError) and exc.exit_code == TVM_EXIT_ACCOUNT_NOT_FOUND
 
 
 async def get_usdt_balance(ton: Any, wallet_address: str) -> float:
@@ -38,15 +70,12 @@ async def get_usdt_balance(ton: Any, wallet_address: str) -> float:
         )
         wallet_data = await get_wallet_data_get_method(client=ton, address=jetton_wallet_address)
         raw_balance = int(wallet_data[0]) if wallet_data else 0
-        return float(raw_balance) / 1_000_000.0
-    except ProviderResponseError as exc:
-        if exc.code == 404:
+        return float(raw_balance) / USDT_UNITS
+    except Exception as exc:
+        if _is_missing_jetton_wallet(exc):
             logger.debug("No USDT jetton wallet found for '%s'; treating balance as 0", wallet_address)
             return 0.0
-        logger.error("Failed to load USDT balance for wallet '%s': %s", wallet_address, exc, exc_info=True)
-        raise WalletError(WalletError.USDT_BALANCE_CHECK_FAILED.format(exc=exc)) from exc
-    except Exception as exc:
-        logger.exception("Failed to load USDT balance for wallet '%s' due to an unexpected error", wallet_address)
+        logger.exception("Failed to load USDT balance for wallet '%s'", wallet_address)
         raise WalletError(WalletError.USDT_BALANCE_CHECK_FAILED.format(exc=exc)) from exc
 
 
@@ -55,12 +84,14 @@ async def check_gram_payment_balance(
     amount_gram: float,
     required_payment_amount: float | None,
 ) -> None:
-    """Validate that the GRAM (ex TON) wallet can cover a GRAM (ex TON)-denominated payment."""
+    """Validate that the GRAM (ex TON) wallet can cover the payment and gas reserve."""
     tx_price_gram = amount_gram
     if required_payment_amount is not None and required_payment_amount > 0:
         tx_price_gram = max(tx_price_gram, required_payment_amount)
 
-    required_gram = max(tx_price_gram, MIN_GRAM_BALANCE)
+    # MIN_GRAM_BALANCE must be reserved on top of the payment itself - the transfer also
+    # consumes GRAM for storage, gas, and forwarding fees, separate from the amount sent.
+    required_gram = tx_price_gram + MIN_GRAM_BALANCE
     if balance_gram < required_gram:
         logger.error(
             "Failed GRAM (ex TON) balance check: balance=%s GRAM (ex TON), required=%s GRAM (ex TON)",
@@ -99,15 +130,14 @@ async def check_usdt_payment_balance(
 
 async def get_account_info(client: FragmentClient) -> dict[str, Any]:
     """Build the wallet payload Fragment needs to prepare a transaction."""
-    async with _make_ton_client(client) as ton:
+    async with make_ton_client(client) as ton:
         try:
-            wallet_cls = WALLET_CLASSES[client.wallet_version]
-            wallet, pub_key, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)
+            wallet, public_key = load_wallet(client, ton)
             boc = wallet.state_init.serialize().to_boc()
             return {
                 "address": wallet.address.to_str(False, False),
-                "publicKey": pub_key.as_hex,
-                "chain": "-239",
+                "publicKey": public_key.as_hex,
+                "chain": MAINNET_CHAIN_ID,
                 "walletStateInit": base64.b64encode(boc).decode(),
             }
         except Exception as exc:
@@ -117,18 +147,27 @@ async def get_account_info(client: FragmentClient) -> dict[str, Any]:
 
 async def get_wallet_info(client: FragmentClient) -> WalletInfo:
     """Fetch the wallet address, chain state, and GRAM (ex TON)/USDT balances."""
-    async with _make_ton_client(client) as ton:
+    async with make_ton_client(client) as ton:
         try:
-            wallet_cls = WALLET_CLASSES[client.wallet_version]
-            wallet, _, _, _ = wallet_cls.from_mnemonic(client=ton, mnemonic=client.seed)
-            await wallet.refresh()
+            wallet, _ = load_wallet(client, ton)
+            onchain = await fetch_onchain_state(ton, wallet)
             wallet_address = wallet.address.to_str(False, False)
-            usdt_balance = await get_usdt_balance(ton, wallet_address)
+            try:
+                usdt_balance = await get_usdt_balance(ton, wallet_address)
+            except WalletError:
+                # The GRAM balance is already known good; don't lose it over a failed
+                # USDT lookup. Report the USDT balance as unknown (None), not as 0.
+                logger.warning(
+                    "USDT balance check failed for wallet '%s'; reporting it as unknown",
+                    wallet_address,
+                    exc_info=True,
+                )
+                usdt_balance = None
             return WalletInfo(
                 address=wallet.address.to_str(is_user_friendly=True, is_bounceable=False),
-                state=wallet.state.value,
-                gram_balance=round(wallet.balance / 1_000_000_000, 4),
-                usdt_balance=round(usdt_balance, 4),
+                state=onchain.state.value,
+                gram_balance=round(onchain.balance / NANO_PER_GRAM, 4),
+                usdt_balance=None if usdt_balance is None else round(usdt_balance, 4),
             )
         except Exception as exc:
             logger.exception("Failed to fetch wallet info from Tonapi")

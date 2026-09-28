@@ -1,0 +1,27 @@
+name: Contract
+
+# Weekly check that pyfragment's assumptions (API hash, limits, payment methods) still match fragment.com.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  contract:
+    name: Fragment contract
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v7.0.1
+
+    - uses: actions/setup-python@v7.0.0
+      with:
+        python-version: "3.13"
+        cache: pip
+
+    - run: pip install ".[dev]"
+
+    - run: pytest tests/018_test_contract.py
+      env:
+        FRAGMENT_LIVE: "1"

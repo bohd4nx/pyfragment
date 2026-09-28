@@ -4,6 +4,7 @@ from typing import Any
 
 FRAGMENT_DOMAIN: str = "fragment.com"
 FRAGMENT_BASE_URL: str = f"https://{FRAGMENT_DOMAIN}"
+FRAGMENT_API_URL: str = f"{FRAGMENT_BASE_URL}/api"
 
 STARS_PAGE: str = f"{FRAGMENT_BASE_URL}/stars/buy"
 STARS_GIVEAWAY_PAGE: str = f"{FRAGMENT_BASE_URL}/stars/giveaway"
@@ -14,6 +15,10 @@ NUMBERS_PAGE: str = f"{FRAGMENT_BASE_URL}/numbers"
 GIFTS_PAGE: str = f"{FRAGMENT_BASE_URL}/gifts"
 
 DEFAULT_TIMEOUT: float = 30.0
+
+# Attempts (initial try included) for Fragment API calls that hit HTTP 429, and for wallet broadcasts
+MAX_API_ATTEMPTS: int = 3
+MAX_BROADCAST_ATTEMPTS: int = 3
 
 # How long (and how often) to poll Fragment for its own on-chain purchase confirmation
 CONFIRM_STATE_TIMEOUT: float = 60.0
@@ -41,6 +46,16 @@ BASE_HEADERS: dict[str, str | None] = {
     "x-requested-with": "XMLHttpRequest",
 }
 
+# Smallest units: 1 GRAM (ex TON) = 10^9 nanograms, 1 USDT = 10^6 units
+NANO_PER_GRAM: int = 1_000_000_000
+USDT_UNITS: int = 1_000_000
+
+# TVM exit code of a get-method called on a contract that isn't deployed (toncenter reports it as an error)
+TVM_EXIT_ACCOUNT_NOT_FOUND: int = -13
+
+# TON Connect network id of the mainnet, as sent in the wallet account payload
+MAINNET_CHAIN_ID: str = "-239"
+
 # USDT-TON jetton master contract address on GRAM (ex TON) mainnet
 USDT_GRAM_MASTER_ADDRESS: str = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"
 
@@ -67,7 +82,7 @@ STARS_GIVEAWAY_MAX: int = 1_000_000
 
 # Stars giveaway winner count
 STARS_WINNERS_MIN: int = 1
-STARS_WINNERS_MAX: int = 15
+STARS_WINNERS_MAX: int = 5
 
 # Premium giveaway winner count
 PREMIUM_WINNERS_MIN: int = 1

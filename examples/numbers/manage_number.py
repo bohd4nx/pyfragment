@@ -8,7 +8,8 @@ Use terminate_sessions() to forcefully end all active Telegram sessions.
 
 import asyncio
 
-from pyfragment import AnonymousNumberError, FragmentClient
+from pyfragment import AnonymousNumberError, FragmentClient, FragmentError
+from pyfragment.enums import ApiProvider, WalletVersion
 
 SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_API_KEY"  # tonconsole.com (tonapi, default) or t.me/toncenter
@@ -32,8 +33,8 @@ async def main() -> None:
         seed=SEED,
         api_key=API_KEY,
         cookies=COOKIES,
-        wallet_version="V5R1",  # or "V4R2", "HighloadV2", "HighloadV3R1"
-        api_provider="tonapi",  # or "toncenter"
+        wallet_version=WalletVersion.V5R1,  # or V4R2, HighloadV2, HighloadV3R1
+        api_provider=ApiProvider.TONAPI,  # or ApiProvider.TONCENTER
     ) as client:
         # Fetch the latest login code
         result = await client.get_login_code(NUMBER)
@@ -48,6 +49,8 @@ async def main() -> None:
             print(f"Sessions terminated for {terminated.number}" + (f": {terminated.message}" if terminated.message else ""))
         except AnonymousNumberError as e:
             print(f"Could not terminate sessions: {e}")
+        except FragmentError as e:
+            print(f"Request failed: {e}")
 
 
 if __name__ == "__main__":

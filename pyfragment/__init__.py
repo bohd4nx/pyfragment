@@ -5,12 +5,25 @@ from pyfragment.client import FragmentClient
 from pyfragment.domains.ads.models import AdsRechargeResult, AdsTopupResult
 from pyfragment.domains.anonymous_numbers.models import LoginCodeResult, TerminateSessionsResult
 from pyfragment.domains.giveaways.models import PremiumGiveawayResult, StarsGiveawayResult
-from pyfragment.domains.marketplace.models import GiftsResult, NumbersResult, UsernamesResult
+from pyfragment.domains.marketplace.models import AuctionItem, GiftsResult, NumbersResult, UsernamesResult
 from pyfragment.domains.purchases.models import PremiumResult, StarsResult
-from pyfragment.enums import ApiProvider, PaymentMethod, WalletVersion
+from pyfragment.enums import (
+    SUPPORTED_PAYMENT_METHODS,
+    ApiError,
+    ApiMethod,
+    ApiProvider,
+    AuctionFilter,
+    AuctionSort,
+    GiftAttribute,
+    MarketplaceType,
+    PaymentMethod,
+    StateMode,
+    WalletVersion,
+)
 from pyfragment.exceptions import (
     AlreadySubscribedError,
     AnonymousNumberError,
+    ChannelNotFoundError,
     ClientError,
     ConfigurationError,
     CookieError,
@@ -44,6 +57,7 @@ __all__ = [
     "AdsTopupResult",
     "AdsRechargeResult",
     "CookieResult",
+    "AuctionItem",
     "GiftsResult",
     "LoginCodeResult",
     "NumbersResult",
@@ -56,6 +70,7 @@ __all__ = [
     "ConfigurationError",
     "AlreadySubscribedError",
     "UserNotFoundError",
+    "ChannelNotFoundError",
     "WalletError",
     "VerificationError",
     "TransactionError",
@@ -65,9 +80,17 @@ __all__ = [
     "OperationError",
     "ParseError",
     "UnexpectedError",
-    # literal types
+    # enums
+    "ApiError",
+    "ApiMethod",
     "ApiProvider",
+    "AuctionFilter",
+    "AuctionSort",
+    "GiftAttribute",
+    "MarketplaceType",
     "PaymentMethod",
+    "StateMode",
+    "SUPPORTED_PAYMENT_METHODS",
     "WalletVersion",
     "get_cookies_from_browser",
 ]

@@ -9,6 +9,7 @@ from ton_core import Cell
 
 from pyfragment import ParseError
 from pyfragment.services.tonapi.transaction import clean_decode
+from tests.shared import fixture_json
 
 PAYLOAD_CASES = [
     pytest.param(
@@ -130,3 +131,9 @@ def test_clean_decode_returns_cell_for_binary_payload() -> None:
         parsed = clean_decode(payload)
 
     assert parsed is fake_cell
+
+
+def test_decode_payload_from_real_stars_link_response() -> None:
+    message = fixture_json("stars_transaction_link_response.json")["transaction"]["messages"][0]
+
+    assert clean_decode(message["payload"]) == "50 Telegram Stars \n\nRef#kpJ55h3BW"
