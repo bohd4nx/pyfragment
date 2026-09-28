@@ -6,7 +6,6 @@ import pytest
 from curl_cffi.requests import AsyncSession, Response
 
 from pyfragment import FragmentClient, FragmentPageError
-from pyfragment.domains.base import raw_api_call
 from pyfragment.transport import FragmentTransport, fragment_request, get_fragment_hash
 from tests.shared import FAKE_HASH, FAKE_RESPONSE
 
@@ -219,23 +218,3 @@ async def test_transport_reuses_one_session_and_aclose_resets_it() -> None:
     assert transport._hashes == {}
     assert transport._get_session() is not first
     await transport.aclose()
-
-
-# raw_api_call: one-shot call without a client
-
-
-@pytest.mark.asyncio
-async def test_raw_api_call_uses_a_throwaway_session_and_closes_it() -> None:
-    with (
-        patch("pyfragment.transport.session.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        patch("pyfragment.transport.session.fragment_request", AsyncMock(return_value=FAKE_RESPONSE)) as mock_request,
-        patch("pyfragment.transport.session.AsyncSession") as mock_session_cls,
-    ):
-        mock_session_cls.return_value.close = AsyncMock()
-        result = await raw_api_call({"stel_ssid": "x"}, 5.0, "anyMethod", {"key": "value"}, "https://fragment.com/stars/buy")
-
-    assert result == FAKE_RESPONSE
-    assert mock_request.call_args.args[3] == {"method": "anyMethod", "key": "value"}
-    assert mock_request.call_args.args[2]["referer"] == "https://fragment.com/stars/buy"
-    mock_session_cls.assert_called_once_with(cookies={"stel_ssid": "x"}, timeout=5.0, impersonate="chrome")
-    mock_session_cls.return_value.close.assert_awaited_once()

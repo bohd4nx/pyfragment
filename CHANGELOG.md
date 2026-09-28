@@ -79,8 +79,9 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
   answers "Bad request" to it for every GRAM/USDT invoice (checked on a live invoice with a connected wallet), so it
   never did anything. Abandoned invoices expire on their own; the extra request and the `ApiMethod.CANCEL_INVOICE`
   member are gone.
-- `pyfragment.core.transport`: use `pyfragment.transport`. `raw_api_call()` stays in `pyfragment.domains.base`
-  as a one-shot call on a throwaway session.
+- `pyfragment.core.transport`: use `pyfragment.transport`.
+- `pyfragment.domains.base.raw_api_call()`, an internal one-shot helper that nothing used: send raw requests with
+  `FragmentClient.call()`.
 - `parse_required_payment_amount()`: use `pyfragment.schemas.InvoiceRequest.amount`.
 
 ### Fixed

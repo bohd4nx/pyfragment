@@ -43,7 +43,7 @@ pyfragment/
     marketplace/      — search_usernames, search_numbers, search_gifts (+ HTML parsers)
     payments/         — the shared purchase flow: run_purchase, confirmation, state helpers
     purchases/        — purchase_stars, purchase_premium
-    base.py           — BaseService, raw_api_call, operation() error guard
+    base.py           — BaseService, operation() error guard
     recipients.py     — recipient lookup shared by the purchase flows
   services/           — shared infrastructure services
     cookies/          — browser cookie extraction (models + service)
