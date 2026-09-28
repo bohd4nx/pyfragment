@@ -12,7 +12,7 @@ from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from ton_core import Address, Builder, Cell, NetworkGlobalID, SignatureDomain, verify_sign
+from ton_core import Address, Cell, NetworkGlobalID
 from tonutils.clients import TonapiClient
 from tonutils.types import ContractInfo
 
@@ -20,10 +20,9 @@ from pyfragment import FragmentClient
 from pyfragment.enums import WALLET_CLASSES, PaymentMethod, WalletVersion
 from pyfragment.services.tonapi.transaction import process_transaction
 from tests.shared import VALID_SEED, fixture_json
+from tests.signing import external_message_body, first_send_action, signature_is_valid, split_signature
 
 NETWORK = NetworkGlobalID.MAINNET
-SIGN_ACTION_OPCODE = 0x0EC3C86D  # action_send_msg of a W5 wallet
-SIGNATURE_BITS = 512
 
 # A real USDT transfer payload Fragment produced for 50 Stars: a jetton `transfer` with a text comment attached.
 USDT_STARS_PAYLOAD = (
@@ -73,88 +72,17 @@ async def _broadcast(transaction: dict[str, Any], payment_method: PaymentMethod)
     yield SignedTransfer(sent[0], wallet.address, public_key.as_bytes, tx_hash, base64.b64decode(returned_boc))
 
 
-def _external_message_body(boc: bytes) -> tuple[Address, Cell]:
-    """Split an ``ext_in_msg_info`` message into its destination and its (inline or referenced) body."""
-    message = Cell.one_from_boc(boc).begin_parse()
-    assert message.load_uint(2) == 0b10  # external inbound
-    assert message.load_uint(2) == 0  # no source
-    destination = message.load_address()
-    message.load_coins()  # import fee
-    if message.load_bool():  # a wallet that isn't deployed yet ships its state_init
-        if message.load_bool():
-            message.load_ref()
-        else:
-            message.load_bits(2)  # split_depth, special
-            for _ in range(3):  # code, data, library
-                message.load_maybe_ref()
-    body = message.load_ref() if message.load_bool() else message.to_cell()
-    return destination, body
-
-
-def _split_signature(body: Cell) -> tuple[Cell, bytes]:
-    """Separate a W5 body into the signed cell and its trailing signature."""
-    reader = body.begin_parse()
-    signed_bits = reader.load_bits(reader.remaining_bits - SIGNATURE_BITS)
-    signature = reader.load_bytes(SIGNATURE_BITS // 8)
-    signed = Builder()
-    signed.store_bits(signed_bits)
-    for ref in body.refs:
-        signed.store_ref(ref)
-    return signed.end_cell(), signature
-
-
-def _signature_is_valid(body: Cell, public_key: bytes, signature_override: bytes | None = None) -> bool:
-    signed, signature = _split_signature(body)
-    data = SignatureDomain(NETWORK).data_to_sign(signed.hash)
-    return bool(verify_sign(public_key, data, signature_override or signature))
-
-
-@dataclass
-class SendAction:
-    destination: Address
-    amount: int
-    bounce: bool
-    body: Cell
-
-
-def _first_send_action(signed: Cell) -> SendAction:
-    """Read the one transfer a W5 wallet was asked to make out of its signed body."""
-    reader = signed.begin_parse()
-    reader.skip_bits(32 * 4)  # opcode, wallet id, valid until, seqno
-    actions = reader.load_maybe_ref()
-    assert actions is not None
-    action = actions.begin_parse()
-    action.load_ref()  # the (empty) list of earlier actions
-    assert action.load_uint(32) == SIGN_ACTION_OPCODE
-    action.load_uint(8)  # send mode
-    message = action.load_ref().begin_parse()
-    assert message.load_uint(1) == 0  # internal message
-    message.load_bit()  # ihr_disabled
-    bounce = message.load_bool()
-    message.load_bit()  # bounced
-    message.load_address()  # source
-    destination = message.load_address()
-    amount = message.load_coins()
-    message.load_bit()  # no extra currencies
-    message.load_coins()  # ihr fee
-    message.load_coins()  # forward fee
-    message.load_uint(64 + 32)  # created lt, created at
-    assert not message.load_bool()  # no state_init
-    body = message.load_ref() if message.load_bool() else message.to_cell()
-    return SendAction(destination, amount, bounce, body)
-
-
 @pytest.mark.asyncio
 async def test_gram_purchase_is_signed_and_pays_what_fragment_asked_for() -> None:
     link = fixture_json("stars_transaction_link_response.json")
     asked = link["transaction"]["messages"][0]
 
     async with _broadcast(link, PaymentMethod.GRAM) as transfer:
-        destination, body = _external_message_body(transfer.boc)
+        destination, body = external_message_body(transfer.boc)
         assert destination == transfer.wallet_address
-        assert _signature_is_valid(body, transfer.public_key)
+        assert signature_is_valid(body, transfer.public_key)
 
-        action = _first_send_action(_split_signature(body)[0])
+        action = first_send_action(split_signature(body)[0])
         assert action.destination == Address(asked["address"])
         assert action.amount == int(asked["amount"]) == 460_900_000
         assert action.bounce is False
@@ -178,10 +106,10 @@ async def test_usdt_purchase_signs_the_jetton_transfer_body_untouched() -> None:
     link["transaction"]["messages"][0]["amount"] = "50000000"
 
     async with _broadcast(link, PaymentMethod.USDT_GRAM) as transfer:
-        _, body = _external_message_body(transfer.boc)
-        assert _signature_is_valid(body, transfer.public_key)
+        _, body = external_message_body(transfer.boc)
+        assert signature_is_valid(body, transfer.public_key)
 
-        action = _first_send_action(_split_signature(body)[0])
+        action = first_send_action(split_signature(body)[0])
         assert action.amount == 50_000_000
         assert action.body.hash == Cell.one_from_boc(base64.urlsafe_b64decode(USDT_STARS_PAYLOAD + "=")).hash
 
@@ -189,9 +117,9 @@ async def test_usdt_purchase_signs_the_jetton_transfer_body_untouched() -> None:
 @pytest.mark.asyncio
 async def test_signature_check_rejects_a_forged_signature() -> None:
     async with _broadcast(fixture_json("stars_transaction_link_response.json"), PaymentMethod.GRAM) as transfer:
-        _, body = _external_message_body(transfer.boc)
+        _, body = external_message_body(transfer.boc)
 
-        assert _signature_is_valid(body, transfer.public_key)
-        assert not _signature_is_valid(body, transfer.public_key, signature_override=bytes(64))
+        assert signature_is_valid(body, transfer.public_key)
+        assert not signature_is_valid(body, transfer.public_key, signature_override=bytes(64))
         other_key = bytes(reversed(transfer.public_key))
-        assert not _signature_is_valid(body, other_key)
+        assert not signature_is_valid(body, other_key)
