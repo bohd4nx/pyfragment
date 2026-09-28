@@ -75,7 +75,7 @@ The client keeps one HTTP session and reuses it across calls. Use `async with Fr
 
 At initialization, library validates:
 
-- seed format,
+- seed: 12 or 24 words that form a valid TON phrase (case and whitespace are normalized; BIP39 and password-protected phrases are rejected),
 - cookie shape and required keys,
 - supported wallet version,
 - supported API provider,
