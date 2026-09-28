@@ -9,6 +9,10 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ## [Unreleased]
 
+---
+
+## [2026.4.0] — 2026-09-28
+
 ### Added
 
 - **Enums instead of string literals**, exported from `pyfragment` and `pyfragment.enums`:
