@@ -26,10 +26,18 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
   workflow verify against fragment.com that the API hash is still discoverable and that limits, payment methods,
   sort/filter values, gift traits and error texts still match what the library assumes.
 - Parser and purchase-flow tests run against real, trimmed fragment.com responses (`tests/fixtures/`).
-- CI type-checks the examples too, so they can't drift from the API.
+- CI type-checks the examples too, so they can't drift from the API. The GitHub Actions in the workflows are
+  up to date (`setup-uv` v10, `action-gh-release` v3.0.3).
+- `tests/021_test_signing.py` signs real Fragment payloads (GRAM and USDT) with a throwaway wallet and verifies the
+  broadcast message: valid signature for the wallet's key, right destination, amount and comment, jetton body untouched.
 
 ### Changed
 
+- **The seed phrase is validated when the client is created.** tonutils only rejects words outside the wordlist: a
+  phrase with a wrong checksum, a BIP39-style phrase or a password-protected one silently derives a *different*
+  wallet, which showed up much later as an empty balance. `FragmentClient` now raises `ConfigurationError` for anything
+  that isn't a valid TON phrase. The phrase is also normalized (lower-cased, whitespace collapsed): `Word` used to
+  derive another wallet than `word`.
 - **Much faster and lighter on Fragment.** The client keeps one HTTP session and caches the API hash per page, so a
   call is a single POST instead of a page load plus a POST on a fresh connection (about 8x faster after the first
   call, far fewer requests per purchase, less risk of rate limiting). A rejected hash (Fragment answers
