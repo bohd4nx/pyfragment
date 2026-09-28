@@ -6,6 +6,7 @@ from typing import Any
 from pyfragment.core.constants import BASE_HEADERS, DEFAULT_TIMEOUT, FRAGMENT_BASE_URL
 from pyfragment.core.validation import (
     normalize_provider,
+    normalize_seed,
     normalize_wallet_version,
     parse_cookies,
     validate_cookie_keys,
@@ -81,7 +82,7 @@ class FragmentClient:
         validate_cookie_keys(parsed_cookies)
         version = normalize_wallet_version(wallet_version)
 
-        self.seed: str = seed.strip()
+        self.seed: str = normalize_seed(seed)
         self.api_key: str = api_key.strip()
         self.api_provider: ApiProvider = provider
         self.cookies: dict[str, Any] = parsed_cookies

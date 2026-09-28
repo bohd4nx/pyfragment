@@ -33,6 +33,10 @@ class ConfigurationError(ClientError):
         f"Invalid mnemonic phrase: expected {', '.join(str(n) for n in sorted(MNEMONIC_WORD_COUNTS_VALID))} words, "
         "got {count}."
     )
+    INVALID_MNEMONIC_PHRASE = (
+        "Invalid mnemonic phrase: it is not a valid TON wallet phrase. Check for a misspelled or missing word and the word "
+        "order; BIP39 and password-protected phrases are not supported."
+    )
     UNSUPPORTED_PROVIDER = "Unsupported API provider '{provider}'. Supported values: {supported}."
     INVALID_MONTHS = f"Invalid Premium duration: choose {', '.join(str(m) for m in sorted(PREMIUM_MONTHS_VALID))} months."
     INVALID_STARS_AMOUNT = (

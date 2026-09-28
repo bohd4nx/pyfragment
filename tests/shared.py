@@ -26,7 +26,14 @@ def fixture_json(name: str) -> dict[str, Any]:
 
 
 # Credentials and config
-VALID_SEED: str = "abandon " * 23 + "about"
+# Throwaway TON mnemonics generated for the tests (the wallets are empty); they must pass the library's phrase check.
+VALID_SEED: str = (
+    "much faith taxi kiss brick siege egg can arrive there because genuine trash virus obtain direct bid liar flash group "
+    "liquid stay mean already"
+)
+VALID_SEED_12_WORDS: str = "range blast planet dove tonight tomato dream must vacuum asthma chimney shrimp"
+# A well-formed BIP39 phrase that is not a TON phrase: tonutils would derive some wallet from it without complaint.
+BIP39_SEED: str = "abandon " * 23 + "about"
 VALID_API_KEY: str = "A" * 68
 VALID_COOKIES: dict[str, str] = {
     "stel_ssid": "x",

@@ -5,9 +5,9 @@ import json
 import pytest
 
 from pyfragment import ConfigurationError, CookieError, FragmentClient
-from pyfragment.core.constants import BASE_HEADERS, MNEMONIC_WORD_COUNTS_VALID
+from pyfragment.core.constants import BASE_HEADERS
 from pyfragment.enums import ApiProvider, WalletVersion
-from tests.shared import VALID_API_KEY, VALID_COOKIES, VALID_SEED
+from tests.shared import BIP39_SEED, VALID_API_KEY, VALID_COOKIES, VALID_SEED, VALID_SEED_12_WORDS
 
 # Client init tests
 
@@ -111,11 +111,30 @@ def test_invalid_mnemonic_length_raises() -> None:
         FragmentClient(seed=bad_seed, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
 
 
-def test_valid_mnemonic_lengths() -> None:
-    for length in sorted(MNEMONIC_WORD_COUNTS_VALID):
-        seed = " ".join(["abandon"] * (length - 1) + ["about"])
-        client = FragmentClient(seed=seed, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
-        assert len(client.seed.split()) == length
+@pytest.mark.parametrize(("seed", "length"), [(VALID_SEED_12_WORDS, 12), (VALID_SEED, 24)])
+def test_valid_mnemonic_lengths(seed: str, length: int) -> None:
+    client = FragmentClient(seed=seed, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
+    assert len(client.seed.split()) == length
+
+
+def test_seed_is_normalized() -> None:
+    messy = "  " + VALID_SEED.upper().replace(" ", "\n ", 3) + "\t"
+    client = FragmentClient(seed=messy, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
+    assert client.seed == VALID_SEED
+
+
+@pytest.mark.parametrize(
+    "seed",
+    [
+        BIP39_SEED,  # right length and words, but not a TON phrase
+        " ".join(VALID_SEED.split()[:-1] + ["abandon"]),  # one word replaced -> wrong checksum
+        " ".join(["notaword"] * 24),
+    ],
+    ids=["bip39", "wrong-word", "not-in-wordlist"],
+)
+def test_invalid_mnemonic_phrase_raises(seed: str) -> None:
+    with pytest.raises(ConfigurationError, match="not a valid TON wallet phrase"):
+        FragmentClient(seed=seed, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
 
 
 # API key validation tests
