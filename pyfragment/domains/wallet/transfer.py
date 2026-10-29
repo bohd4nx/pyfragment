@@ -41,17 +41,20 @@ async def _send_message(ton: Any, boc_hex: str, valid_until: int) -> None:
     """
     try:
         await ton.send_message(boc_hex)
+        return
     except ProviderResponseError as exc:
-        if exc.code == HTTPStatus.TOO_MANY_REQUESTS and time.time() < valid_until:
-            await asyncio.sleep(1)
-            try:
-                await ton.send_message(boc_hex)
-            except Exception as retry_exc:
-                logger.warning("Failed to send transfer (retry): %s", retry_exc)
-        else:
+        if exc.code != HTTPStatus.TOO_MANY_REQUESTS or time.time() >= valid_until:
             logger.warning("Failed to send transfer: %s", exc)
+            return
+        await asyncio.sleep(1)
     except Exception as exc:
         logger.warning("Failed to send transfer: %s", exc)
+        return
+
+    try:
+        await ton.send_message(boc_hex)
+    except Exception as exc:
+        logger.warning("Failed to send transfer (retry): %s", exc)
 
 
 async def process_transaction(
