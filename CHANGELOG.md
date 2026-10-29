@@ -26,9 +26,9 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ### Changed
 
-- **A transfer is signed and sent once.** The provider's answer to the send decides nothing; the chain does. Outcome
-  is confirmed by finding the transfer in the wallet's history, which also catches the case where a wallet silently
-  skips a payment it can't afford.
+- **A transfer is signed and sent once.** Fragment's confirmation API handles the outcome. Send errors are
+  logged and do not raise; the provider's answer to the send is not the truth — toncenter answers 500 to
+  some sends that went through.
 - **Transfers expire with Fragment's invoice** — at most 60 s, never past `validUntil`. A transfer that didn't land
   in time never will. Expired transactions are refused before signing.
 - **Seqno is read explicitly** — a provider failure raises `ProviderError` instead of silently signing seqno 0.
@@ -37,9 +37,9 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
   attached GRAM plus the gas reserve, the same as a GRAM payment.
 - **Exceptions are flat and carry `retryable`** (`True` = nothing was paid, repeating may succeed):
   `NetworkError`, `HTTPStatusError` (`status`, `url`), `SessionExpiredError`, `RecipientError`, `ChainError`,
-  `InsufficientBalanceError` (`balance`, `required`, `currency`), `ProviderError` (`status`), `TransactionError`,
-  `BroadcastError` (`transfer`). Blockchain errors are no longer `FragmentAPIError`; `ChannelNotFoundError` is no
-  longer a subclass of `UserNotFoundError`.
+  `InsufficientBalanceError` (`balance`, `required`, `currency`), `ProviderError` (`status`), `TransactionError`.
+  Blockchain errors are no longer `FragmentAPIError`; `ChannelNotFoundError` is no longer a subclass of
+  `UserNotFoundError`.
 - Seed phrase validated by tonutils on construction (length, wordlist, checksum).
 - Session expiry is `SessionExpiredError` for 401/403, "Access denied", missing request id, and missing API hash.
 - One blockchain API connection per client, closed by `aclose()`; the wallet key is derived once.
@@ -71,9 +71,8 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ### Migration
 
-- Check `error.retryable`: `True` means nothing was paid and the call can be retried. Only a `BroadcastError` with
-  `retryable=False` requires `find_transfer(msg_hash=error.transfer.msg_hash, since=...)` before paying again.
-- Catch `RecipientError` (or `ChannelNotFoundError`) for giveaways; `ChainError` for wallet/blockchain failures.
+- Check `error.retryable`: `True` means nothing was paid and the call can be retried. Catch `RecipientError` (or
+  `ChannelNotFoundError`) for giveaways; `ChainError` for wallet/blockchain failures.
 - Balances are `Decimal`; use `float(...)` where you need a float.
 - `process_transaction()` returns `TransferIntent` instead of `(hash, boc)`.
 

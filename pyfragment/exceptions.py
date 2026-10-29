@@ -1,14 +1,12 @@
 """Exceptions raised by pyfragment.
 
-``retryable`` means nothing was paid and repeating the call may succeed. Only a ``BroadcastError`` with
-``retryable=False`` leaves the payment's outcome unknown.
+``retryable`` means nothing was paid and repeating the call may succeed.
 """
 
 from __future__ import annotations
 
 from decimal import Decimal
 from http import HTTPStatus
-from typing import TYPE_CHECKING
 
 from pyfragment.constants import (
     GRAM_TOPUP_MAX,
@@ -23,9 +21,6 @@ from pyfragment.constants import (
     STARS_WINNERS_MAX,
     STARS_WINNERS_MIN,
 )
-
-if TYPE_CHECKING:
-    from pyfragment.domains.wallet.models import TransferIntent
 
 
 class FragmentError(Exception):
@@ -220,29 +215,6 @@ class TransactionError(ChainError):
     EXPIRED = "Fragment's transaction expired at {valid_until} (unix time) before it could be signed."
 
 
-class BroadcastError(ChainError):
-    """The signed transfer didn't go through, or its outcome couldn't be checked.
-
-    ``retryable`` is ``True`` when the transfer certainly didn't pay anything. When it is ``False`` the outcome is
-    unknown: check ``transfer.msg_hash`` in your wallet's transaction history before paying again.
-    """
-
-    NOT_SENT = "Transaction {msg_hash} was not sent: {exc}. Nothing was paid."
-    NOT_LANDED = "Transaction {msg_hash} did not reach the chain before it expired. Nothing was paid."
-    FAILED = "Transaction {msg_hash} reached the chain, but the wallet didn't pay (not enough funds?). Nothing was paid."
-    UNKNOWN = (
-        "Transaction {msg_hash} was sent, but whether it paid couldn't be checked: {exc}. "
-        "Check your wallet's transaction history by msg_hash before paying again."
-    )
-    SSL_HINT = (
-        "\nThis usually means your system's CA bundle is missing or outdated. Fix: run `pip install --upgrade certifi`; "
-        "on macOS you may also need to run the 'Install Certificates.command' located in your Python installation folder."
-    )
-
-    def __init__(self, message: str, transfer: TransferIntent, retryable: bool) -> None:
-        self.transfer = transfer
-        super().__init__(message, retryable=retryable)
-
 
 class UnexpectedError(FragmentError):
     """Raised when an unexpected error occurs during an API call. Nothing was sent."""
@@ -270,6 +242,5 @@ __all__ = [
     "InsufficientBalanceError",
     "ProviderError",
     "TransactionError",
-    "BroadcastError",
     "UnexpectedError",
 ]

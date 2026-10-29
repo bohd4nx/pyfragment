@@ -26,7 +26,6 @@ from pyfragment.enums import (
 from pyfragment.exceptions import (
     AlreadySubscribedError,
     AnonymousNumberError,
-    BroadcastError,
     ChainError,
     ChannelNotFoundError,
     ClientError,
@@ -91,7 +90,6 @@ __all__ = [
     "InsufficientBalanceError",
     "ProviderError",
     "TransactionError",
-    "BroadcastError",
     "UnexpectedError",
     # enums
     "ApiError",

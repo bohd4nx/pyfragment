@@ -1,7 +1,8 @@
 """Sign and send Fragment transactions with a real wallet against an in-memory provider: balance checks, the seqno and
-expiry that get signed, idempotent re-sends, and what each failure reports about whether money may have moved."""
+expiry that get signed, and how the library handles send errors."""
 
 import asyncio
+import logging
 import time
 from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager, contextmanager
@@ -13,7 +14,6 @@ import pytest
 from ton_core import ContractState
 
 from pyfragment import (
-    BroadcastError,
     FragmentClient,
     InsufficientBalanceError,
     ProviderError,
@@ -236,19 +236,12 @@ async def test_transfer_expires_within_a_minute_otherwise() -> None:
     assert before + 60 <= signed_header(ton.sent[0])[0] <= int(time.time()) + 60
 
 
-# Sending: the same signed bytes, never a second transfer, and an outcome settled on-chain
-
-
-@contextmanager
-def expired_right_away() -> Iterator[None]:
-    """Stop waiting for a transfer as soon as it isn't found (no 2 minutes of real time per test)."""
-    with patch("pyfragment.domains.wallet.transfer.LANDING_GRACE", -3600.0):
-        yield
+# Sending
 
 
 @pytest.mark.asyncio
 async def test_send_error_on_a_transfer_that_landed_is_a_success() -> None:
-    # toncenter answers 500 to some sends that went through: the chain decides, and nothing is sent twice.
+    # toncenter answers 500 to some sends that went through: the error is logged and the result returned normally.
     ton = FakeTon(seqno=5)
     ton.send_errors = [(provider_error(500, "internal"), True)]
     async with fragment_client(ton) as client:
@@ -258,60 +251,14 @@ async def test_send_error_on_a_transfer_that_landed_is_a_success() -> None:
 
 
 @pytest.mark.asyncio
-async def test_send_error_on_a_transfer_that_never_landed_is_reported_as_not_sent() -> None:
+async def test_send_error_is_logged_and_result_returned(caplog: pytest.LogCaptureFixture) -> None:
     ton = FakeTon()
     ton.send_errors = [(provider_error(401, "invalid token"), False)]
-    with expired_right_away():
-        async with fragment_client(ton) as client:
-            with pytest.raises(BroadcastError, match="was not sent: .*invalid token") as exc_info:
-                await process_transaction(client, transaction())
-
-    error = exc_info.value
-    assert error.retryable  # nothing was paid: buying again is safe
-    assert len(ton.sent) == 1 and ton.landed == []  # sent once, never again
-    assert error.transfer.amount_nano == 500_000_000 and error.transfer.destination == FRAGMENT_ADDRESS
-    assert error.transfer.msg_hash in str(error)
-
-
-@pytest.mark.asyncio
-async def test_accepted_transfer_that_never_lands_is_reported_as_not_paid() -> None:
-    ton = FakeTon(lands=False)
-    with expired_right_away():
-        async with fragment_client(ton) as client:
-            with pytest.raises(BroadcastError, match="did not reach the chain") as exc_info:
-                await process_transaction(client, transaction())
-    assert exc_info.value.retryable and len(ton.sent) == 1
-
-
-@pytest.mark.asyncio
-async def test_transfer_the_wallet_skipped_is_reported_as_not_paid() -> None:
-    # Wallets send with "ignore errors": a transfer they can't afford is dropped while the transaction succeeds.
-    ton = FakeTon(skips=True)
     async with fragment_client(ton) as client:
-        with pytest.raises(BroadcastError, match="didn't pay") as exc_info:
-            await process_transaction(client, transaction())
-    assert exc_info.value.retryable and len(ton.landed) == 1
-
-
-@pytest.mark.asyncio
-async def test_unreadable_history_leaves_the_outcome_unknown(caplog: pytest.LogCaptureFixture) -> None:
-    ton = FakeTon()
-    ton.transaction_errors = [provider_error(401, "unauthorized")]
-    with expired_right_away():
-        async with fragment_client(ton) as client:
-            with pytest.raises(BroadcastError, match="couldn't be checked") as exc_info:
-                await process_transaction(client, transaction())
-    assert not exc_info.value.retryable  # the one case where the caller has to look the transfer up
-    assert "Couldn't check whether transfer" in caplog.text
-
-
-@pytest.mark.asyncio
-async def test_history_failures_before_the_deadline_are_waited_out() -> None:
-    ton = FakeTon()
-    ton.transaction_errors = [provider_error(401, "unauthorized")] * 2
-    async with fragment_client(ton) as client:
-        await process_transaction(client, transaction())
-    assert len(ton.landed) == 1
+        with caplog.at_level(logging.WARNING, logger="pyfragment"):
+            sent = await process_transaction(client, transaction())
+    assert "Failed to send transfer" in caplog.text
+    assert isinstance(sent, TransferIntent)
 
 
 # The on_transfer_prepared hook
@@ -340,9 +287,8 @@ async def test_failing_hook_stops_the_transfer() -> None:
         raise RuntimeError("database is down")
 
     async with fragment_client(ton, on_transfer_prepared=hook) as client:
-        with pytest.raises(BroadcastError, match="database is down") as exc_info:
+        with pytest.raises(RuntimeError, match="database is down"):
             await process_transaction(client, transaction())
-    assert exc_info.value.retryable
     assert ton.sent == []
 
 
@@ -449,20 +395,6 @@ async def test_send_429_is_retried_once() -> None:
         await process_transaction(client, transaction())
     assert len(ton.sent) == 2 and len(ton.landed) == 1
 
-
-@pytest.mark.asyncio
-async def test_send_429_twice_is_reported_as_not_sent() -> None:
-    ton = FakeTon()
-    ton.send_errors = [
-        (provider_error(429, "rate limited"), False),
-        (provider_error(429, "rate limited"), False),
-    ]
-    with expired_right_away():
-        async with fragment_client(ton) as client:
-            with pytest.raises(BroadcastError, match="was not sent") as exc_info:
-                await process_transaction(client, transaction())
-    assert exc_info.value.retryable
-    assert len(ton.sent) == 2 and ton.landed == []
 
 
 def test_insufficient_balance_message_has_no_scientific_notation() -> None:

@@ -23,7 +23,7 @@ from pyfragment import (
     UserNotFoundError,
 )
 from pyfragment.enums import ApiMethod
-from pyfragment.exceptions import BroadcastError, ProviderError, TransactionError
+from pyfragment.exceptions import ProviderError, TransactionError
 from pyfragment.transport import fragment_request, get_fragment_hash
 from tests.shared import FAKE_ACCOUNT, FAKE_HASH, FAKE_RECIPIENT, FAKE_TRANSACTION
 
@@ -185,7 +185,7 @@ async def test_check_recipient_not_found(client: FragmentClient) -> None:
 
 
 def test_chain_errors_are_not_fragment_api_errors() -> None:
-    for error_cls in (InsufficientBalanceError, ProviderError, TransactionError, BroadcastError):
+    for error_cls in (InsufficientBalanceError, ProviderError, TransactionError):
         assert issubclass(error_cls, ChainError) and not issubclass(error_cls, FragmentAPIError)
 
 

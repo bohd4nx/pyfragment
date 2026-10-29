@@ -1,31 +1,29 @@
-"""Sign a Fragment transaction once, send exactly that message, and wait until the chain says whether it paid.
+"""Sign a Fragment transaction once and send it; Fragment's confirmation API handles the outcome.
 
-A signed message expires: once its ``valid_until`` has passed without it reaching the chain, it never will. So whether a
-transfer paid is settled by looking for it on-chain until then, never by the provider's answer to the send. A transfer
-is never signed twice: that would be a second, independent payment.
+A signed message expires: once its ``valid_until`` has passed, the wallet won't accept it and nothing lands.
+A transfer is never signed twice: that would create a second, independent payment.
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
-import ssl
 import time
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
 import tonutils.exceptions
-from ton_core import Address, normalize_hash
+from ton_core import Address
 from tonutils.contracts.wallet import TONTransferBuilder
 from tonutils.exceptions import ProviderResponseError
 
-from pyfragment.constants import LANDING_GRACE, LANDING_POLL_INTERVAL, MESSAGE_TTL, TRANSACTIONS_PAGE_SIZE
+from pyfragment.constants import MESSAGE_TTL
 from pyfragment.domains.wallet.balance import check_payment_balance
 from pyfragment.domains.wallet.models import TransferIntent
 from pyfragment.domains.wallet.payload import body_comment, decode_boc
 from pyfragment.domains.wallet.wallet import provider_error
 from pyfragment.enums import PaymentMethod
-from pyfragment.exceptions import BroadcastError, ProviderError, TransactionError
+from pyfragment.exceptions import ProviderError, TransactionError
 
 if TYPE_CHECKING:
     from decimal import Decimal
@@ -34,56 +32,6 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
-
-
-def _succeeded(tx: Any) -> bool:
-    # Wallets send with "ignore errors": a transfer the wallet can't afford is skipped silently while the tx
-    # succeeds and seqno advances. Both outmsg_cnt > 0 and skipped_actions == 0 must hold.
-    d = tx.description
-    if getattr(d, "aborted", True):
-        return False
-    compute = getattr(d, "compute_ph", None)
-    action = getattr(d, "action", None)
-    return (
-        compute is not None
-        and bool(compute.success)
-        and action is not None
-        and action.success
-        and action.skipped_actions == 0
-        and tx.outmsg_cnt > 0
-    )
-
-
-async def _find_transfer_by_lt(
-    client: FragmentClient,
-    *,
-    msg_hash: str,
-    last_lt: int,
-) -> bool | None:
-    """Scan the wallet's history for ``msg_hash``, stopping at ``last_lt``.
-
-    Returns ``True`` (found, succeeded), ``False`` (found, failed), or ``None`` (not yet on-chain).
-    Uses logical time as the lower bound to eliminate clock-skew false negatives.
-    """
-    ton_wallet = client.ton_wallet
-    low_hash = msg_hash.lower()
-    try:
-        ton = await ton_wallet.ton()
-        address = ton_wallet.wallet().address
-        from_lt: int | None = None
-        while True:
-            page = await ton.get_transactions(address, limit=TRANSACTIONS_PAGE_SIZE, from_lt=from_lt)
-            for tx in page:
-                if tx.lt <= last_lt:
-                    return None
-                in_msg = tx.in_msg
-                if in_msg is not None and in_msg.is_external and normalize_hash(in_msg) == low_hash:
-                    return _succeeded(tx)
-            if len(page) < TRANSACTIONS_PAGE_SIZE:
-                return None
-            from_lt = page[-1].lt - 1
-    except Exception as exc:
-        raise provider_error(ProviderError.TRANSFER_LOOKUP_FAILED, exc) from exc
 
 
 def _extract_message(transaction_data: dict[str, Any]) -> dict[str, Any]:
@@ -129,68 +77,25 @@ def _expiry(transaction_data: dict[str, Any]) -> int:
     return min(now + MESSAGE_TTL, valid_until)
 
 
-def _broadcast_error(
-    template: str, intent: TransferIntent, retryable: bool, exc: BaseException | None = None
-) -> BroadcastError:
-    message = template.format(msg_hash=intent.msg_hash, exc=exc)
-    cause: BaseException | None = exc
-    while cause is not None:
-        if isinstance(cause, ssl.SSLError):
-            message += BroadcastError.SSL_HINT
-            break
-        cause = cause.__cause__ or cause.__context__
-    return BroadcastError(message, intent, retryable=retryable)
-
-
-async def _send_message(ton: Any, boc_hex: str, valid_until: int) -> Exception | None:
+async def _send_message(ton: Any, boc_hex: str, valid_until: int) -> None:
     """Send the signed message, retrying once on a 429 while the message is still valid.
 
-    Returns the exception if the send ultimately failed, or ``None`` on success. The chain decides whether the message
-    landed regardless: toncenter answers 500 to some sends that went through.
+    Send errors are logged but not raised: the chain decides whether the message landed, and Fragment's
+    confirmation API reports the outcome. toncenter answers 500 to some sends that went through.
     """
     try:
         await ton.send_message(boc_hex)
-        return None
     except ProviderResponseError as exc:
         if exc.code == HTTPStatus.TOO_MANY_REQUESTS and time.time() < valid_until:
             await asyncio.sleep(1)
             try:
                 await ton.send_message(boc_hex)
-                return None
             except Exception as retry_exc:
-                return retry_exc
-        return exc
+                logger.warning("Failed to send transfer (retry): %s", retry_exc)
+        else:
+            logger.warning("Failed to send transfer: %s", exc)
     except Exception as exc:
-        return exc
-
-
-async def _wait_until_landed(
-    client: FragmentClient, intent: TransferIntent, last_lt: int, send_error: Exception | None
-) -> None:
-    """Poll the wallet's history until the transfer shows up, or until it can no longer land.
-
-    Uses ``last_lt`` (the wallet's logical time before signing) as the lower bound, which avoids false negatives from
-    local-clock skew. Raises ``BroadcastError``: retryable if the transfer certainly paid nothing, not retryable if
-    that couldn't be determined.
-    """
-    deadline = intent.valid_until + LANDING_GRACE
-    while True:
-        try:
-            found = await _find_transfer_by_lt(client, msg_hash=intent.msg_hash, last_lt=last_lt)
-        except ProviderError as exc:
-            if time.time() >= deadline:
-                logger.warning("Couldn't check whether transfer %s paid: %s", intent.msg_hash, exc)
-                raise _broadcast_error(BroadcastError.UNKNOWN, intent, retryable=False, exc=exc) from exc
-            found = None
-        if found is not None:
-            if not found:
-                raise _broadcast_error(BroadcastError.FAILED, intent, retryable=True)
-            logger.debug("Transfer %s confirmed on-chain", intent.msg_hash)
-            return
-        if time.time() >= deadline:
-            template = BroadcastError.NOT_SENT if send_error is not None else BroadcastError.NOT_LANDED
-            raise _broadcast_error(template, intent, retryable=True, exc=send_error) from send_error
-        await asyncio.sleep(LANDING_POLL_INTERVAL)
+        logger.warning("Failed to send transfer: %s", exc)
 
 
 async def process_transaction(
@@ -200,7 +105,7 @@ async def process_transaction(
     required_payment_amount: Decimal | None = None,
     req_id: str | None = None,
 ) -> TransferIntent:
-    """Sign and send a Fragment transaction with the seeded GRAM (ex TON) wallet, and wait until it has paid.
+    """Sign and send a Fragment transaction with the seeded GRAM (ex TON) wallet.
 
     Args:
         client: Authenticated `FragmentClient` instance.
@@ -210,11 +115,7 @@ async def process_transaction(
         req_id: Fragment's invoice id, passed on to the ``on_transfer_prepared`` hook.
 
     Returns:
-        The paid transfer: its normalized message hash, the signed boc (what Fragment's own `confirm_method`, e.g.
-        confirmReq, expects) and the payment details.
-
-    Raises:
-        BroadcastError: Once the message is signed, if it didn't pay (``retryable``) or that couldn't be checked.
+        The signed transfer: its normalized message hash, the signed boc and the payment details.
     """
     message = _extract_message(transaction_data)
     amount_nano = _unsigned_int(message.get("amount"))
@@ -230,7 +131,6 @@ async def process_transaction(
             required_payment_amount,
             transaction_data["transaction"].get("from", ""),
         )
-        last_lt: int = onchain.last_transaction_lt or 0
         valid_until = _expiry(transaction_data)
         params = await ton_wallet.transfer_params(valid_until, state=onchain)
         try:
@@ -252,13 +152,9 @@ async def process_transaction(
         )
         logger.debug("Signed transfer %s (valid_until=%d, amount=%d nano)", intent.msg_hash, valid_until, amount_nano)
 
-        try:
-            if client.on_transfer_prepared is not None:
-                await client.on_transfer_prepared(intent)
-            ton = await ton_wallet.ton()
-        except Exception as exc:
-            raise _broadcast_error(BroadcastError.NOT_SENT, intent, retryable=True, exc=exc) from exc
+        if client.on_transfer_prepared is not None:
+            await client.on_transfer_prepared(intent)
 
-        send_error = await _send_message(ton, external.as_hex, valid_until)
-        await _wait_until_landed(client, intent, last_lt, send_error)
+        ton = await ton_wallet.ton()
+        await _send_message(ton, external.as_hex, valid_until)
         return intent

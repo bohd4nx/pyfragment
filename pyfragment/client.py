@@ -72,9 +72,8 @@ class FragmentClient:
     The client keeps one HTTP session and one blockchain API connection and reuses them across calls.
     Use ``async with`` (or call :meth:`aclose`) to release them when you are done.
 
-    A purchase returns only once its transfer is on-chain (or raises :class:`BroadcastError` once it can no
-    longer get there), so purchases from one client run one at a time. Run purchases from one wallet in
-    several processes one at a time too, and keep the system clock synced.
+    Purchases from one client run one at a time. Run purchases from one wallet in several processes one at a
+    time too, and keep the system clock synced.
 
     Raises:
         ConfigurationError: If ``seed``, ``api_key``, ``wallet_version``, ``mnemonic_type``,
