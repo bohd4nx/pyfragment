@@ -12,7 +12,7 @@ class MyUsernamesResult:
     items: list[AuctionItem]
 
     def __repr__(self) -> str:
-        return f"MyUsernamesResult(items={len(self.items)})"
+        return f"MyUsernamesResult(items={self.items!r})"
 
 
 @dataclass
@@ -22,7 +22,7 @@ class MyNumbersResult:
     items: list[AuctionItem]
 
     def __repr__(self) -> str:
-        return f"MyNumbersResult(items={len(self.items)})"
+        return f"MyNumbersResult(items={self.items!r})"
 
 
 @dataclass
@@ -32,4 +32,4 @@ class MyGiftsResult:
     items: list[AuctionItem]
 
     def __repr__(self) -> str:
-        return f"MyGiftsResult(items={len(self.items)})"
+        return f"MyGiftsResult(items={self.items!r})"
