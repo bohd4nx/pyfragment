@@ -54,9 +54,7 @@ async def get_stars_price(client: FragmentClient, amount: int) -> Decimal:
 async def get_stars_packages(client: FragmentClient) -> list[StarsPackage]:
     """Return all predefined Stars purchase packages with current GRAM and USD prices."""
     with operation(logger, "get Stars packages"):
-        result = await client.call(
-            ApiMethod.UPDATE_STARS_PRICES, {"quantity": STARS_PURCHASE_MIN}, page_url=STARS_PAGE
-        )
+        result = await client.call(ApiMethod.UPDATE_STARS_PRICES, {"quantity": STARS_PURCHASE_MIN}, page_url=STARS_PAGE)
         if err := error_text(result):
             raise FragmentAPIError(err)
         packages = parse_stars_packages(str(result.get("options_html", "")))
