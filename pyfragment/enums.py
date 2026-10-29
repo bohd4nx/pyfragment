@@ -1,29 +1,13 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Any
-
-from tonutils.contracts.wallet import WalletHighloadV2, WalletHighloadV3R1, WalletV4R2, WalletV5R1
 
 
 class PaymentMethod(StrEnum):
+    """How a purchase is paid. Fragment also offers non-TON chains, which this library can't sign for."""
+
     GRAM = "ton"
     USDT_GRAM = "usdt_ton"
-
-    # Not supported yet
-    USDT_ETH = "usdt_eth"
-    USDT_POL = "usdt_pol"
-    USDC_ETH = "usdc_eth"
-    USDC_BASE = "usdc_base"
-    USDC_POL = "usdc_pol"
-
-
-# Only these are actually broadcastable by this library today - the rest are non-TON chains
-# that `process_transaction()` can't sign or settle for, even though Fragment lists them.
-SUPPORTED_PAYMENT_METHODS: set[PaymentMethod] = {
-    PaymentMethod.GRAM,
-    PaymentMethod.USDT_GRAM,
-}
 
 
 class WalletVersion(StrEnum):
@@ -31,35 +15,19 @@ class WalletVersion(StrEnum):
     V5R1 = "V5R1"
     HighloadV2 = "HighloadV2"
     HighloadV3R1 = "HighloadV3R1"
+    TG = "TG"  # Telegram Wallet (self-custodial): a 12-word phrase, or 24 words after a key rotation
 
 
-WALLET_CLASSES: dict[WalletVersion, Any] = {
-    WalletVersion.V4R2: WalletV4R2,
-    WalletVersion.V5R1: WalletV5R1,
-    WalletVersion.HighloadV2: WalletHighloadV2,
-    WalletVersion.HighloadV3R1: WalletHighloadV3R1,
-}
+class MnemonicType(StrEnum):
+    """How a seed phrase derives the wallet key."""
+
+    TON = "ton"  # TON's own scheme: Tonkeeper, MyTonWallet, Tonhub and other TON-only wallets
+    MULTICHAIN = "multichain"  # BIP-39 phrase, key at m/44'/607'/0': Telegram Wallet and multichain wallets
 
 
 class ApiProvider(StrEnum):
     TONAPI = "tonapi"  # tonconsole.com — default
     TONCENTER = "toncenter"  # t.me/toncenter
-
-
-class SupportedBrowser(StrEnum):
-    ARC = "arc"
-    BRAVE = "brave"
-    CHROME = "chrome"
-    CHROMIUM = "chromium"
-    CHROMIUM_BASED = "chromium_based"
-    EDGE = "edge"
-    FIREFOX = "firefox"
-    FIREFOX_BASED = "firefox_based"
-    LIBREWOLF = "librewolf"
-    OPERA = "opera"
-    OPERA_GX = "opera_gx"
-    SAFARI = "safari"
-    VIVALDI = "vivaldi"
 
 
 class ApiMethod(StrEnum):

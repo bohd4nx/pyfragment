@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from pyfragment.domains.base import BaseService
-from pyfragment.domains.giveaways.giveaway import giveaway_premium, giveaway_stars
 from pyfragment.domains.giveaways.models import PremiumGiveawayResult, StarsGiveawayResult
+from pyfragment.domains.giveaways.premium import giveaway_premium
+from pyfragment.domains.giveaways.stars import giveaway_stars
 from pyfragment.enums import PaymentMethod
 
 

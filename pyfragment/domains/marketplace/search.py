@@ -5,14 +5,14 @@ import logging
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
-from pyfragment.core.constants import FRAGMENT_BASE_URL, GIFTS_PAGE, NUMBERS_PAGE
-from pyfragment.core.validation import normalize_filter, normalize_gift_attributes, normalize_sort
+from pyfragment.constants import FRAGMENT_BASE_URL, GIFTS_PAGE, NUMBERS_PAGE
 from pyfragment.domains.base import operation
 from pyfragment.domains.marketplace.models import AuctionItem, GiftsResult, NumbersResult, UsernamesResult
 from pyfragment.domains.marketplace.parser import parse_auction_rows, parse_gift_items
 from pyfragment.enums import ApiMethod, AuctionFilter, AuctionSort, MarketplaceType
 from pyfragment.exceptions import FragmentAPIError
 from pyfragment.schemas import error_text
+from pyfragment.utils.validation import normalize_filter, normalize_gift_attributes, normalize_sort
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient

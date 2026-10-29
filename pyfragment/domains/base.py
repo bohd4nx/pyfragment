@@ -13,18 +13,19 @@ if TYPE_CHECKING:
 
 @contextmanager
 def operation(logger: logging.Logger, description: str, *args: object) -> Iterator[None]:
-    """Log a failed Fragment operation once and normalize its errors.
+    """Normalize a Fragment operation's errors.
 
-    ``FragmentError`` subclasses are logged and re-raised untouched; anything else is wrapped in
-    ``UnexpectedError``. ``description`` is a %-style template completing "Failed to ...".
+    ``FragmentError`` subclasses are re-raised untouched; anything else is wrapped in ``UnexpectedError``. The error
+    is the caller's to report: it is logged here at debug level only, for context. ``description`` is a %-style
+    template completing "Failed to ...".
     """
     try:
         yield
     except FragmentError as exc:
-        logger.error("Failed to " + description + ": %s", *args, exc, exc_info=True)
+        logger.debug("Failed to " + description + ": %s", *args, exc)
         raise
     except Exception as exc:
-        logger.exception("Failed to " + description + " due to an unexpected error", *args)
+        logger.debug("Failed to " + description + " due to an unexpected error", *args, exc_info=True)
         raise UnexpectedError(UnexpectedError.UNEXPECTED.format(exc=exc)) from exc
 
 
