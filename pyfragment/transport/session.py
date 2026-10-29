@@ -64,6 +64,7 @@ class FragmentTransport:
 
         fragment_hash = await get_fragment_hash(session, page_url)
         response = await fragment_request(session, fragment_hash, headers, payload)
-        if not is_bad_hash(response):
-            self._hashes[page_url] = fragment_hash
+        if is_bad_hash(response):
+            raise SessionExpiredError(SessionExpiredError.STALE_HASH.format(url=page_url))
+        self._hashes[page_url] = fragment_hash
         return response

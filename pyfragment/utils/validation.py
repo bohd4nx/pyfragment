@@ -49,7 +49,7 @@ def normalize_provider(api_provider: str) -> ApiProvider:
                 provider=api_provider,
                 supported=", ".join(sorted(p.value for p in ApiProvider)),
             )
-        )
+        ) from None
 
 
 def normalize_wallet_version(wallet_version: str) -> WalletVersion:

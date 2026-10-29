@@ -7,7 +7,6 @@ from urllib.parse import urlsplit, urlunsplit
 
 from curl_cffi.requests import AsyncSession
 
-from pyfragment.constants import FRAGMENT_BASE_URL
 from pyfragment.exceptions import SessionExpiredError
 from pyfragment.transport.api import send, status_error
 
@@ -27,7 +26,7 @@ def parent_url(page_url: str) -> str:
 
 async def get_fragment_hash(session: AsyncSession[Any], page_url: str) -> str:
     """Load a Fragment page and extract the API hash its frontend embeds for ``/api?hash=...`` calls."""
-    referer = parent_url(page_url) or FRAGMENT_BASE_URL
+    referer = parent_url(page_url)
 
     # This is a plain page load, not an XHR call — leave Accept/Sec-Fetch-*/UA/etc. to
     # curl_cffi's impersonate="chrome" defaults, which already look like a real navigation.

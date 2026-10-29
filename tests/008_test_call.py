@@ -159,13 +159,14 @@ async def test_transport_refreshes_stale_hash_once() -> None:
 
 
 @pytest.mark.asyncio
-async def test_transport_does_not_cache_a_rejected_hash() -> None:
+async def test_transport_raises_on_persistently_rejected_hash() -> None:
     session = AsyncMock(spec=AsyncSession)
     session.post = AsyncMock(return_value=_response(200, {"error": "Bad request"}))
     transport = _transport_with_session(session)
 
     with patch("pyfragment.transport.session.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)):
-        assert await transport.call("a", None, "https://fragment.com/stars/buy") == {"error": "Bad request"}
+        with pytest.raises(SessionExpiredError, match="freshly fetched API hash"):
+            await transport.call("a", None, "https://fragment.com/stars/buy")
 
     assert transport._hashes == {}
 

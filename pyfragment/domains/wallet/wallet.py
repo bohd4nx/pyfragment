@@ -146,5 +146,6 @@ class TonWallet:
     async def aclose(self) -> None:
         ton, self._ton = self._ton, None
         self._wallet = None
+        self._account = None
         if ton is not None and ton.connected:
             await ton.close()
