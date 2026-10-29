@@ -81,3 +81,7 @@ module = [
     "tonutils.*",
 ]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "pyfragment.transport.api"
+warn_unused_ignores = false
