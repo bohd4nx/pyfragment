@@ -7,7 +7,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ---
 
-## [Unreleased]
+## [2026.5.0] — 2026-10-29
 
 ### Added
 
@@ -522,7 +522,7 @@ The TON blockchain has been rebranded to **GRAM (ex TON)**. All identifiers, mes
 - `py.typed` marker — full PEP 561 typing support for type-checkers
 - `__repr__` on all result types for readable debug output
 
-[Unreleased]: https://github.com/bohd4nx/pyfragment/compare/v2026.4.0...HEAD
+[2026.5.0]: https://github.com/bohd4nx/pyfragment/compare/v2026.4.0...v2026.5.0
 [2026.4.0]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.4.0
 [2026.3.4]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.3.4
 [2026.3.3]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.3.3
