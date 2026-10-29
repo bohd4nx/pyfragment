@@ -11,74 +11,92 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ### Added
 
-- **Telegram Wallet:** `wallet_version="TG"` for Telegram's self-custodial contract. Supports the 24-word phrase
-  shown after a key rotation (words 1–12 keep the address; words 13–24 are the active key).
-- **Multichain (BIP-39) phrases:** `FragmentClient(mnemonic_type="multichain")` for BIP-39 wallets (`m/44'/607'/0'`).
-  The default is `"ton"`; the scheme is never guessed automatically.
-- **`on_transfer_prepared` callback** — called with a `TransferIntent` after signing and before sending, so a crash
-  mid-purchase leaves enough information to check whether the transfer landed. If it raises, nothing is sent.
-- Purchase results carry `comment` (Fragment's `Ref#…` reference) and `boc` (the signed message). All six results
-  share the `PaymentResult` base (`transaction_id`, `confirmed`, `comment`, `boc`).
-- **`check_stars_recipient()` / `check_premium_recipient()`** — validate a recipient without purchasing. Return
-  `Recipient` (`recipient`, `username`, `name`, `photo`, `myself`).
-- `FragmentClient(gas_reserve=...)` (default `0.33` GRAM) and `confirm_timeout=...` (default `60` s, `0` to skip).
-- `MnemonicType` in `pyfragment.enums`.
+- **Telegram Wallet:** `WalletVersion.TG` for Telegram's self-custodial contract. Always paired with
+  `mnemonic_type="multichain"` — the 12-word phrase (or the 24 words shown after a key rotation; words 1–12
+  keep the address, words 13–24 are the active key).
+- **Multichain (BIP-39) phrases:** `FragmentClient(mnemonic_type="multichain")` for BIP-39 wallets
+  (`m/44'/607'/0'`). The default is `"ton"`; the scheme is never guessed automatically.
+  `MnemonicType` is exported from `pyfragment` and `pyfragment.enums`.
+- **`on_transfer_prepared` callback** — `FragmentClient(on_transfer_prepared=async_fn)`. Called with a
+  `TransferIntent` after signing and before sending. If it raises, nothing is sent; a crash after it returns
+  leaves enough information to verify whether the transfer landed.
+- **`comment` and `boc` in all purchase results.** Every result (`StarsResult`, `PremiumResult`, etc.)
+  now carries `comment` (Fragment's `Ref#…` payment reference) and `boc` (the raw signed message). All six
+  results share the new `PaymentResult` base (`transaction_id`, `confirmed`, `comment`, `boc`).
+  `PaymentResult`, `TransferIntent` and `Recipient` are exported from the package root.
+- **`check_stars_recipient()` / `check_premium_recipient()`** — validate a recipient without starting a
+  purchase. Return a `Recipient` (`recipient`, `username`, `name`, `photo`, `myself`).
+- `FragmentClient(gas_reserve=...)` — GRAM the wallet must keep on top of any payment for network fees.
+  Defaults to `0.33`; replaces `MIN_GRAM_BALANCE`.
+- `FragmentClient(confirm_timeout=...)` — seconds to wait for Fragment's own confirmation after paying.
+  Defaults to `60`; pass `0` to skip.
 
 ### Changed
 
-- **A transfer is signed and sent once.** Fragment's confirmation API handles the outcome. Send errors are
-  logged and do not raise; the provider's answer to the send is not the truth — toncenter answers 500 to
-  some sends that went through.
-- **Transfers expire with Fragment's invoice** — at most 60 s, never past `validUntil`. A transfer that didn't land
-  in time never will. Expired transactions are refused before signing.
-- **Seqno is read explicitly** — a provider failure raises `ProviderError` instead of silently signing seqno 0.
-- **Fragment's payload is signed byte-for-byte** (it used to be decoded and re-encoded, stripping surrounding whitespace).
-- **Balances and amounts are exact `Decimal` values** (previously rounded to 4 places). A USDT payment needs the
-  attached GRAM plus the gas reserve, the same as a GRAM payment.
-- **Exceptions are flat and carry `retryable`** (`True` = nothing was paid, repeating may succeed):
-  `NetworkError`, `HTTPStatusError` (`status`, `url`), `SessionExpiredError`, `RecipientError`, `ChainError`,
-  `InsufficientBalanceError` (`balance`, `required`, `currency`), `ProviderError` (`status`), `TransactionError`.
-  Blockchain errors are no longer `FragmentAPIError`; `ChannelNotFoundError` is no longer a subclass of
-  `UserNotFoundError`.
-- Seed phrase validated by tonutils on construction (length, wordlist, checksum).
-- Session expiry is `SessionExpiredError` for 401/403, "Access denied", missing request id, and missing API hash.
-- One blockchain API connection per client, closed by `aclose()`; the wallet key is derived once.
+- **A transfer is signed and sent exactly once.** Fragment's confirmation API is the outcome signal.
+  Send errors are logged but do not raise — the provider's response to `sendBoc` is not authoritative
+  (toncenter answers 500 to some sends that went through). A 429 is retried once while the message is
+  still valid; any other error is logged.
+- **Transfers expire with Fragment's invoice.** The signed message carries a `valid_until` capped at 60 s,
+  never past Fragment's `validUntil`. An expired transaction is refused before signing (`TransactionError`),
+  as is a transaction with multiple messages — signing only the first would pay a partial invoice.
+- **Seqno is read explicitly.** A provider failure raises `ProviderError` instead of silently signing
+  seqno 0, which would deploy an uninitialised wallet and waste the transfer.
+- **Fragment's payload is signed byte-for-byte.** Previously the payload was decoded and re-encoded,
+  silently stripping surrounding whitespace.
+- **Balances and amounts are exact `Decimal` values** (previously rounded to 4 decimal places). A USDT
+  payment requires the attached GRAM plus the gas reserve, the same as a GRAM payment.
+- **Exception hierarchy restructured** — every error carries `retryable` (`True` = nothing was paid,
+  repeating is safe):
+  - `NetworkError` — Fragment unreachable (timeout, dropped connection); always `retryable=True`
+  - `HTTPStatusError` (`status`, `url`) — unexpected HTTP status; `retryable=True` for 429 and 5xx
+  - `SessionExpiredError` — HTTP 401/403, "Access denied", missing request ID, or a freshly fetched API
+    hash also rejected (previously this last case was returned silently as a valid result)
+  - `RecipientError` → `UserNotFoundError`, `ChannelNotFoundError`, `AlreadySubscribedError`
+  - `ChainError` → `InsufficientBalanceError` (`balance`, `required`, `currency`),
+    `ProviderError` (`status`), `TransactionError`
+  - `UnexpectedError` is now a direct subclass of `FragmentError`, not `OperationError`
+  - Blockchain errors (`ChainError` and below) are no longer subclasses of `FragmentAPIError`
+  - `ChannelNotFoundError` is now a subclass of `RecipientError`, not `UserNotFoundError`
+- `toggle_login_codes()` raises `AnonymousNumberError` on failure, like `terminate_sessions()`.
+- The wallet key is derived once at first use and reused; `TonWallet.aclose()` clears the cached account
+  payload so a reconnect never reuses stale on-chain state.
 - The library no longer logs the errors it raises.
-- `toggle_login_codes()` raises `AnonymousNumberError` like `terminate_sessions()`.
+- `Recipient.username` stores the query exactly as the caller passed it (previously normalised:
+  `@durov` → `durov`, `https://t.me/durov` → `durov`).
 - Dependencies: tonutils ≥ 2.5.1, ton-core ≥ 0.7.1 (now declared), curl-cffi ≥ 0.16.3.
 
 ### Fixed
 
-- A transaction with multiple messages is refused instead of paying only the first one.
 - Cookies given as non-object JSON raise `CookieError` instead of `AttributeError`.
-- `get_wallet()` error messages no longer mention Tonapi when toncenter is the provider.
-- `SessionExpiredError` is now raised when a freshly fetched API hash is also rejected by Fragment (previously the
-  error response was returned silently as if it were a valid result).
-- `TonWallet.aclose()` now clears the cached account payload so a reconnect never reuses stale on-chain state.
+- `get_wallet()` error messages no longer reference Tonapi when toncenter is the configured provider.
 
 ### Removed
 
-- `FragmentPageError`, `OperationError`, `WalletError`: use `HTTPStatusError`/`SessionExpiredError`,
-  `ChainError`/`UnexpectedError`, `InsufficientBalanceError`/`ProviderError`.
-- `get_cookies_from_browser()`, `CookieResult`, `SupportedBrowser`, `browser` extra: pass cookies as a dict or JSON.
+- `FragmentPageError`, `OperationError`, `WalletError` — replaced by the restructured hierarchy:
+  `HTTPStatusError` / `SessionExpiredError`, `ChainError` / `UnexpectedError`,
+  `InsufficientBalanceError` / `ProviderError`.
+- `get_cookies_from_browser()`, `CookieResult`, `SupportedBrowser`, the `browser` install extra —
+  pass cookies as a dict or JSON string.
 - `MIN_GRAM_BALANCE` → `FragmentClient(gas_reserve=...)` / `DEFAULT_GAS_RESERVE`.
   `NANO_PER_GRAM`, `USDT_UNITS` → `GRAM_DECIMALS`, `USDT_DECIMALS`.
-- `MAX_BROADCAST_ATTEMPTS`: a transfer is sent once (with one 429 retry).
-- `PaymentMethod.USDT_ETH/POL`, `USDC_ETH/BASE/POL`, `SUPPORTED_PAYMENT_METHODS`:
-  `PaymentMethod` contains only `GRAM` and `USDT_GRAM`.
+- `MAX_BROADCAST_ATTEMPTS` — a transfer is sent once (with one 429 retry).
+- `PaymentMethod.USDT_ETH`, `USDT_POL`, `USDC_ETH`, `USDC_BASE`, `USDC_POL` and `SUPPORTED_PAYMENT_METHODS` —
+  `PaymentMethod` now contains only `GRAM` and `USDT_GRAM`.
 - `client.tonapi` → `client.wallet` (`WalletService`).
-- `clean_decode()`: the payment comment is in the result's `comment` field.
-- `BroadcastError`: send errors are logged; Fragment's confirmation API is the outcome signal.
-- `find_transfer()` / `TransferInfo`: on-chain scan replaced by Fragment's confirmation API.
-- `normalize_username()`: `Recipient.username` is the query as passed by the caller.
-- `domains/wallet/payload.py` → `utils/ton.py`; `domains/wallet/lookup.py` removed.
+- `clean_decode()` — the payment comment is in the result's `comment` field.
+- `BroadcastError` — send errors are logged; Fragment's confirmation API is the outcome signal.
+- `find_transfer()` / `TransferInfo` — on-chain scan removed; Fragment's confirmation API is the source of truth.
+- `normalize_username()` — see `Recipient.username` change above.
 
 ### Migration
 
-- Check `error.retryable`: `True` means nothing was paid and the call can be retried. Catch `RecipientError` (or
-  `ChannelNotFoundError`) for giveaways; `ChainError` for wallet/blockchain failures.
-- Balances are `Decimal`; use `float(...)` where you need a float.
-- `process_transaction()` returns `TransferIntent` instead of `(hash, boc)`.
+- **Exceptions:** catch `RecipientError` (or specifically `ChannelNotFoundError`) for giveaways; `ChainError`
+  for wallet and blockchain failures. Check `error.retryable` before deciding to retry — `True` means nothing
+  was paid and repeating is safe.
+- **Balances** are `Decimal`; use `float(balance)` where a float is needed.
+- **`process_transaction()`** returns `TransferIntent` (`msg_hash`, `boc`, `destination`, `amount_nano`,
+  `comment`, `payment_method`, `req_id`, `valid_until`) instead of `(hash, boc)`.
 
 ---
 
