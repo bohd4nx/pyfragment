@@ -10,9 +10,13 @@
   - Stars
     - [Purchase](client/stars/purchase.md)
     - [Giveaway](client/stars/giveaway.md)
+    - [Prices](client/stars/prices.md)
   - Premium
     - [Purchase](client/premium/purchase.md)
     - [Giveaway](client/premium/giveaway.md)
+    - [Prices](client/premium/prices.md)
+  - My Assets
+    - [Overview](client/assets/overview.md)
   - Marketplace
     - [Overview](client/marketplace/overview.md)
     - [Search Usernames](client/marketplace/search-usernames.md)

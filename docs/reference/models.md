@@ -16,6 +16,9 @@ Exported result models (the purchase results share the `PaymentResult` base: `tr
 - `LoginCodeResult(number, code, active_sessions)`
 - `TerminateSessionsResult(number, message)`
 - `UsernamesResult(items, next_offset_id)`, `NumbersResult(items, next_offset_id)`, `GiftsResult(items, next_offset)` — `items` is a list of `AuctionItem` (`slug`, `name`, `status`, `price`, `date`)
+- `MyUsernamesResult(items)`, `MyNumbersResult(items)`, `MyGiftsResult(items)` — owned assets; same `AuctionItem` list format
+- `StarsPackage(stars, gram, usd)` — one predefined Stars purchase option with live GRAM and USD prices
+- `PremiumPackage(months, gram, usd)` — one Telegram Premium subscription option with live GRAM and USD prices
 
 Most high-level methods return one of these dataclasses.
 
@@ -34,6 +37,12 @@ Most high-level methods return one of these dataclasses.
 - `search_usernames()`: `UsernamesResult`
 - `search_numbers()`: `NumbersResult`
 - `search_gifts()`: `GiftsResult`
+- `get_my_usernames()`: `MyUsernamesResult`
+- `get_my_numbers()`: `MyNumbersResult`
+- `get_my_gifts()`: `MyGiftsResult`
+- `get_stars_price()`: `Decimal`
+- `get_stars_packages()`: `list[StarsPackage]`
+- `get_premium_packages()`: `list[PremiumPackage]`
 
 ## `transaction_id`, `comment` and `boc`
 
@@ -50,6 +59,7 @@ Most high-level methods return one of these dataclasses.
 ## Methods without dataclass return
 
 - `toggle_login_codes()`: returns `None`
+- `logout()`, `disconnect_wallet()`: return `None`
 - `call()`: returns `dict[str, Any]` (raw Fragment API response)
 
 **Use these models directly in your app layer and avoid passing raw dictionaries around.**
