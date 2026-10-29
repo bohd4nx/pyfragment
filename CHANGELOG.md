@@ -68,6 +68,10 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
   `PaymentMethod` contains only `GRAM` and `USDT_GRAM`.
 - `client.tonapi` → `client.wallet` (`WalletService`).
 - `clean_decode()`: the payment comment is in the result's `comment` field.
+- `BroadcastError`: send errors are logged; Fragment's confirmation API is the outcome signal.
+- `find_transfer()` / `TransferInfo`: on-chain scan replaced by Fragment's confirmation API.
+- `normalize_username()`: `Recipient.username` is the query as passed by the caller.
+- `domains/wallet/payload.py` → `utils/ton.py`; `domains/wallet/lookup.py` removed.
 
 ### Migration
 

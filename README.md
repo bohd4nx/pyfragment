@@ -71,24 +71,7 @@ Check that `get_wallet().address` is the address your wallet app shows before pa
 
 ## Failures and money
 
-A purchase returns once its payment is on-chain. A transfer is signed and sent once (never a second payment), and it
-expires within a minute, so the library can always tell whether it paid. Retrying failed calls is up to you. Every error has
-`retryable`: `True` means nothing was paid. Only a `BroadcastError` with `retryable=False` (the wallet history couldn't
-be read) leaves the payment unchecked:
-
-```python
-from datetime import UTC, datetime
-
-from pyfragment import BroadcastError
-
-started = datetime.now(UTC)
-try:
-    stars = await client.purchase_stars("@username", amount=500)
-except BroadcastError as error:
-    if not error.retryable:
-        transfer = await client.find_transfer(msg_hash=error.transfer.msg_hash, since=started)
-        print("paid" if transfer and transfer.success else "not paid")
-```
+A transfer is signed and sent once — never a second payment. Fragment's confirmation API is the source of truth for whether it landed. Every error has `retryable`: `True` means nothing was paid and the call is safe to retry. `confirmed` on a result is a best-effort acknowledgement from Fragment's backend; `False` doesn't mean the purchase failed — **don't retry just because `confirmed` is `False`**. See [Payment Safety](https://bohd4nx.gitbook.io/pyfragment/client/transfers) for crash recovery via `on_transfer_prepared`.
 
 <div align="center">
 

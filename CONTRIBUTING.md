@@ -35,7 +35,7 @@ pyfragment/
   enums.py            — PaymentMethod, WalletVersion, MnemonicType, ApiProvider, ApiMethod, ApiError, marketplace enums
   exceptions.py       — exception hierarchy and canonical messages
   schemas.py          — typed views of Fragment's response bodies
-  utils/              — input validation (validation.py), exact money arithmetic (money.py)
+  utils/              — input validation (validation.py), exact money arithmetic (money.py), TON cell helpers (ton.py), transaction payload parsing (transaction.py)
   transport/          — HTTP layer: page (API hash), api (requests, 429 retry), session (reusable transport)
   domains/            — one package per feature domain
     ads/              — recharge_ads, topup_gram
@@ -46,7 +46,7 @@ pyfragment/
     purchases/        — stars.py (purchase_stars, check_stars_recipient), premium.py (purchase_premium, check_premium_recipient)
     recipients/       — recipient lookup shared by the purchase flows (Recipient model)
     wallet/           — the GRAM (ex TON) wallet: TonWallet (wallet.py), balances (balance.py), signing and sending
-                        (transfer.py), on-chain lookup (lookup.py), payload comments (payload.py)
+                        (transfer.py)
     base.py           — BaseService, operation() error guard
 tests/                — unit tests (pytest); tests/fixtures holds real fragment.com markup and chain data;
                         tests/fake_ton.py is an in-memory blockchain API for signing with real wallets
@@ -64,7 +64,7 @@ examples/             — runnable usage examples (excluded from CI)
 - Fragment method names and error texts are enums (`ApiMethod`, `ApiError`); response bodies are read through `pyfragment.schemas`. A new Fragment call means a new `ApiMethod` member; tests use the enums, not string literals.
 - Errors: raise a `FragmentError` subclass with a message template defined on the exception class; wrap a whole operation with `domains.base.operation()`. Don't log what you raise: the caller decides.
 - The library is a thin wrapper: no retries besides Fragment's 429. Report failures with a `retryable` flag and let the caller decide.
-- Money: compare amounts in integer nanograms / USDT units (`utils/money.py`), never floats. A transfer is signed and sent once; whether it paid is read from the chain, and every failure after signing surfaces as a `BroadcastError`.
+- Money: compare amounts in integer nanograms / USDT units (`utils/money.py`), never floats. A transfer is signed and sent once; Fragment's confirmation API is the source of truth for whether it landed.
 - tonutils swallows provider failures in some calls (`wallet.refresh()` turns a bad API key into an empty wallet): use the strict helpers on `domains/wallet/wallet.py`'s `TonWallet`.
 - Parser changes are checked against real markup: add or refresh a trimmed response under `tests/fixtures/` (see its README).
 - Versioning follows [CalVer](https://calver.org/): `YYYY.MINOR.MICRO`. Bump in `pyproject.toml`; tag as `vYYYY.MINOR.MICRO`.
