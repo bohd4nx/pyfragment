@@ -27,7 +27,7 @@ CONFIRM_STATE_POLL_INTERVAL: float = 2.0
 # How long a signed transfer stays valid: after that the wallet rejects it, so it can never land late
 MESSAGE_TTL: int = 60
 # Fragment cookie keys required for authenticated API calls
-REQUIRED_COOKIE_KEYS: tuple[str, ...] = ("stel_ssid", "stel_dt", "stel_token", "stel_ton_token")
+REQUIRED_COOKIE_KEYS: tuple[str, ...] = ("stel_ssid", "stel_dt", "stel_token")
 
 # Headers for Fragment's JSON API calls (POST /api?hash=...). curl_cffi's impersonate="chrome"
 # already supplies a browser-consistent User-Agent, Sec-Ch-Ua*, Accept-Language, and

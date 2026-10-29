@@ -165,7 +165,7 @@ def test_empty_cookie_value_raises() -> None:
 
 
 def test_whitespace_cookie_value_raises() -> None:
-    bad = {**VALID_COOKIES, "stel_ton_token": "   "}
+    bad = {**VALID_COOKIES, "stel_token": "   "}
     with pytest.raises(CookieError):
         FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=bad)
 

@@ -4,20 +4,16 @@ Example: purchase Telegram Stars for a user.
 Amount must be an integer between 50 and 10 000 000.
 Set show_sender=False to send anonymously.
 Username can be "@username", "username", or "https://t.me/username".
-
-A purchase returns once its payment is on-chain. Every error with retryable=True means nothing was paid;
-only a BroadcastError with retryable=False leaves the payment unchecked: look it up before paying again.
 """
 
 import asyncio
-from datetime import UTC, datetime
 
 from pyfragment import (
-    BroadcastError,
     ConfigurationError,
     FragmentClient,
     FragmentError,
     InsufficientBalanceError,
+    TransactionError,
     UserNotFoundError,
 )
 from pyfragment.enums import ApiProvider, PaymentMethod, WalletVersion
@@ -45,7 +41,6 @@ async def main() -> None:
         wallet_version=WalletVersion.V5R1,  # or V4R2, HighloadV2, HighloadV3R1, TG (Telegram Wallet)
         api_provider=ApiProvider.TONAPI,  # or ApiProvider.TONCENTER
     ) as client:
-        started = datetime.now(UTC)
         try:
             result = await client.purchase_stars(
                 USERNAME,
@@ -62,12 +57,8 @@ async def main() -> None:
         except InsufficientBalanceError as e:
             print(f"Not enough funds in the wallet: {e}")
             return
-        except BroadcastError as e:
-            if e.retryable:
-                print(f"Nothing was paid, safe to retry: {e}")
-                return
-            transfer = await client.find_transfer(msg_hash=e.transfer.msg_hash, since=started)
-            print("Paid after all." if transfer and transfer.success else f"Not paid: {e}")
+        except TransactionError as e:
+            print(f"Transaction failed, nothing was paid: {e}")
             return
         except FragmentError as e:
             print(f"Request failed (retryable: {e.retryable}): {e}")
