@@ -30,15 +30,15 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Framework :: AsyncIO",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
-dependencies = ["curl-cffi>=0.14.0", "tonutils>=2.0.1"]
+dependencies = ["curl-cffi>=0.16.3", "ton-core>=0.7.1", "tonutils>=2.5.1"]
 
 [project.optional-dependencies]
 dev = ["pytest", "pytest-asyncio", "pytest-mock", "mypy", "ruff"]
-browser = ["rookiepy>=0.5.6"]
 
 [project.urls]
 Repository = "https://github.com/bohd4nx/pyfragment"
@@ -76,15 +76,8 @@ exclude = ["^examples/", "^logs/", "^tests/"]
 
 [[tool.mypy.overrides]]
 module = [
-    "rookiepy",
     "ton_core",
     "tonutils",
     "tonutils.*",
 ]
 ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-# rookiepy = None assignment is valid when the package is installed (type: ModuleType)
-# but mypy on CI (without rookiepy) sees it as Any and flags the comment as unused.
-module = "pyfragment.services.cookies.service"
-warn_unused_ignores = false

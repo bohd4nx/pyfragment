@@ -58,6 +58,38 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
+## Wallets
+
+| Wallet                                       | `wallet_version`                   | `mnemonic_type`       |
+| -------------------------------------------- | ---------------------------------- | --------------------- |
+| Tonkeeper, MyTonWallet and other TON wallets | `"V5R1"` (default) or `"V4R2"`     | `"ton"` (default)     |
+| Multichain wallets (BIP-39 phrase)           | `"V5R1"` or `"V4R2"`               | `"multichain"`        |
+| Telegram Wallet (self-custodial)             | `"TG"`                             | always `"multichain"` |
+| Highload wallets                             | `"HighloadV2"` or `"HighloadV3R1"` | either                |
+
+Check that `get_wallet().address` is the address your wallet app shows before paying from a new configuration.
+
+## Failures and money
+
+A purchase returns once its payment is on-chain. A transfer is signed and sent once (never a second payment), and it
+expires within a minute, so the library can always tell whether it paid. Retrying failed calls is up to you. Every error has
+`retryable`: `True` means nothing was paid. Only a `BroadcastError` with `retryable=False` (the wallet history couldn't
+be read) leaves the payment unchecked:
+
+```python
+from datetime import UTC, datetime
+
+from pyfragment import BroadcastError
+
+started = datetime.now(UTC)
+try:
+    stars = await client.purchase_stars("@username", amount=500)
+except BroadcastError as error:
+    if not error.retryable:
+        transfer = await client.find_transfer(msg_hash=error.transfer.msg_hash, since=started)
+        print("paid" if transfer and transfer.success else "not paid")
+```
+
 <div align="center">
 
 [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
