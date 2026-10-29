@@ -24,15 +24,21 @@ await client.purchase_stars(
 
 ## Return
 
-- `StarsResult(transaction_id, username, amount, confirmed)`
+- `StarsResult(transaction_id, username, amount, confirmed, comment, boc)`
 
 `confirmed` reflects Fragment's own post-broadcast acknowledgement, not whether the transfer happened — see [Result Models](../../reference/models.md#confirmed).
+
+## Checking the recipient first
+
+`await client.check_stars_recipient(username)` looks the recipient up without buying anything and returns a `Recipient(recipient, username, name, photo, myself)`, or raises `UserNotFoundError`.
+
+The recipient is sent to Fragment as typed (Fragment parses `@username` and `t.me` links itself); `username` in results is the query as you passed it.
 
 ## Typical errors
 
 - `ConfigurationError`: invalid amount or payment method
 - `UserNotFoundError`: the username doesn't exist, or belongs to a channel or bot
-- `WalletError`: insufficient balance or wallet-side issue
+- `InsufficientBalanceError`: the wallet can't cover the payment plus the gas reserve (`balance`, `required`, `currency`)
 - `VerificationError`: verification/KYC required for operation
 
 ## Example

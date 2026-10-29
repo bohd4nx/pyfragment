@@ -24,16 +24,22 @@ await client.purchase_premium(
 
 ## Return
 
-- `PremiumResult(transaction_id, username, amount, confirmed)`
+- `PremiumResult(transaction_id, username, amount, confirmed, comment, boc)`
 
 `confirmed` reflects Fragment's own post-broadcast acknowledgement, not whether the transfer happened — see [Result Models](../../reference/models.md#confirmed).
+
+## Checking the recipient first
+
+`await client.check_premium_recipient(username, months=3)` looks the recipient up without buying anything and returns a `Recipient(recipient, username, name, photo, myself)`, or raises `UserNotFoundError`. It also raises `AlreadySubscribedError` if the user already has Premium.
+
+The recipient is sent to Fragment as typed (Fragment parses `@username` and `t.me` links itself); `username` in results is the query as you passed it.
 
 ## Typical errors
 
 - `ConfigurationError`
 - `UserNotFoundError`: the username doesn't exist, or belongs to a channel or bot
 - `AlreadySubscribedError`: the recipient already has Telegram Premium
-- `WalletError`
+- `InsufficientBalanceError`
 - `VerificationError`
 
 ## Example

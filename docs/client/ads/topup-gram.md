@@ -22,7 +22,7 @@ await client.topup_gram(
 
 ## Return
 
-- `AdsTopupResult(transaction_id, username, amount, confirmed)`
+- `AdsTopupResult(transaction_id, username, amount, confirmed, comment, boc)`
 
 `confirmed` reflects Fragment's own post-broadcast acknowledgement, not whether the transfer happened — see [Result Models](../../reference/models.md#confirmed).
 
@@ -30,7 +30,7 @@ await client.topup_gram(
 
 - `ConfigurationError`: invalid amount
 - `UserNotFoundError`: recipient not found on Fragment
-- `WalletError`: insufficient GRAM (ex TON) balance
+- `InsufficientBalanceError`: insufficient GRAM (ex TON) balance
 
 ## Example
 

@@ -25,20 +25,9 @@ from pyfragment.enums import PaymentMethod
 
 PaymentMethod.GRAM        # GRAM (ex TON) — default
 PaymentMethod.USDT_GRAM   # USDT on GRAM (ex TON)
-PaymentMethod.USDT_ETH    # USDT on Ethereum (not supported yet)
-PaymentMethod.USDT_POL    # USDT on Polygon (not supported yet)
-PaymentMethod.USDC_ETH    # USDC on Ethereum (not supported yet)
-PaymentMethod.USDC_BASE   # USDC on Base (not supported yet)
-PaymentMethod.USDC_POL    # USDC on Polygon (not supported yet)
 ```
 
-Only `GRAM` and `USDT_GRAM` can be broadcast today. To check programmatically, use `SUPPORTED_PAYMENT_METHODS`:
-
-```python
-from pyfragment import SUPPORTED_PAYMENT_METHODS
-
-PaymentMethod.USDT_ETH in SUPPORTED_PAYMENT_METHODS  # False
-```
+Fragment also offers USDT/USDC on other chains; the library can't sign for those, so they aren't listed.
 
 ## WalletVersion
 
@@ -49,6 +38,16 @@ WalletVersion.V5R1       # default
 WalletVersion.V4R2
 WalletVersion.HighloadV2
 WalletVersion.HighloadV3R1
+WalletVersion.TG         # Telegram Wallet
+```
+
+## MnemonicType
+
+```python
+from pyfragment.enums import MnemonicType
+
+MnemonicType.TON         # default: TON wallet phrases
+MnemonicType.MULTICHAIN  # BIP-39 phrases (multichain wallets, Telegram Wallet)
 ```
 
 ## ApiMethod
@@ -82,6 +81,6 @@ All enums are exported from both `pyfragment` (top-level) and `pyfragment.enums`
 
 - Use `ApiProvider` when configuring the blockchain API provider in `FragmentClient`.
 - Use `PaymentMethod` for purchase and giveaway operations.
-- Use `WalletVersion` when configuring `FragmentClient`.
+- Use `WalletVersion` and `MnemonicType` when configuring `FragmentClient`.
 
 **Passing unsupported values raises `ConfigurationError`.**

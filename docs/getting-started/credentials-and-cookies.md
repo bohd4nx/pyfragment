@@ -8,7 +8,9 @@ Generate an API key at https://tonconsole.com.
 
 ## Seed phrase
 
-Use your GRAM (ex TON) wallet mnemonic.
+Use your GRAM (ex TON) wallet mnemonic: a TON wallet phrase (Tonkeeper, MyTonWallet, ...), the BIP-39 phrase of a
+multichain wallet, or the phrase of your Telegram Wallet. See
+[Library and Configuration](configuration.md#wallets) for the matching `wallet_version` and `mnemonic_type`.
 
 - **Keep it private.**
 - **Never log it or commit it to git.**
@@ -17,23 +19,8 @@ Use your GRAM (ex TON) wallet mnemonic.
 
 You must be logged in to Fragment.
 
-### Option 1: automatic extraction
-
-```python
-from pyfragment import get_cookies_from_browser
-
-cookie_result = get_cookies_from_browser("chrome")
-cookies = cookie_result.cookies
-```
-
-`cookie_result` is `CookieResult`:
-
-- `cookies`: `dict[str, str]`
-- `expires`: ISO string or `None`
-
-### Option 2: manual export
-
-Export the four required Fragment cookies and pass them directly as dict or JSON string.
+Export the four required Fragment cookies from your browser (developer tools → Application → Cookies →
+`fragment.com`) and pass them as a dict or a JSON string.
 
 Required keys:
 
@@ -49,7 +36,7 @@ Required keys:
 - missing `stel_*` keys,
 - stale cookies from another browser/profile.
 
-When this happens, re-login on fragment.com and refresh cookies first. It solves most auth issues.
+The library reports all of these as `SessionExpiredError`: re-login on fragment.com and refresh the cookies.
 
 ## Next step
 

@@ -4,7 +4,7 @@
 
 You can call methods directly on the client or use grouped services.
 
-The client keeps one HTTP session and reuses it across calls, so use it as `async with FragmentClient(...) as client:` (or call `await client.aclose()`) to release the connection when you are done.
+The client keeps one HTTP session and one blockchain API connection and reuses them across calls, so use it as `async with FragmentClient(...) as client:` (or call `await client.aclose()`) to release the connection when you are done.
 
 Grouped service wrappers:
 
@@ -13,7 +13,7 @@ Grouped service wrappers:
 - `client.ads`
 - `client.anonymous_numbers`
 - `client.marketplace`
-- `client.tonapi`
+- `client.wallet`
 
 Main async methods on `FragmentClient`:
 
@@ -24,6 +24,7 @@ Main async methods on `FragmentClient`:
 - `topup_gram(...)`
 - `recharge_ads(...)`
 - `get_wallet()`
+- `check_stars_recipient(...)`, `check_premium_recipient(...)`
 - `get_login_code(...)`
 - `toggle_login_codes(...)`
 - `terminate_sessions(...)`
@@ -40,6 +41,7 @@ All methods are async and should be used inside `async with FragmentClient(...) 
 - Premium: [Purchase](premium/purchase.md), [Giveaway](premium/giveaway.md)
 - Marketplace: [Overview](marketplace/overview.md), Ads: [Overview](ads/overview.md)
 - Numbers: [Anonymous Numbers](anonymous-numbers/overview.md)
+- Payments: [Payment Safety](transfers.md)
 - Utility operations: [Raw API Calls](raw-call.md)
 
 **If you are new to the library, start with Stars Purchase or Wallet read (`get_wallet`) first.**

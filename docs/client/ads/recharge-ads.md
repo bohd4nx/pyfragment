@@ -20,7 +20,7 @@ await client.recharge_ads(
 
 ## Return
 
-- `AdsRechargeResult(transaction_id, amount, confirmed)`
+- `AdsRechargeResult(transaction_id, amount, confirmed, comment, boc)`
 
 `confirmed` reflects Fragment's own post-broadcast acknowledgement, not whether the transfer happened — see [Result Models](../../reference/models.md#confirmed).
 

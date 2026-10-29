@@ -27,10 +27,10 @@
     - [Get Login Code](client/anonymous-numbers/get-login-code.md)
     - [Toggle Login Codes](client/anonymous-numbers/toggle-login-codes.md)
     - [Terminate Sessions](client/anonymous-numbers/terminate-sessions.md)
+  - [Payment Safety](client/transfers.md)
   - [Raw API Calls](client/raw-call.md)
 - Reference
   - [Result Models](reference/models.md)
   - [Literal Types](reference/literals.md)
 - Advanced
-  - [Cookie Extraction Details](advanced/cookies.md)
   - [Troubleshooting](advanced/troubleshooting.md)

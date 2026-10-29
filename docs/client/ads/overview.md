@@ -12,5 +12,5 @@ Use the second method to fund your own Telegram Ads account.
 
 - `ConfigurationError`
 - `UserNotFoundError` (for recipient/account issues)
-- `WalletError`
+- `InsufficientBalanceError`
 - `VerificationError`
