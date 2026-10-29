@@ -20,11 +20,15 @@ from pyfragment import (
     TransactionError,
     TransferIntent,
 )
+from pyfragment.constants import DEFAULT_GAS_RESERVE, GRAM_CURRENCY, GRAM_DECIMALS, USDT_CURRENCY
 from pyfragment.domains.wallet.transfer import process_transaction
 from pyfragment.enums import PaymentMethod
+from pyfragment.utils.money import from_units, to_units
 from tests.fake_ton import FakeTon, provider_error, use_fake_ton
 from tests.shared import VALID_API_KEY, VALID_COOKIES, VALID_SEED
 from tests.signing import external_message_body, has_state_init, split_leading_signature, split_signature, w5_header
+
+_GAS_NANO: int = to_units(DEFAULT_GAS_RESERVE, GRAM_DECIMALS)
 
 FRAGMENT_ADDRESS = "UQCFJEP4WZ_mpdo0_kMEmsTgvrMHG7K_tWY16pQhKHwoOtFz"
 STARS_PAYLOAD = "te6ccgEBAQEAJwAASgAAAAA1MCBUZWxlZ3JhbSBTdGFycyAKClJlZiNrcEo1NWgzQlc="
@@ -86,14 +90,18 @@ async def test_insufficient_balance_raises_before_signing() -> None:
             await process_transaction(client, transaction())
 
     error = exc_info.value
-    assert (error.balance, error.required, error.currency) == (Decimal("0.1"), Decimal("0.55"), "GRAM (ex TON)")
+    assert (error.balance, error.required, error.currency) == (
+        Decimal("0.1"),
+        from_units(500_000_000 + _GAS_NANO, GRAM_DECIMALS),
+        GRAM_CURRENCY,
+    )
     assert ton.sent == [] and ton.seqno_reads == 0
 
 
 @pytest.mark.asyncio
 async def test_balance_exactly_covering_payment_and_reserve_sends() -> None:
-    # 0.5 GRAM (ex TON) payment + 0.05 reserve, compared in nanograms: no float rounding at the boundary.
-    ton = FakeTon(balance=550_000_000)
+    # 0.5 GRAM (ex TON) payment + DEFAULT_GAS_RESERVE, compared in nanograms: no float rounding at the boundary.
+    ton = FakeTon(balance=500_000_000 + _GAS_NANO)
     async with fragment_client(ton) as client:
         await process_transaction(client, transaction())
     assert len(ton.sent) == 1
@@ -101,11 +109,11 @@ async def test_balance_exactly_covering_payment_and_reserve_sends() -> None:
 
 @pytest.mark.asyncio
 async def test_one_nanogram_short_raises() -> None:
-    ton = FakeTon(balance=549_999_999)
+    ton = FakeTon(balance=500_000_000 + _GAS_NANO - 1)
     async with fragment_client(ton) as client:
         with pytest.raises(InsufficientBalanceError) as exc_info:
             await process_transaction(client, transaction())
-    assert exc_info.value.balance == Decimal("0.549999999")
+    assert exc_info.value.balance == from_units(500_000_000 + _GAS_NANO - 1, GRAM_DECIMALS)
     assert ton.sent == []
 
 
@@ -124,11 +132,12 @@ async def test_gas_reserve_is_configurable(gas_reserve: object, balance: int, se
 
 @pytest.mark.asyncio
 async def test_invoice_amount_above_the_transfer_is_what_must_be_covered() -> None:
-    ton = FakeTon(balance=649_999_999)
+    _inv_nano = to_units(Decimal("0.6"), GRAM_DECIMALS)
+    ton = FakeTon(balance=_inv_nano + _GAS_NANO - 1)
     async with fragment_client(ton) as client:
         with pytest.raises(InsufficientBalanceError) as exc_info:
             await process_transaction(client, transaction(), required_payment_amount=Decimal("0.6"))
-    assert exc_info.value.required == Decimal("0.65")
+    assert exc_info.value.required == from_units(_inv_nano + _GAS_NANO, GRAM_DECIMALS)
 
 
 @pytest.mark.asyncio
@@ -341,12 +350,12 @@ async def test_highload_transfers_expire_like_the_others(wallet_version: str, se
 
 @pytest.mark.asyncio
 async def test_usdt_payment_needs_the_attached_gram_plus_reserve() -> None:
-    ton = FakeTon(balance=99_999_999)  # 0.05 attached + 0.05 reserve, minus one nanogram
+    ton = FakeTon(balance=50_000_000 + _GAS_NANO - 1)  # 0.05 GRAM attached + DEFAULT_GAS_RESERVE, minus one nanogram
     with patch("pyfragment.domains.wallet.balance.get_usdt_balance", AsyncMock(return_value=100_000_000)):
         async with fragment_client(ton) as client:
             with pytest.raises(InsufficientBalanceError) as exc_info:
                 await process_transaction(client, transaction(amount="50000000"), payment_method=PaymentMethod.USDT_GRAM)
-    assert exc_info.value.currency == "GRAM (ex TON)"
+    assert exc_info.value.currency == GRAM_CURRENCY
     assert ton.sent == []
 
 
@@ -365,7 +374,7 @@ async def test_usdt_payment_checks_usdt_balance() -> None:
     assert (exc_info.value.balance, exc_info.value.required, exc_info.value.currency) == (
         Decimal("5"),
         Decimal("12.5"),
-        "USDT",
+        USDT_CURRENCY,
     )
     assert ton.sent == []
 
@@ -397,5 +406,5 @@ async def test_send_429_is_retried_once() -> None:
 
 
 def test_insufficient_balance_message_has_no_scientific_notation() -> None:
-    err = InsufficientBalanceError(Decimal("0"), Decimal("0.000000001"), "GRAM (ex TON)")
+    err = InsufficientBalanceError(Decimal("0"), Decimal("0.000000001"), GRAM_CURRENCY)
     assert "E" not in str(err) and "0.000000001" in str(err)
