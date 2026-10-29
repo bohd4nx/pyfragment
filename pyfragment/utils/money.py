@@ -1,9 +1,3 @@
-"""Exact money arithmetic: amounts are compared in integer smallest units, never in floats.
-
-1 GRAM (ex TON) = 10^9 nanograms and 1 USDT = 10^6 units; ``Decimal`` is used only at the edges, to read Fragment's
-amounts and to report balances.
-"""
-
 from __future__ import annotations
 
 from decimal import ROUND_CEILING, Decimal, InvalidOperation

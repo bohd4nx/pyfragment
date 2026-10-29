@@ -1,5 +1,3 @@
-"""The client's GRAM (ex TON) wallet: one blockchain API connection, and the key derived from the seed once."""
-
 from __future__ import annotations
 
 import asyncio
