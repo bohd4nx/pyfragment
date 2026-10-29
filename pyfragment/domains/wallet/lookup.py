@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def _succeeded(tx: Any) -> bool:
+
     # Wallets send with "ignore errors": a transfer the wallet can't afford is skipped silently while the tx
     # succeeds and seqno advances. Both outmsg_cnt > 0 and skipped_actions == 0 must hold.
     description = tx.description
@@ -98,11 +99,14 @@ async def find_transfer(
         raise ConfigurationError(ConfigurationError.TRANSFER_QUERY)
     since_ts = since.timestamp()
     low_hash = msg_hash.lower() if msg_hash is not None else None
-    return await _scan_transactions(
+    result = await _scan_transactions(
         client,
         stop=lambda tx: tx.now < since_ts,
         match=lambda tx: (low_hash is None or _msg_hash(tx) == low_hash) and (comment is None or comment in _comments(tx)),
     )
+    if result is not None:
+        logger.debug("Found transfer %s in wallet history (lt=%d)", result.msg_hash or result.hash[:16], result.lt)
+    return result
 
 
 async def _find_transfer_by_lt(

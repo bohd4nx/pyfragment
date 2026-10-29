@@ -58,6 +58,7 @@ async def confirm_purchase(
             state = PageState.from_response(response, default_mode=mode)
             mode = state.mode
             if state.is_done:
+                logger.debug("Fragment confirmed '%s' (dh=%s)", flow.state_method, dh)
                 return response
             await asyncio.sleep(CONFIRM_STATE_POLL_INTERVAL)
 

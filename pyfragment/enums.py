@@ -26,8 +26,10 @@ class MnemonicType(StrEnum):
 
 
 class ApiProvider(StrEnum):
-    TONAPI = "tonapi"  # tonconsole.com — default
-    TONCENTER = "toncenter"  # t.me/toncenter
+    """Blockchain API provider used to read the wallet and broadcast transactions."""
+
+    TONAPI = "tonapi"  # tonconsole.com — get a key at tonconsole.com (default)
+    TONCENTER = "toncenter"  # t.me/toncenter — get a key via @tonapibot
 
 
 class ApiMethod(StrEnum):

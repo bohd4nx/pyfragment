@@ -55,6 +55,9 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - A transaction with multiple messages is refused instead of paying only the first one.
 - Cookies given as non-object JSON raise `CookieError` instead of `AttributeError`.
 - `get_wallet()` error messages no longer mention Tonapi when toncenter is the provider.
+- `SessionExpiredError` is now raised when a freshly fetched API hash is also rejected by Fragment (previously the
+  error response was returned silently as if it were a valid result).
+- `TonWallet.aclose()` now clears the cached account payload so a reconnect never reuses stale on-chain state.
 
 ### Removed
 
@@ -481,6 +484,10 @@ The TON blockchain has been rebranded to **GRAM (ex TON)**. All identifiers, mes
 - `py.typed` marker — full PEP 561 typing support for type-checkers
 - `__repr__` on all result types for readable debug output
 
+[Unreleased]: https://github.com/bohd4nx/pyfragment/compare/v2026.4.0...HEAD
+[2026.4.0]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.4.0
+[2026.3.4]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.3.4
+[2026.3.3]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.3.3
 [2026.3.2]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.3.2
 [2026.3.1]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.3.1
 [2026.3.0]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.3.0

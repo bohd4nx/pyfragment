@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -15,6 +16,8 @@ from pyfragment.schemas import InvoiceRequest, TransactionLink, error_text, has_
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -62,6 +65,7 @@ async def run_purchase(
         if error := error_text(result):
             raise FragmentAPIError(error)
         raise SessionExpiredError(SessionExpiredError.NO_REQUEST_ID.format(context=flow.label))
+    logger.debug("Invoice %s obtained for %s (%s)", invoice.req_id, flow.label, payment_method)
 
     account = client.ton_wallet.account_info()
     transaction = await client.call(
@@ -87,6 +91,6 @@ async def run_purchase(
     )
     # The money is out: from here on nothing raises (confirmation failures only leave confirmed=False).
     state_response = await confirm_purchase(client, flow, account, sent.boc, transaction)
-    return PaymentResult(
-        transaction_id=sent.msg_hash, confirmed=is_confirmed(state_response), comment=sent.comment, boc=sent.boc
-    )
+    confirmed = is_confirmed(state_response)
+    logger.debug("Invoice %s: purchase %s (confirmed=%s)", invoice.req_id, flow.label, confirmed)
+    return PaymentResult(transaction_id=sent.msg_hash, confirmed=confirmed, comment=sent.comment, boc=sent.boc)
