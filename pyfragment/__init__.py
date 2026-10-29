@@ -9,7 +9,7 @@ from pyfragment.domains.marketplace.models import AuctionItem, GiftsResult, Numb
 from pyfragment.domains.payments.models import PaymentResult
 from pyfragment.domains.purchases.models import PremiumResult, StarsResult
 from pyfragment.domains.recipients import Recipient
-from pyfragment.domains.wallet.models import TransferInfo, TransferIntent, WalletInfo
+from pyfragment.domains.wallet.models import TransferIntent, WalletInfo
 from pyfragment.enums import (
     ApiError,
     ApiMethod,
@@ -61,7 +61,6 @@ __all__ = [
     "PremiumResult",
     "PremiumGiveawayResult",
     "WalletInfo",
-    "TransferInfo",
     "TransferIntent",
     "Recipient",
     "AdsTopupResult",

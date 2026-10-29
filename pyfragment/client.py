@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Mapping, Sequence
-from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
@@ -23,7 +22,7 @@ from pyfragment.domains.marketplace.service import MarketplaceService
 from pyfragment.domains.purchases.models import PremiumResult, StarsResult
 from pyfragment.domains.purchases.service import PurchasesService
 from pyfragment.domains.recipients import Recipient
-from pyfragment.domains.wallet.models import TransferInfo, TransferIntent, WalletInfo
+from pyfragment.domains.wallet.models import TransferIntent, WalletInfo
 from pyfragment.domains.wallet.service import WalletService
 from pyfragment.domains.wallet.wallet import TonWallet
 from pyfragment.enums import ApiMethod, ApiProvider, AuctionFilter, AuctionSort, MnemonicType, PaymentMethod, WalletVersion
@@ -67,8 +66,8 @@ class FragmentClient:
         confirm_timeout: Seconds to wait for Fragment to confirm a purchase after paying. ``0`` reports it
             right away (``confirmed=False``). Defaults to ``60``.
         on_transfer_prepared: Async callback receiving each :class:`TransferIntent` after it is signed and
-            before it is sent. Save it to check the transfer with :meth:`find_transfer` if the process
-            dies mid-purchase; if it raises, nothing is sent.
+            before it is sent. Save it to verify the transfer on-chain by ``msg_hash`` if the process dies
+            before returning the purchase result; if it raises, nothing is sent.
 
     The client keeps one HTTP session and one blockchain API connection and reuses them across calls.
     Use ``async with`` (or call :meth:`aclose`) to release them when you are done.
@@ -246,24 +245,6 @@ class FragmentClient:
             AlreadySubscribedError: If the user already has Premium.
         """
         return await self.purchases.check_premium_recipient(username, months)
-
-    async def find_transfer(
-        self, *, msg_hash: str | None = None, comment: str | None = None, since: datetime
-    ) -> TransferInfo | None:
-        """Look for a transfer this wallet sent since ``since``: to check a purchase the process didn't see finish.
-
-        Args:
-            msg_hash: The purchase's ``transaction_id`` (or ``TransferIntent.msg_hash``) — the reliable key.
-            comment: Fragment's payment reference, e.g. the purchase's ``comment``.
-            since: When the purchase started; use a timezone-aware datetime.
-
-        Returns:
-            :class:`TransferInfo` (check ``success``), or ``None`` if no such transfer is on-chain.
-
-        Raises:
-            ProviderError: If the wallet's history could not be read.
-        """
-        return await self.wallet.find_transfer(msg_hash=msg_hash, comment=comment, since=since)
 
     async def giveaway_stars(
         self,

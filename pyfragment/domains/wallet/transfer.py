@@ -15,13 +15,12 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
 import tonutils.exceptions
-from ton_core import Address
+from ton_core import Address, normalize_hash
 from tonutils.contracts.wallet import TONTransferBuilder
 from tonutils.exceptions import ProviderResponseError
 
-from pyfragment.constants import LANDING_GRACE, LANDING_POLL_INTERVAL, MESSAGE_TTL
+from pyfragment.constants import LANDING_GRACE, LANDING_POLL_INTERVAL, MESSAGE_TTL, TRANSACTIONS_PAGE_SIZE
 from pyfragment.domains.wallet.balance import check_payment_balance
-from pyfragment.domains.wallet.lookup import _find_transfer_by_lt
 from pyfragment.domains.wallet.models import TransferIntent
 from pyfragment.domains.wallet.payload import body_comment, decode_boc
 from pyfragment.domains.wallet.wallet import provider_error
@@ -35,6 +34,56 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
+
+
+def _succeeded(tx: Any) -> bool:
+    # Wallets send with "ignore errors": a transfer the wallet can't afford is skipped silently while the tx
+    # succeeds and seqno advances. Both outmsg_cnt > 0 and skipped_actions == 0 must hold.
+    d = tx.description
+    if getattr(d, "aborted", True):
+        return False
+    compute = getattr(d, "compute_ph", None)
+    action = getattr(d, "action", None)
+    return (
+        compute is not None
+        and bool(compute.success)
+        and action is not None
+        and action.success
+        and action.skipped_actions == 0
+        and tx.outmsg_cnt > 0
+    )
+
+
+async def _find_transfer_by_lt(
+    client: FragmentClient,
+    *,
+    msg_hash: str,
+    last_lt: int,
+) -> bool | None:
+    """Scan the wallet's history for ``msg_hash``, stopping at ``last_lt``.
+
+    Returns ``True`` (found, succeeded), ``False`` (found, failed), or ``None`` (not yet on-chain).
+    Uses logical time as the lower bound to eliminate clock-skew false negatives.
+    """
+    ton_wallet = client.ton_wallet
+    low_hash = msg_hash.lower()
+    try:
+        ton = await ton_wallet.ton()
+        address = ton_wallet.wallet().address
+        from_lt: int | None = None
+        while True:
+            page = await ton.get_transactions(address, limit=TRANSACTIONS_PAGE_SIZE, from_lt=from_lt)
+            for tx in page:
+                if tx.lt <= last_lt:
+                    return None
+                in_msg = tx.in_msg
+                if in_msg is not None and in_msg.is_external and normalize_hash(in_msg) == low_hash:
+                    return _succeeded(tx)
+            if len(page) < TRANSACTIONS_PAGE_SIZE:
+                return None
+            from_lt = page[-1].lt - 1
+    except Exception as exc:
+        raise provider_error(ProviderError.TRANSFER_LOOKUP_FAILED, exc) from exc
 
 
 def _extract_message(transaction_data: dict[str, Any]) -> dict[str, Any]:
@@ -134,7 +183,7 @@ async def _wait_until_landed(
                 raise _broadcast_error(BroadcastError.UNKNOWN, intent, retryable=False, exc=exc) from exc
             found = None
         if found is not None:
-            if not found.success:
+            if not found:
                 raise _broadcast_error(BroadcastError.FAILED, intent, retryable=True)
             logger.debug("Transfer %s confirmed on-chain", intent.msg_hash)
             return

@@ -72,7 +72,6 @@ class ConfigurationError(ClientError):
     INVALID_FILTER = "Invalid filter '{filter}'. Supported values: {supported}."
     INVALID_GIFT_ATTRIBUTE = "Invalid gift attribute '{attribute}'. Supported values: {supported}."
     INVALID_PAYMENT_METHOD = "Invalid payment method '{method}'. Supported values: {supported}."
-    TRANSFER_QUERY = "Pass msg_hash or comment to look a transfer up."
 
 
 class CookieError(ClientError):
@@ -225,7 +224,7 @@ class BroadcastError(ChainError):
     """The signed transfer didn't go through, or its outcome couldn't be checked.
 
     ``retryable`` is ``True`` when the transfer certainly didn't pay anything. When it is ``False`` the outcome is
-    unknown: look ``transfer.msg_hash`` up with ``FragmentClient.find_transfer()`` before paying again.
+    unknown: check ``transfer.msg_hash`` in your wallet's transaction history before paying again.
     """
 
     NOT_SENT = "Transaction {msg_hash} was not sent: {exc}. Nothing was paid."
@@ -233,7 +232,7 @@ class BroadcastError(ChainError):
     FAILED = "Transaction {msg_hash} reached the chain, but the wallet didn't pay (not enough funds?). Nothing was paid."
     UNKNOWN = (
         "Transaction {msg_hash} was sent, but whether it paid couldn't be checked: {exc}. "
-        "Look it up with find_transfer(msg_hash=...) before paying again."
+        "Check your wallet's transaction history by msg_hash before paying again."
     )
     SSL_HINT = (
         "\nThis usually means your system's CA bundle is missing or outdated. Fix: run `pip install --upgrade certifi`; "

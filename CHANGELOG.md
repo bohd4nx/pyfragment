@@ -15,9 +15,6 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
   shown after a key rotation (words 1–12 keep the address; words 13–24 are the active key).
 - **Multichain (BIP-39) phrases:** `FragmentClient(mnemonic_type="multichain")` for BIP-39 wallets (`m/44'/607'/0'`).
   The default is `"ton"`; the scheme is never guessed automatically.
-- **`find_transfer(msg_hash=..., comment=..., since=...)`** — look a transfer up in the wallet's history. Returns
-  `TransferInfo` (`hash`, `lt`, `utime`, `msg_hash`, `comment`, `success`) or `None`; raises `ProviderError` when
-  the history can't be read.
 - **`on_transfer_prepared` callback** — called with a `TransferIntent` after signing and before sending, so a crash
   mid-purchase leaves enough information to check whether the transfer landed. If it raises, nothing is sent.
 - Purchase results carry `comment` (Fragment's `Ref#…` reference) and `boc` (the signed message). All six results

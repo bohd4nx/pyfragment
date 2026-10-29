@@ -23,10 +23,10 @@ class WalletInfo:
 
 @dataclass(frozen=True)
 class TransferIntent:
-    """A signed transfer about to be sent: everything needed to find it on-chain later.
+    """A signed transfer about to be sent: everything needed to identify it on-chain later.
 
-    Passed to ``FragmentClient(on_transfer_prepared=...)`` after signing and before sending; store it to be able to
-    check the transfer with ``find_transfer(msg_hash=...)`` if the process dies mid-purchase.
+    Passed to ``FragmentClient(on_transfer_prepared=...)`` after signing and before sending; store it to verify the
+    purchase on-chain (e.g. by ``msg_hash``) if the process dies before the purchase result is returned.
     """
 
     msg_hash: str  # normalized hash of the signed external message: the purchase's transaction_id
@@ -37,15 +37,3 @@ class TransferIntent:
     payment_method: PaymentMethod
     req_id: str | None  # Fragment's invoice id
     valid_until: int  # unix time after which the wallet rejects the transfer: it can never land later
-
-
-@dataclass(frozen=True)
-class TransferInfo:
-    """A wallet transaction found on-chain by ``find_transfer()``."""
-
-    hash: str  # transaction hash, hex
-    lt: int  # logical time of the transaction
-    utime: int  # unix time of the transaction
-    msg_hash: str | None  # normalized hash of the external message that started it
-    comment: str | None  # comment of the first outgoing transfer that carries one
-    success: bool  # the transaction went through and actually sent its transfers (nothing failed or was skipped)
