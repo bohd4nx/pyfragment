@@ -6,7 +6,7 @@ import pytest
 from ton_core import Cell
 
 from pyfragment import ParseError
-from pyfragment.domains.wallet.payload import body_comment, decode_boc
+from pyfragment.utils.ton import body_comment, decode_boc
 from tests.shared import fixture_json
 
 PAYLOAD_CASES = [

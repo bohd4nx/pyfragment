@@ -18,10 +18,10 @@ from tonutils.exceptions import ProviderResponseError
 
 from pyfragment.domains.wallet.balance import check_payment_balance
 from pyfragment.domains.wallet.models import TransferIntent
-from pyfragment.domains.wallet.payload import body_comment, decode_boc
 from pyfragment.domains.wallet.wallet import provider_error
 from pyfragment.enums import PaymentMethod
 from pyfragment.exceptions import ProviderError
+from pyfragment.utils.ton import body_comment, decode_boc
 from pyfragment.utils.transaction import expiry, extract_message, parse_destination, unsigned_int
 
 if TYPE_CHECKING:
