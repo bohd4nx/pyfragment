@@ -79,7 +79,14 @@ async def run_purchase(
         },
         page_url=flow.page_url,
     )
-    if TransactionLink.from_response(transaction).need_verify:
+    link = TransactionLink.from_response(transaction)
+    if link.need_verify:
+        logger.debug(
+            "Fragment returned need_verify for %s (error=%r, confirm_method=%r)",
+            flow.label,
+            transaction.get("error"),
+            link.confirm_method,
+        )
         raise VerificationError(VerificationError.KYC_REQUIRED)
 
     sent = await process_transaction(

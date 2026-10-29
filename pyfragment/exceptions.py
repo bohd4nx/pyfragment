@@ -172,11 +172,13 @@ class ParseError(FragmentAPIError):
 
 
 class VerificationError(FragmentAPIError):
-    """Raised when Fragment requires KYC verification before proceeding."""
+    """Raised when Fragment requires verification before proceeding."""
 
     KYC_REQUIRED = (
-        "Fragment requires identity verification (KYC) before this action can be completed. "
-        "Complete verification at https://fragment.com/my/profile and retry."
+        "Fragment requires verification before this action can be completed. "
+        "Check https://fragment.com/my/profile: either identity verification (KYC) is pending, "
+        "or the wallet used here is not linked to your Fragment account "
+        "(the connected wallet address must match the one the library signs with)."
     )
 
 
