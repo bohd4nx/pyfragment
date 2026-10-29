@@ -263,7 +263,9 @@ def test_multichain_phrase_works_with_every_wallet_contract(version: str) -> Non
 # Money and timing options
 
 
-@pytest.mark.parametrize(("gas_reserve", "nano"), [("0.33", 330_000_000), (0.1, 100_000_000), (Decimal("0"), 0), (1, 10**GRAM_DECIMALS)])
+@pytest.mark.parametrize(
+    ("gas_reserve", "nano"), [("0.33", 330_000_000), (0.1, 100_000_000), (Decimal("0"), 0), (1, 10**GRAM_DECIMALS)]
+)
 def test_gas_reserve_is_exact(gas_reserve: object, nano: int) -> None:
     assert _client(gas_reserve=gas_reserve).gas_reserve_nano == nano
 
