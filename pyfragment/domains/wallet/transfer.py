@@ -11,6 +11,7 @@ import asyncio
 import logging
 import ssl
 import time
+from collections.abc import Callable
 from datetime import datetime
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
@@ -36,14 +37,12 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-def _succeeded(tx: Any) -> bool:
-    """Whether the transaction went through and really sent its transfers.
 
-    Wallets send with the "ignore errors" flag, so a transfer the wallet can't afford is skipped silently while the
-    transaction itself succeeds (and the seqno moves on): skipped actions count as a failure.
-    """
+def _succeeded(tx: Any) -> bool:
+    # Wallets send with "ignore errors": a transfer the wallet can't afford is skipped silently while the tx
+    # succeeds and seqno advances. Both outmsg_cnt > 0 and skipped_actions == 0 must hold.
     description = tx.description
-    if getattr(description, "aborted", True):  # storage and tick-tock transactions have no aborted flag
+    if getattr(description, "aborted", True):
         return False
     compute = getattr(description, "compute_ph", None)
     action = getattr(description, "action", None)
@@ -78,6 +77,31 @@ def _transfer_info(tx: Any) -> TransferInfo:
     )
 
 
+async def _scan_transactions(
+    client: FragmentClient,
+    *,
+    stop: Callable[[Any], bool],
+    match: Callable[[Any], bool],
+) -> TransferInfo | None:
+    ton_wallet = client.ton_wallet
+    try:
+        ton = await ton_wallet.ton()
+        address = ton_wallet.wallet().address
+        from_lt: int | None = None
+        while True:
+            page = await ton.get_transactions(address, limit=TRANSACTIONS_PAGE_SIZE, from_lt=from_lt)
+            for tx in page:
+                if stop(tx):
+                    return None
+                if match(tx):
+                    return _transfer_info(tx)
+            if len(page) < TRANSACTIONS_PAGE_SIZE:
+                return None
+            from_lt = page[-1].lt - 1
+    except Exception as exc:
+        raise provider_error(ProviderError.TRANSFER_LOOKUP_FAILED, exc) from exc
+
+
 async def find_transfer(
     client: FragmentClient,
     *,
@@ -92,23 +116,12 @@ async def find_transfer(
     if msg_hash is None and comment is None:
         raise ConfigurationError(ConfigurationError.TRANSFER_QUERY)
     since_ts = since.timestamp()
-    ton_wallet = client.ton_wallet
-    try:
-        ton = await ton_wallet.ton()
-        address = ton_wallet.wallet().address
-        from_lt: int | None = None
-        while True:
-            page = await ton.get_transactions(address, limit=TRANSACTIONS_PAGE_SIZE, from_lt=from_lt)
-            for tx in page:
-                if tx.now < since_ts:
-                    return None
-                if (msg_hash is None or _msg_hash(tx) == msg_hash.lower()) and (comment is None or comment in _comments(tx)):
-                    return _transfer_info(tx)
-            if len(page) < TRANSACTIONS_PAGE_SIZE:
-                return None
-            from_lt = page[-1].lt - 1
-    except Exception as exc:
-        raise provider_error(ProviderError.TRANSFER_LOOKUP_FAILED, exc) from exc
+    low_hash = msg_hash.lower() if msg_hash is not None else None
+    return await _scan_transactions(
+        client,
+        stop=lambda tx: tx.now < since_ts,
+        match=lambda tx: (low_hash is None or _msg_hash(tx) == low_hash) and (comment is None or comment in _comments(tx)),
+    )
 
 
 async def _find_transfer_by_lt(
@@ -122,28 +135,12 @@ async def _find_transfer_by_lt(
     Uses the wallet's logical time (not the local clock) as the lower bound, which eliminates clock-skew false
     negatives: any transaction with lt <= last_lt predates our send, so we stop there.
     """
-    ton_wallet = client.ton_wallet
-    try:
-        ton = await ton_wallet.ton()
-        address = ton_wallet.wallet().address
-        from_lt: int | None = None
-        while True:
-            page = await ton.get_transactions(address, limit=TRANSACTIONS_PAGE_SIZE, from_lt=from_lt)
-            for tx in page:
-                if tx.lt <= last_lt:
-                    return None
-                if _msg_hash(tx) == msg_hash.lower():
-                    return _transfer_info(tx)
-            if len(page) < TRANSACTIONS_PAGE_SIZE:
-                return None
-            from_lt = page[-1].lt - 1
-    except Exception as exc:
-        raise provider_error(ProviderError.TRANSFER_LOOKUP_FAILED, exc) from exc
-
-
-# ---------------------------------------------------------------------------
-# Transaction parsing helpers
-# ---------------------------------------------------------------------------
+    low_hash = msg_hash.lower()
+    return await _scan_transactions(
+        client,
+        stop=lambda tx: tx.lt <= last_lt,
+        match=lambda tx: _msg_hash(tx) == low_hash,
+    )
 
 
 def _extract_message(transaction_data: dict[str, Any]) -> dict[str, Any]:
@@ -187,11 +184,6 @@ def _expiry(transaction_data: dict[str, Any]) -> int:
     if valid_until <= now:
         raise TransactionError(TransactionError.EXPIRED.format(valid_until=valid_until), retryable=True)
     return min(now + MESSAGE_TTL, valid_until)
-
-
-# ---------------------------------------------------------------------------
-# Broadcast helpers
-# ---------------------------------------------------------------------------
 
 
 def _broadcast_error(
@@ -238,7 +230,7 @@ async def _wait_until_landed(
     local-clock skew. Raises ``BroadcastError``: retryable if the transfer certainly paid nothing, not retryable if
     that couldn't be determined.
     """
-    deadline = intent.valid_until + LANDING_GRACE  # providers' view of the chain lags a little behind it
+    deadline = intent.valid_until + LANDING_GRACE
     while True:
         try:
             found = await _find_transfer_by_lt(client, msg_hash=intent.msg_hash, last_lt=last_lt)
@@ -255,11 +247,6 @@ async def _wait_until_landed(
             template = BroadcastError.NOT_SENT if send_error is not None else BroadcastError.NOT_LANDED
             raise _broadcast_error(template, intent, retryable=True, exc=send_error) from send_error
         await asyncio.sleep(LANDING_POLL_INTERVAL)
-
-
-# ---------------------------------------------------------------------------
-# Main entry point
-# ---------------------------------------------------------------------------
 
 
 async def process_transaction(
@@ -307,7 +294,6 @@ async def process_transaction(
                 [TONTransferBuilder(destination=destination, amount=amount_nano, body=body)], params
             )
         except tonutils.exceptions.ProviderError as exc:
-            # tonutils refreshes the wallet state while building and lets rate limiting through.
             raise provider_error(ProviderError.WALLET_STATE_FAILED, exc) from exc
 
         intent = TransferIntent(
@@ -329,6 +315,5 @@ async def process_transaction(
             raise _broadcast_error(BroadcastError.NOT_SENT, intent, retryable=True, exc=exc) from exc
 
         send_error = await _send_message(ton, external.as_hex, valid_until)
-        # Waiting also keeps the next transfer from this wallet from reusing this one's seqno.
         await _wait_until_landed(client, intent, last_lt, send_error)
         return intent
