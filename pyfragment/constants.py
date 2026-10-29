@@ -12,6 +12,7 @@ STARS_GIVEAWAY_PAGE: str = f"{FRAGMENT_BASE_URL}/stars/giveaway"
 PREMIUM_PAGE: str = f"{FRAGMENT_BASE_URL}/premium/gift"
 PREMIUM_GIVEAWAY_PAGE: str = f"{FRAGMENT_BASE_URL}/premium/giveaway"
 ADS_TOPUP_PAGE: str = f"{FRAGMENT_BASE_URL}/ads/topup"
+PROFILE_PAGE: str = f"{FRAGMENT_BASE_URL}/my/profile"
 NUMBERS_PAGE: str = f"{FRAGMENT_BASE_URL}/numbers"
 GIFTS_PAGE: str = f"{FRAGMENT_BASE_URL}/gifts"
 

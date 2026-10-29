@@ -10,6 +10,7 @@ from pyfragment.constants import (
     DEFAULT_GAS_RESERVE,
     DEFAULT_TIMEOUT,
     FRAGMENT_BASE_URL,
+    PROFILE_PAGE,
 )
 from pyfragment.domains.ads.models import AdsRechargeResult, AdsTopupResult
 from pyfragment.domains.ads.service import AdsService
@@ -264,6 +265,14 @@ class FragmentClient:
     async def logout(self) -> None:
         """End the Fragment session (invalidates session cookies server-side)."""
         await self.call("logOut")
+
+    async def link_wallet(self) -> None:
+        """Link the connected TON wallet to the Fragment account.
+
+        Required once after connecting a wallet via TON Connect before purchases can be made.
+        Uses the existing ``stel_ton_token`` cookie — no separate signing needed.
+        """
+        await self.call("linkWallet", page_url=PROFILE_PAGE)
 
     async def disconnect_wallet(self) -> None:
         """Disconnect the linked TON wallet from Fragment."""

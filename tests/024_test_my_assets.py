@@ -150,6 +150,16 @@ async def test_get_my_gifts_empty(client: FragmentClient) -> None:
 
 
 @pytest.mark.asyncio
+async def test_link_wallet_calls_link_wallet(client: FragmentClient) -> None:
+    mock_call = AsyncMock(return_value={"ok": True})
+    with patch.object(client, "call", mock_call):
+        await client.link_wallet()
+
+    mock_call.assert_awaited_once()
+    assert mock_call.call_args[0][0] == "linkWallet"
+
+
+@pytest.mark.asyncio
 async def test_disconnect_wallet_calls_ton_logout(client: FragmentClient) -> None:
     mock_call = AsyncMock(return_value={"ok": True})
     with patch.object(client, "call", mock_call):

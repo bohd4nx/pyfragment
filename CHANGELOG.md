@@ -19,6 +19,8 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - **`get_my_usernames()` / `get_my_numbers()` / `get_my_gifts()`** — return assets owned by the authenticated
   account (`MyUsernamesResult`, `MyNumbersResult`, `MyGiftsResult`, each wrapping a `list[AuctionItem]`).
 - **`disconnect_wallet()`** — disconnects the linked TON wallet from Fragment (`tonLogOut`).
+- **`link_wallet()`** — links the connected TON wallet to the Fragment account (`linkWallet`).
+  Required once after connecting a new wallet via TON Connect before purchases can be made.
 - `StarsPackage`, `PremiumPackage`, `MyUsernamesResult`, `MyNumbersResult`, `MyGiftsResult` exported from
   `pyfragment`.
 
