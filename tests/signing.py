@@ -1,11 +1,12 @@
-"""Read a signed W5 wallet message back: split off the signature, verify it, and decode the transfer it carries.
+"""Read a signed wallet message back: split off the signature, verify it, and decode the transfer it carries.
 
 Used by the signing tests and by ``scripts/live_signing_check.py`` (no pytest needed).
 """
 
+from collections import deque
 from dataclasses import dataclass
 
-from ton_core import Address, Builder, Cell, NetworkGlobalID, SignatureDomain, verify_sign
+from ton_core import Address, Builder, Cell, MessageAny, NetworkGlobalID, SignatureDomain, Slice, verify_sign
 
 NETWORK = NetworkGlobalID.MAINNET
 SIGN_ACTION_OPCODE = 0x0EC3C86D  # action_send_msg of a W5 wallet
@@ -30,6 +31,15 @@ def external_message_body(boc: bytes) -> tuple[Address, Cell]:
     return destination, body
 
 
+def has_state_init(boc: bytes) -> bool:
+    """Whether an external message deploys its wallet (ships the wallet's state_init)."""
+    message = Cell.one_from_boc(boc).begin_parse()
+    message.skip_bits(4)  # ext_in_msg_info, no source
+    message.load_address()
+    message.load_coins()
+    return bool(message.load_bool())
+
+
 def split_signature(body: Cell) -> tuple[Cell, bytes]:
     """Separate a W5 body into the signed cell and its trailing signature."""
     reader = body.begin_parse()
@@ -42,10 +52,15 @@ def split_signature(body: Cell) -> tuple[Cell, bytes]:
     return signed.end_cell(), signature
 
 
-def signature_is_valid(body: Cell, public_key: bytes, signature_override: bytes | None = None) -> bool:
-    signed, signature = split_signature(body)
+def signature_matches(signed: Cell, signature: bytes, public_key: bytes) -> bool:
     data = SignatureDomain(NETWORK).data_to_sign(signed.hash)
-    return bool(verify_sign(public_key, data, signature_override or signature))
+    return bool(verify_sign(public_key, data, signature))
+
+
+def signature_is_valid(body: Cell, public_key: bytes, signature_override: bytes | None = None) -> bool:
+    """Whether a W5 body carries a valid signature for ``public_key``."""
+    signed, signature = split_signature(body)
+    return signature_matches(signed, signature_override or signature, public_key)
 
 
 @dataclass
@@ -81,3 +96,49 @@ def first_send_action(signed: Cell) -> SendAction:
     assert not message.load_bool()  # no state_init
     body = message.load_ref() if message.load_bool() else message.to_cell()
     return SendAction(destination, amount, bounce, body)
+
+
+def w5_header(signed: Cell) -> tuple[int, int]:
+    """``(valid_until, seqno)`` of a signed W5 body."""
+    reader = signed.begin_parse()
+    reader.skip_bits(32 * 2)  # opcode, wallet id
+    return reader.load_uint(32), reader.load_uint(32)
+
+
+def split_leading_signature(body: Cell, signed_in_ref: bool = False) -> tuple[Cell, bytes]:
+    """Separate a body that starts with its signature (v4, highload, Telegram Wallet) into the signed cell and it.
+
+    Highload v3 keeps the signed cell in the body's only reference; the others continue it inline.
+    """
+    reader = body.begin_parse()
+    signature = reader.load_bytes(SIGNATURE_BITS // 8)
+    if signed_in_ref:
+        return reader.load_ref(), signature
+    signed = Builder()
+    signed.store_bits(reader.load_bits(reader.remaining_bits))
+    for ref in body.refs:
+        signed.store_ref(ref)
+    return signed.end_cell(), signature
+
+
+def find_internal_message(root: Cell, destination: Address, amount: int) -> MessageAny | None:
+    """The internal message paying ``amount`` nanograms to ``destination`` anywhere in a signed cell tree."""
+    queue = deque([root])
+    while queue:
+        cell = queue.popleft()
+        queue.extend(cell.refs)
+        try:
+            message = MessageAny.deserialize(Slice.one_from_boc(cell.to_boc()))
+        except Exception:
+            continue
+        info = message.info
+        if getattr(info, "dest", None) == destination and getattr(getattr(info, "value", None), "grams", None) == amount:
+            return message
+    return None
+
+
+def split_body(body: Cell, wallet_version: str) -> tuple[Cell, bytes]:
+    """The signed cell and the signature of any supported wallet's body: W5 signs last, the others first."""
+    if wallet_version == "V5R1":
+        return split_signature(body)
+    return split_leading_signature(body, signed_in_ref=wallet_version == "HighloadV3R1")

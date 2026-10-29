@@ -1,13 +1,22 @@
 """Validate FragmentClient setup, cookie parsing, and wallet version checks."""
 
 import json
+from decimal import Decimal
 
 import pytest
 
 from pyfragment import ConfigurationError, CookieError, FragmentClient
-from pyfragment.core.constants import BASE_HEADERS
-from pyfragment.enums import ApiProvider, WalletVersion
-from tests.shared import BIP39_SEED, VALID_API_KEY, VALID_COOKIES, VALID_SEED, VALID_SEED_12_WORDS
+from pyfragment.constants import BASE_HEADERS
+from pyfragment.enums import ApiProvider, MnemonicType, WalletVersion
+from tests.shared import (
+    BIP39_SEED,
+    BIP39_SEED_12_WORDS,
+    TG_ROTATED_SEED,
+    VALID_API_KEY,
+    VALID_COOKIES,
+    VALID_SEED,
+    VALID_SEED_12_WORDS,
+)
 
 # Client init tests
 
@@ -123,20 +132,6 @@ def test_seed_is_normalized() -> None:
     assert client.seed == VALID_SEED
 
 
-@pytest.mark.parametrize(
-    "seed",
-    [
-        BIP39_SEED,  # right length and words, but not a TON phrase
-        " ".join(VALID_SEED.split()[:-1] + ["abandon"]),  # one word replaced -> wrong checksum
-        " ".join(["notaword"] * 24),
-    ],
-    ids=["bip39", "wrong-word", "not-in-wordlist"],
-)
-def test_invalid_mnemonic_phrase_raises(seed: str) -> None:
-    with pytest.raises(ConfigurationError, match="not a valid TON wallet phrase"):
-        FragmentClient(seed=seed, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
-
-
 # API key validation tests
 
 
@@ -195,3 +190,97 @@ async def test_aclose_is_idempotent() -> None:
     client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
     await client.aclose()
     await client.aclose()
+
+
+# Wallet kinds and phrase schemes
+
+
+@pytest.mark.parametrize(
+    ("seed", "options", "message"),
+    [
+        (BIP39_SEED, {}, "checksum for a TON mnemonic.*Multichain"),  # a multichain phrase without mnemonic_type
+        (" ".join(VALID_SEED.split()[:-1] + ["abandon"]), {}, "checksum for a TON mnemonic"),
+        (" ".join(["notaword"] * 23 + ["abandon"]), {}, "Invalid mnemonic word"),
+        (VALID_SEED, {"mnemonic_type": "multichain"}, "checksum for a Multichain"),
+        (BIP39_SEED_12_WORDS + " abandon", {"wallet_version": "TG"}, "length: 13"),
+        (BIP39_SEED_12_WORDS + " " + " ".join(["zoo"] * 12), {"wallet_version": "TG"}, "words 13-24"),
+        (VALID_SEED, {"wallet_version": "TG"}, "TON mnemonics are not supported"),
+        (BIP39_SEED_12_WORDS, {"wallet_version": "TG", "mnemonic_type": "ton"}, "only Multichain"),
+    ],
+    ids=[
+        "bip39-as-ton",
+        "wrong-word",
+        "not-in-wordlist",
+        "ton-as-multichain",
+        "tg-length",
+        "tg-second-half",
+        "tg-ton-phrase",
+        "tg-ton-scheme",
+    ],
+)
+def test_invalid_seed_phrase_raises(seed: str, options: dict[str, str], message: str) -> None:
+    with pytest.raises(ConfigurationError, match="Invalid seed phrase: .*" + message):
+        FragmentClient(seed=seed, api_key=VALID_API_KEY, cookies=VALID_COOKIES, **options)  # type: ignore[arg-type]
+
+
+def _client(**options: object) -> FragmentClient:
+    options.setdefault("seed", VALID_SEED)
+    return FragmentClient(api_key=VALID_API_KEY, cookies=VALID_COOKIES, **options)  # type: ignore[arg-type]
+
+
+def test_phrase_scheme_defaults_to_ton() -> None:
+    assert _client().mnemonic_type == MnemonicType.TON
+
+
+def test_telegram_wallet_uses_multichain_phrases() -> None:
+    client = _client(seed=BIP39_SEED_12_WORDS, wallet_version="tg")
+    assert client.wallet_version == WalletVersion.TG
+    assert client.mnemonic_type == MnemonicType.MULTICHAIN
+
+
+def test_telegram_wallet_accepts_a_rotated_24_word_phrase() -> None:
+    assert _client(seed=TG_ROTATED_SEED, wallet_version="TG").seed == TG_ROTATED_SEED
+
+
+@pytest.mark.parametrize("words", [12, 15, 18, 21, 24])
+def test_multichain_phrases_of_every_bip39_length_are_accepted(words: int) -> None:
+    from ton_core import multichain_mnemonic_new
+
+    seed = " ".join(multichain_mnemonic_new(words))
+    assert _client(seed=seed, mnemonic_type="Multichain").mnemonic_type == MnemonicType.MULTICHAIN
+
+
+def test_unknown_mnemonic_type_raises() -> None:
+    with pytest.raises(ConfigurationError, match="Unsupported mnemonic type 'bip44'"):
+        _client(mnemonic_type="bip44")
+
+
+@pytest.mark.parametrize("version", ["V4R2", "V5R1", "HighloadV2", "HighloadV3R1"])
+def test_multichain_phrase_works_with_every_wallet_contract(version: str) -> None:
+    assert _client(seed=BIP39_SEED, wallet_version=version, mnemonic_type="multichain").wallet_version == version
+
+
+# Money and timing options
+
+
+@pytest.mark.parametrize(("gas_reserve", "nano"), [("0.33", 330_000_000), (0.1, 100_000_000), (Decimal("0"), 0), (1, 10**9)])
+def test_gas_reserve_is_exact(gas_reserve: object, nano: int) -> None:
+    assert _client(gas_reserve=gas_reserve).gas_reserve_nano == nano
+
+
+@pytest.mark.parametrize("gas_reserve", ["-0.1", "abc", "1,5", float("nan"), True])
+def test_invalid_gas_reserve_raises(gas_reserve: object) -> None:
+    with pytest.raises(ConfigurationError, match="gas_reserve"):
+        _client(gas_reserve=gas_reserve)
+
+
+@pytest.mark.parametrize("confirm_timeout", [-1, float("inf"), "60", None])
+def test_invalid_confirm_timeout_raises(confirm_timeout: object) -> None:
+    with pytest.raises(ConfigurationError, match="confirm_timeout"):
+        _client(confirm_timeout=confirm_timeout)
+
+
+@pytest.mark.parametrize("cookies", ['["stel_ssid"]', "42", '"text"'])
+def test_cookies_json_that_is_not_an_object_raises_cookie_error(cookies: str) -> None:
+    with pytest.raises(CookieError, match="Failed to parse cookies"):
+        FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=cookies)

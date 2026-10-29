@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from curl_cffi.requests import AsyncSession, Response
 
-from pyfragment import FragmentClient, FragmentPageError
+from pyfragment import FragmentClient, HTTPStatusError, SessionExpiredError
 from pyfragment.transport import FragmentTransport, fragment_request, get_fragment_hash
 from tests.shared import FAKE_HASH, FAKE_RESPONSE
 
@@ -73,7 +73,7 @@ async def test_fragment_request_non_200_raises() -> None:
     session = AsyncMock(spec=AsyncSession)
     session.post = AsyncMock(return_value=response)
 
-    with pytest.raises(FragmentPageError, match="429"):
+    with pytest.raises(HTTPStatusError, match="429"):
         await fragment_request(session, FAKE_HASH, {}, {"method": "anyMethod"})
 
 
@@ -110,7 +110,7 @@ async def test_get_fragment_hash_nested_url_referer_is_parent_path() -> None:
 # FragmentTransport: session reuse and API hash caching
 
 
-def _response(payload: dict[str, object] | None = None, status: int = 200) -> MagicMock:
+def _response(status: int = 200, payload: dict[str, object] | None = None) -> MagicMock:
     response = MagicMock(spec=Response)
     response.status_code = status
     response.json.return_value = payload or {}
@@ -126,7 +126,7 @@ def _transport_with_session(session: AsyncMock) -> FragmentTransport:
 @pytest.mark.asyncio
 async def test_transport_caches_hash_per_page() -> None:
     session = AsyncMock(spec=AsyncSession)
-    session.post = AsyncMock(return_value=_response({"ok": 1}))
+    session.post = AsyncMock(return_value=_response(200, {"ok": 1}))
     transport = _transport_with_session(session)
 
     with patch("pyfragment.transport.session.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)) as mock_hash:
@@ -145,7 +145,7 @@ async def test_transport_caches_hash_per_page() -> None:
 async def test_transport_refreshes_stale_hash_once() -> None:
     # Fragment reports an unknown/stale hash as HTTP 200 + {"error": "Bad request"}.
     session = AsyncMock(spec=AsyncSession)
-    session.post = AsyncMock(side_effect=[_response(), _response({"error": "Bad request"}), _response({"ok": 1})])
+    session.post = AsyncMock(side_effect=[_response(), _response(200, {"error": "Bad request"}), _response(200, {"ok": 1})])
     transport = _transport_with_session(session)
     page_url = "https://fragment.com/stars/buy"
 
@@ -161,7 +161,7 @@ async def test_transport_refreshes_stale_hash_once() -> None:
 @pytest.mark.asyncio
 async def test_transport_does_not_cache_a_rejected_hash() -> None:
     session = AsyncMock(spec=AsyncSession)
-    session.post = AsyncMock(return_value=_response({"error": "Bad request"}))
+    session.post = AsyncMock(return_value=_response(200, {"error": "Bad request"}))
     transport = _transport_with_session(session)
 
     with patch("pyfragment.transport.session.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)):
@@ -182,7 +182,7 @@ async def test_transport_rate_limit_keeps_cached_hash() -> None:
         patch("pyfragment.transport.api.asyncio.sleep", AsyncMock()),
     ):
         await transport.call("a", None, page_url)
-        with pytest.raises(FragmentPageError, match="429"):
+        with pytest.raises(HTTPStatusError, match="429"):
             await transport.call("b", None, page_url)
 
     assert mock_hash.await_count == 1
@@ -197,7 +197,7 @@ async def test_transport_failed_first_call_does_not_cache_hash() -> None:
 
     with (
         patch("pyfragment.transport.session.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)),
-        pytest.raises(FragmentPageError, match="403"),
+        pytest.raises(SessionExpiredError, match="403"),
     ):
         await transport.call("a", None, "https://fragment.com/stars/buy")
 

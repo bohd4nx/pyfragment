@@ -5,13 +5,12 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from pyfragment import FragmentClient
-from pyfragment.core.constants import STARS_PAGE
+from pyfragment.domains.ads.topup import TOPUP_FLOW
 from pyfragment.domains.payments import confirm_purchase, is_confirmed, state_nonce
-from pyfragment.enums import ApiMethod
+from pyfragment.domains.purchases.stars import STARS_FLOW
 from tests.shared import FAKE_ACCOUNT, FAKE_CONFIRM_METHOD, FAKE_REQ_ID, FAKE_TX_BOC
 
-STATE_METHOD = ApiMethod.UPDATE_STARS_BUY_STATE
-PAGE_URL = STARS_PAGE
+STATE_METHOD = STARS_FLOW.state_method
 
 # state_nonce
 
@@ -54,7 +53,7 @@ async def test_confirm_purchase_posts_boc_to_confirm_method(client: FragmentClie
         ]
     )
     with patch.object(client, "call", call_mock):
-        response = await confirm_purchase(client, FAKE_ACCOUNT, FAKE_TX_BOC, transaction_data, STATE_METHOD, PAGE_URL)
+        response = await confirm_purchase(client, STARS_FLOW, FAKE_ACCOUNT, FAKE_TX_BOC, transaction_data)
 
     assert response == {"ok": True, "need_update": False, "mode": "done"}
     confirm_call = call_mock.await_args_list[0]
@@ -68,7 +67,7 @@ async def test_confirm_purchase_skips_confirm_call_when_no_confirm_method(client
     transaction_data: dict[str, object] = {}
     call_mock = AsyncMock(return_value={"ok": True, "need_update": False, "mode": "done"})
     with patch.object(client, "call", call_mock):
-        response = await confirm_purchase(client, FAKE_ACCOUNT, FAKE_TX_BOC, transaction_data, STATE_METHOD, PAGE_URL)
+        response = await confirm_purchase(client, STARS_FLOW, FAKE_ACCOUNT, FAKE_TX_BOC, transaction_data)
 
     assert response is not None
     assert response["mode"] == "done"
@@ -91,7 +90,7 @@ async def test_confirm_purchase_polls_until_done(client: FragmentClient) -> None
         patch.object(client, "call", call_mock),
         patch("pyfragment.domains.payments.confirmation.CONFIRM_STATE_POLL_INTERVAL", 0),
     ):
-        response = await confirm_purchase(client, FAKE_ACCOUNT, FAKE_TX_BOC, {}, STATE_METHOD, PAGE_URL)
+        response = await confirm_purchase(client, STARS_FLOW, FAKE_ACCOUNT, FAKE_TX_BOC, {})
 
     assert response is not None
     assert response["mode"] == "done"
@@ -105,12 +104,12 @@ async def test_confirm_purchase_polls_until_done(client: FragmentClient) -> None
 async def test_confirm_purchase_times_out_and_returns_last_response(client: FragmentClient) -> None:
     call_mock = AsyncMock(return_value={"ok": True, "need_update": True, "mode": "processing"})
     # A short timeout with a longer poll interval guarantees exactly one poll before the deadline passes.
+    client.confirm_timeout = 0.02
     with (
         patch.object(client, "call", call_mock),
-        patch("pyfragment.domains.payments.confirmation.CONFIRM_STATE_TIMEOUT", 0.02),
         patch("pyfragment.domains.payments.confirmation.CONFIRM_STATE_POLL_INTERVAL", 0.2),
     ):
-        response = await confirm_purchase(client, FAKE_ACCOUNT, FAKE_TX_BOC, {}, STATE_METHOD, PAGE_URL)
+        response = await confirm_purchase(client, STARS_FLOW, FAKE_ACCOUNT, FAKE_TX_BOC, {})
 
     assert response == {"ok": True, "need_update": True, "mode": "processing"}
     assert is_confirmed(response) is False
@@ -120,6 +119,31 @@ async def test_confirm_purchase_times_out_and_returns_last_response(client: Frag
 @pytest.mark.asyncio
 async def test_confirm_purchase_swallows_errors(client: FragmentClient) -> None:
     with patch.object(client, "call", AsyncMock(side_effect=RuntimeError("network down"))):
-        response = await confirm_purchase(client, FAKE_ACCOUNT, FAKE_TX_BOC, {}, STATE_METHOD, PAGE_URL)
+        response = await confirm_purchase(client, STARS_FLOW, FAKE_ACCOUNT, FAKE_TX_BOC, {})
 
     assert response is None
+
+
+@pytest.mark.asyncio
+async def test_zero_confirm_timeout_reports_the_purchase_without_polling(client: FragmentClient) -> None:
+    client.confirm_timeout = 0
+    transaction_data = {"confirm_method": FAKE_CONFIRM_METHOD, "confirm_params": {"id": FAKE_REQ_ID}}
+    call_mock = AsyncMock(return_value={"ok": True})
+    with patch.object(client, "call", call_mock):
+        response = await confirm_purchase(client, STARS_FLOW, FAKE_ACCOUNT, FAKE_TX_BOC, transaction_data)
+
+    # Fragment is still told about the transfer, but nobody waits for it.
+    call_mock.assert_awaited_once()
+    assert call_mock.await_args.args[0] == FAKE_CONFIRM_METHOD
+    assert is_confirmed(response) is False
+
+
+@pytest.mark.asyncio
+async def test_ads_pages_are_polled_with_the_mode_only(client: FragmentClient) -> None:
+    # fragment.com's own frontend sends updateAdsTopupState/updateAdsState with {mode} and nothing else.
+    call_mock = AsyncMock(return_value={"ok": True, "need_update": False, "mode": "done"})
+    with patch.object(client, "call", call_mock):
+        await confirm_purchase(client, TOPUP_FLOW, FAKE_ACCOUNT, FAKE_TX_BOC, {})
+
+    assert call_mock.await_args.args[0] == TOPUP_FLOW.state_method
+    assert call_mock.await_args.args[1] == {"mode": "new"}

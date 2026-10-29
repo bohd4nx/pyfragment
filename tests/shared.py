@@ -1,16 +1,11 @@
-"""Shared test constants for the pyfragment test suite.
-
-pyfragment is an async Python client for the Fragment API — a unified toolkit
-to manage Telegram assets: purchase Stars and Premium, top up GRAM (ex TON) and Ads balances,
-run giveaways, manage anonymous numbers, and explore the marketplace for usernames,
-numbers, and gifts.
-"""
+"""Shared test fixtures, constants, and helpers for the pyfragment test suite."""
 
 import json
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
+
+from pyfragment import TransferIntent
+from pyfragment.enums import PaymentMethod
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -32,8 +27,12 @@ VALID_SEED: str = (
     "liquid stay mean already"
 )
 VALID_SEED_12_WORDS: str = "range blast planet dove tonight tomato dream must vacuum asthma chimney shrimp"
-# A well-formed BIP39 phrase that is not a TON phrase: tonutils would derive some wallet from it without complaint.
-BIP39_SEED: str = "abandon " * 23 + "about"
+# Well-formed multichain (BIP-39) phrases (the standard BIP-39 test vectors) that are not TON phrases: tonutils would
+# derive some TON-scheme wallet from them without complaint.
+BIP39_SEED: str = "abandon " * 23 + "art"
+BIP39_SEED_12_WORDS: str = "abandon " * 11 + "about"
+# A Telegram Wallet phrase after a key rotation: words 1-12 keep the address, words 13-24 are the current key.
+TG_ROTATED_SEED: str = BIP39_SEED_12_WORDS + " " + "zoo " * 11 + "wrong"
 VALID_API_KEY: str = "A" * 68
 VALID_COOKIES: dict[str, str] = {
     "stel_ssid": "x",
@@ -51,24 +50,22 @@ FAKE_TX_HASH: str = "deadbeef" * 8
 FAKE_TX_BOC: str = "te6ccgEBAQEAAgAAAA=="
 FAKE_ACCOUNT: dict[str, Any] = {"address": "0:abc", "publicKey": "pub", "chain": "-239", "walletStateInit": "base64=="}
 FAKE_TRANSACTION: dict[str, Any] = {"transaction": {"messages": [{"address": "0:abc", "amount": "100000000", "payload": ""}]}}
+FAKE_COMMENT: str = "50 Telegram Stars \n\nRef#kpJ55h3BW"
+# What process_transaction() reports for a transfer it sent.
+FAKE_SENT: TransferIntent = TransferIntent(
+    msg_hash=FAKE_TX_HASH,
+    boc=FAKE_TX_BOC,
+    destination="0:abc",
+    amount_nano=100_000_000,
+    comment=FAKE_COMMENT,
+    payment_method=PaymentMethod.GRAM,
+    req_id=FAKE_REQ_ID,
+    valid_until=1_900_000_000,
+)
 
 # client.call()
 FAKE_RESPONSE: dict[str, Any] = {"status": "ok", "data": {"value": 42}}
 
-
-def ton_client_with_account(balance: int, state: str = "active", error: Exception | None = None) -> MagicMock:
-    """A mocked tonutils client whose ``get_info`` reports the given on-chain account (or raises ``error``)."""
-    ton = MagicMock()
-    if error is not None:
-        ton.get_info = AsyncMock(side_effect=error)
-    else:
-        ton.get_info = AsyncMock(return_value=SimpleNamespace(balance=balance, state=SimpleNamespace(value=state)))
-    return ton
-
-
-# get_wallet()
-FAKE_ADDRESS: str = "UQCppfw5DxWgdVHf3zkmZS8k1mt9oAUYxQLwq2fz3nhO8No5"
-FAKE_BALANCE_NANOGRAM: int = 1_500_000_000  # 1.5 GRAM (ex TON)
 
 # recharge_ads
 FAKE_ADS_ACCOUNT: str = "@mychannel"

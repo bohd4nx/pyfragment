@@ -11,7 +11,7 @@ from collections.abc import AsyncIterator
 import pytest
 from curl_cffi.requests import AsyncSession
 
-from pyfragment.core.constants import (
+from pyfragment.constants import (
     ADS_TOPUP_PAGE,
     BASE_HEADERS,
     GIFTS_PAGE,
@@ -80,7 +80,7 @@ async def test_premium_durations(session: AsyncSession) -> None:
 async def test_payment_methods_match_enum(session: AsyncSession) -> None:
     html = await _page(session, PREMIUM_PAGE)
     offered = set(re.findall(r'name="payment_method"[^>]*value="(\w+)"', html))
-    assert offered == {m.value for m in PaymentMethod}
+    assert {m.value for m in PaymentMethod} <= offered  # Fragment also offers chains this library can't pay on
 
 
 async def test_marketplace_sort_and_filter_values(session: AsyncSession) -> None:

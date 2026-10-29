@@ -24,3 +24,9 @@ Refresh them from live responses when Fragment changes its markup, then update t
 
 The invoice id and the sender wallet address are replaced with placeholders; the payload, amount and destination are as
 Fragment sent them.
+
+## On-chain (captured 2026-10-23 from tonapi, public mainnet data)
+
+| File | What it is |
+| --- | --- |
+| `wallet_payment_transaction.json` | A wallet's transaction paying Fragment for 1700 Stars: the raw transaction BOC, its hash, lt and time, the normalized hash of the external message that started it, and the payment comment |
