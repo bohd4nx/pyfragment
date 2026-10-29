@@ -58,21 +58,6 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-## Wallets
-
-| Wallet                                       | `wallet_version`                   | `mnemonic_type`       |
-| -------------------------------------------- | ---------------------------------- | --------------------- |
-| Tonkeeper, MyTonWallet and other TON wallets | `"V5R1"` (default) or `"V4R2"`     | `"ton"` (default)     |
-| Multichain wallets (BIP-39 phrase)           | `"V5R1"` or `"V4R2"`               | `"multichain"`        |
-| Telegram Wallet (self-custodial)             | `"TG"`                             | always `"multichain"` |
-| Highload wallets                             | `"HighloadV2"` or `"HighloadV3R1"` | either                |
-
-Check that `get_wallet().address` is the address your wallet app shows before paying from a new configuration.
-
-## Failures and money
-
-A transfer is signed and sent once — never a second payment. Fragment's confirmation API is the source of truth for whether it landed. Every error has `retryable`: `True` means nothing was paid and the call is safe to retry. `confirmed` on a result is a best-effort acknowledgement from Fragment's backend; `False` doesn't mean the purchase failed — **don't retry just because `confirmed` is `False`**. See [Payment Safety](https://bohd4nx.gitbook.io/pyfragment/client/transfers) for crash recovery via `on_transfer_prepared`.
-
 <div align="center">
 
 [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
