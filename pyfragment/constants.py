@@ -26,14 +26,6 @@ CONFIRM_STATE_POLL_INTERVAL: float = 2.0
 
 # How long a signed transfer stays valid: after that the wallet rejects it, so it can never land late
 MESSAGE_TTL: int = 60
-# After sending, how often to look for the transfer in the wallet's history, and how long past its expiry to keep
-# looking: the API providers' view of the chain lags a little behind it, and the system clock may be a little off
-LANDING_POLL_INTERVAL: float = 2.0
-LANDING_GRACE: float = 60.0
-
-# Transactions fetched per page when searching the wallet's history
-TRANSACTIONS_PAGE_SIZE: int = 50
-
 # Fragment cookie keys required for authenticated API calls
 REQUIRED_COOKIE_KEYS: tuple[str, ...] = ("stel_ssid", "stel_dt", "stel_token", "stel_ton_token")
 
