@@ -22,6 +22,7 @@ from pyfragment import (
     SessionExpiredError,
     UserNotFoundError,
 )
+from pyfragment.constants import GRAM_CURRENCY, STARS_PAGE
 from pyfragment.enums import ApiMethod
 from pyfragment.exceptions import ProviderError, TransactionError
 from pyfragment.transport import fragment_request, get_fragment_hash
@@ -110,16 +111,16 @@ async def test_other_client_errors_are_plain_status_errors() -> None:
 async def test_page_without_the_api_hash_means_a_logged_out_session() -> None:
     session = _session(_response(200, text="<html>Log in</html>"), method="get")
     with pytest.raises(SessionExpiredError, match="not logged in"):
-        await get_fragment_hash(session, "https://fragment.com/stars/buy")
+        await get_fragment_hash(session, STARS_PAGE)
 
 
 @pytest.mark.asyncio
 async def test_page_load_failures_are_not_retried() -> None:
     with pytest.raises(HTTPStatusError) as exc_info:
-        await get_fragment_hash(_session(_response(502), method="get"), "https://fragment.com/stars/buy")
+        await get_fragment_hash(_session(_response(502), method="get"), STARS_PAGE)
     assert exc_info.value.retryable
     with pytest.raises(NetworkError, match="slow"):
-        await get_fragment_hash(_session(Timeout("slow"), method="get"), "https://fragment.com/stars/buy")
+        await get_fragment_hash(_session(Timeout("slow"), method="get"), STARS_PAGE)
 
 
 @pytest.mark.asyncio
@@ -205,7 +206,7 @@ async def test_expected_failures_are_not_logged_as_errors(client: FragmentClient
     with patch.object(client, "call", AsyncMock(return_value={"found": {}})), pytest.raises(UserNotFoundError):
         await client.purchase_stars("@ghost", amount=500)
 
-    low_balance = AsyncMock(side_effect=InsufficientBalanceError(0, 1, "GRAM (ex TON)"))  # type: ignore[arg-type]
+    low_balance = AsyncMock(side_effect=InsufficientBalanceError(0, 1, GRAM_CURRENCY))  # type: ignore[arg-type]
     call_mock = AsyncMock(side_effect=[{"found": {"recipient": FAKE_RECIPIENT}}, {}, {"req_id": "r"}, FAKE_TRANSACTION])
     with (
         patch.object(client, "call", call_mock),

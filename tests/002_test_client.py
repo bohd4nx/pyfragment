@@ -174,8 +174,8 @@ def test_repr() -> None:
     client = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
     r = repr(client)
     assert "FragmentClient" in r
-    assert "V5R1" in r
-    assert "tonapi" in r
+    assert WalletVersion.V5R1 in r
+    assert ApiProvider.TONAPI in r
     assert "4 keys" in r
 
 
