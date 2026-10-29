@@ -6,9 +6,11 @@ from pyfragment.domains.ads.models import AdsRechargeResult, AdsTopupResult
 from pyfragment.domains.anonymous_numbers.models import LoginCodeResult, TerminateSessionsResult
 from pyfragment.domains.giveaways.models import PremiumGiveawayResult, StarsGiveawayResult
 from pyfragment.domains.marketplace.models import AuctionItem, GiftsResult, NumbersResult, UsernamesResult
+from pyfragment.domains.payments.models import PaymentResult
 from pyfragment.domains.purchases.models import PremiumResult, StarsResult
+from pyfragment.domains.recipients import Recipient
+from pyfragment.domains.wallet.models import TransferInfo, TransferIntent, WalletInfo
 from pyfragment.enums import (
-    SUPPORTED_PAYMENT_METHODS,
     ApiError,
     ApiMethod,
     ApiProvider,
@@ -16,6 +18,7 @@ from pyfragment.enums import (
     AuctionSort,
     GiftAttribute,
     MarketplaceType,
+    MnemonicType,
     PaymentMethod,
     StateMode,
     WalletVersion,
@@ -23,23 +26,26 @@ from pyfragment.enums import (
 from pyfragment.exceptions import (
     AlreadySubscribedError,
     AnonymousNumberError,
+    BroadcastError,
+    ChainError,
     ChannelNotFoundError,
     ClientError,
     ConfigurationError,
     CookieError,
     FragmentAPIError,
     FragmentError,
-    FragmentPageError,
-    OperationError,
+    HTTPStatusError,
+    InsufficientBalanceError,
+    NetworkError,
     ParseError,
+    ProviderError,
+    RecipientError,
+    SessionExpiredError,
     TransactionError,
     UnexpectedError,
     UserNotFoundError,
     VerificationError,
-    WalletError,
 )
-from pyfragment.services.cookies import CookieResult, get_cookies_from_browser
-from pyfragment.services.tonapi.models import WalletInfo
 
 logging.getLogger("pyfragment").addHandler(logging.NullHandler())
 
@@ -49,14 +55,17 @@ __all__ = [
     "__version__",
     "FragmentClient",
     # results
+    "PaymentResult",
     "StarsResult",
     "StarsGiveawayResult",
     "PremiumResult",
     "PremiumGiveawayResult",
     "WalletInfo",
+    "TransferInfo",
+    "TransferIntent",
+    "Recipient",
     "AdsTopupResult",
     "AdsRechargeResult",
-    "CookieResult",
     "AuctionItem",
     "GiftsResult",
     "LoginCodeResult",
@@ -65,20 +74,25 @@ __all__ = [
     "UsernamesResult",
     # exceptions
     "FragmentError",
-    "FragmentAPIError",
-    "FragmentPageError",
+    "ClientError",
     "ConfigurationError",
-    "AlreadySubscribedError",
+    "CookieError",
+    "FragmentAPIError",
+    "NetworkError",
+    "HTTPStatusError",
+    "SessionExpiredError",
+    "RecipientError",
     "UserNotFoundError",
     "ChannelNotFoundError",
-    "WalletError",
+    "AlreadySubscribedError",
     "VerificationError",
-    "TransactionError",
-    "AnonymousNumberError",
-    "ClientError",
-    "CookieError",
-    "OperationError",
     "ParseError",
+    "AnonymousNumberError",
+    "ChainError",
+    "InsufficientBalanceError",
+    "ProviderError",
+    "TransactionError",
+    "BroadcastError",
     "UnexpectedError",
     # enums
     "ApiError",
@@ -88,9 +102,8 @@ __all__ = [
     "AuctionSort",
     "GiftAttribute",
     "MarketplaceType",
+    "MnemonicType",
     "PaymentMethod",
     "StateMode",
-    "SUPPORTED_PAYMENT_METHODS",
     "WalletVersion",
-    "get_cookies_from_browser",
 ]

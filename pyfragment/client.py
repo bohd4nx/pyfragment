@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
+from datetime import datetime
+from decimal import Decimal
 from typing import Any
 
-from pyfragment.core.constants import BASE_HEADERS, DEFAULT_TIMEOUT, FRAGMENT_BASE_URL
-from pyfragment.core.validation import (
-    normalize_provider,
-    normalize_seed,
-    normalize_wallet_version,
-    parse_cookies,
-    validate_cookie_keys,
-    validate_credentials,
+from pyfragment.constants import (
+    BASE_HEADERS,
+    CONFIRM_STATE_TIMEOUT,
+    DEFAULT_GAS_RESERVE,
+    DEFAULT_TIMEOUT,
+    FRAGMENT_BASE_URL,
 )
 from pyfragment.domains.ads.models import AdsRechargeResult, AdsTopupResult
 from pyfragment.domains.ads.service import AdsService
@@ -22,10 +22,24 @@ from pyfragment.domains.marketplace.models import GiftsResult, NumbersResult, Us
 from pyfragment.domains.marketplace.service import MarketplaceService
 from pyfragment.domains.purchases.models import PremiumResult, StarsResult
 from pyfragment.domains.purchases.service import PurchasesService
-from pyfragment.enums import ApiMethod, ApiProvider, AuctionFilter, AuctionSort, PaymentMethod, WalletVersion
-from pyfragment.services.tonapi.models import WalletInfo
-from pyfragment.services.tonapi.service import TonapiService
+from pyfragment.domains.recipients import Recipient
+from pyfragment.domains.wallet.models import TransferInfo, TransferIntent, WalletInfo
+from pyfragment.domains.wallet.service import WalletService
+from pyfragment.domains.wallet.wallet import TonWallet
+from pyfragment.enums import ApiMethod, ApiProvider, AuctionFilter, AuctionSort, MnemonicType, PaymentMethod, WalletVersion
 from pyfragment.transport import FragmentTransport
+from pyfragment.utils.validation import (
+    normalize_confirm_timeout,
+    normalize_gas_reserve,
+    normalize_mnemonic_type,
+    normalize_provider,
+    normalize_seed,
+    normalize_wallet_version,
+    parse_cookies,
+    validate_cookie_keys,
+    validate_credentials,
+    validate_seed,
+)
 
 
 class FragmentClient:
@@ -37,21 +51,35 @@ class FragmentClient:
         connected with Fragment or Telegram.
 
     Args:
-        seed: 12- or 24-word mnemonic phrase for the GRAM (ex TON) wallet.
+        seed: Mnemonic phrase of the GRAM (ex TON) wallet.
         api_key: API key for the chosen provider — tonconsole.com (default) or t.me/toncenter.
         cookies: Fragment session cookies as a dict or JSON string.
-        wallet_version: Wallet contract version — ``"V4R2"`` or ``"V5R1"`` (default).
+        wallet_version: Wallet contract — ``"V5R1"`` (default), ``"V4R2"``, ``"HighloadV2"``,
+            ``"HighloadV3R1"``, or ``"TG"`` for a Telegram Wallet (12 words, or 24 after a key rotation).
+        mnemonic_type: How the phrase derives the key — ``"ton"`` (default: Tonkeeper, MyTonWallet and
+            other TON wallets, 12 or 24 words) or ``"multichain"`` (a BIP-39 phrase of a multichain
+            wallet, 12 to 24 words). A Telegram Wallet always uses ``"multichain"``.
         api_provider: Blockchain API provider — ``"tonapi"`` (tonconsole.com, default)
             or ``"toncenter"`` (t.me/toncenter).
         timeout: HTTP request timeout in seconds. Defaults to ``30.0``.
         headers: Custom HTTP request headers. If omitted, :data:`BASE_HEADERS` is used.
+        gas_reserve: GRAM (ex TON) the wallet must keep on top of a payment for fees. Defaults to ``0.33``.
+        confirm_timeout: Seconds to wait for Fragment to confirm a purchase after paying. ``0`` reports it
+            right away (``confirmed=False``). Defaults to ``60``.
+        on_transfer_prepared: Async callback receiving each :class:`TransferIntent` after it is signed and
+            before it is sent. Save it to check the transfer with :meth:`find_transfer` if the process
+            dies mid-purchase; if it raises, nothing is sent.
 
-    The client keeps one HTTP session and reuses it across calls. Use ``async with`` (or call
-    :meth:`aclose`) to release it when you are done.
+    The client keeps one HTTP session and one blockchain API connection and reuses them across calls.
+    Use ``async with`` (or call :meth:`aclose`) to release them when you are done.
+
+    A purchase returns only once its transfer is on-chain (or raises :class:`BroadcastError` once it can no
+    longer get there), so purchases from one client run one at a time. Run purchases from one wallet in
+    several processes one at a time too, and keep the system clock synced.
 
     Raises:
-        ConfigurationError: If ``seed``, ``api_key``, ``wallet_version``, or ``api_provider``
-            are missing or invalid.
+        ConfigurationError: If ``seed``, ``api_key``, ``wallet_version``, ``mnemonic_type``,
+            ``api_provider``, ``gas_reserve`` or ``confirm_timeout`` are missing or invalid.
         CookieError: If ``cookies`` cannot be parsed or are missing required keys.
 
     Example::
@@ -75,25 +103,37 @@ class FragmentClient:
         api_provider: str = "tonapi",
         timeout: float = DEFAULT_TIMEOUT,
         headers: dict[str, str | None] | None = None,
+        mnemonic_type: str | None = None,
+        gas_reserve: Decimal | float | str = DEFAULT_GAS_RESERVE,
+        confirm_timeout: float = CONFIRM_STATE_TIMEOUT,
+        on_transfer_prepared: Callable[[TransferIntent], Awaitable[None]] | None = None,
     ) -> None:
         validate_credentials(seed, api_key)
         provider = normalize_provider(api_provider)
         parsed_cookies = parse_cookies(cookies)
         validate_cookie_keys(parsed_cookies)
         version = normalize_wallet_version(wallet_version)
+        phrase_type = normalize_mnemonic_type(mnemonic_type, version)
+        normalized_seed = normalize_seed(seed)
+        validate_seed(normalized_seed, version, phrase_type)
 
-        self.seed: str = normalize_seed(seed)
+        self.seed: str = normalized_seed
         self.api_key: str = api_key.strip()
         self.api_provider: ApiProvider = provider
         self.cookies: dict[str, Any] = parsed_cookies
         self.wallet_version: WalletVersion = version
+        self.mnemonic_type: MnemonicType = phrase_type
         self.timeout: float = timeout
         self.headers: dict[str, str | None] = dict(headers) if headers is not None else dict(BASE_HEADERS)
+        self.gas_reserve_nano: int = normalize_gas_reserve(gas_reserve)
+        self.confirm_timeout: float = normalize_confirm_timeout(confirm_timeout)
+        self.on_transfer_prepared: Callable[[TransferIntent], Awaitable[None]] | None = on_transfer_prepared
         self._transport = FragmentTransport(parsed_cookies, timeout, self.headers)
+        self.ton_wallet = TonWallet(self)
         self.marketplace = MarketplaceService(self)
         self.purchases = PurchasesService(self)
         self.giveaways = GiveawaysService(self)
-        self.tonapi = TonapiService(self)
+        self.wallet = WalletService(self)
         self.anonymous_numbers = AnonymousNumbersService(self)
         self.ads = AdsService(self)
 
@@ -104,13 +144,16 @@ class FragmentClient:
         await self.aclose()
 
     async def aclose(self) -> None:
-        """Close the underlying HTTP session. Called automatically when leaving ``async with``."""
-        await self._transport.aclose()
+        """Close the HTTP session and the blockchain API connection. Called automatically when leaving ``async with``."""
+        try:
+            await self._transport.aclose()
+        finally:
+            await self.ton_wallet.aclose()
 
     def __repr__(self) -> str:
         return (
-            f"FragmentClient(wallet_version='{self.wallet_version}', api_provider='{self.api_provider}', "
-            f"cookies={len(self.cookies)} keys)"
+            f"FragmentClient(wallet_version='{self.wallet_version}', mnemonic_type='{self.mnemonic_type}', "
+            f"api_provider='{self.api_provider}', cookies={len(self.cookies)} keys)"
         )
 
     async def purchase_premium(
@@ -129,7 +172,7 @@ class FragmentClient:
             payment_method: Payment currency — defaults to ``PaymentMethod.GRAM``.
 
         Returns:
-            :class:`PremiumResult` with ``transaction_id``, ``username``, and ``amount``.
+            :class:`PremiumResult` with ``transaction_id``, ``username``, ``amount``, ``confirmed``, and ``comment``.
         """
         return await self.purchases.purchase_premium(username, months, show_sender=show_sender, payment_method=payment_method)
 
@@ -149,7 +192,7 @@ class FragmentClient:
             payment_method: Payment currency — defaults to ``PaymentMethod.GRAM``.
 
         Returns:
-            :class:`StarsResult` with ``transaction_id``, ``username``, and ``amount``.
+            :class:`StarsResult` with ``transaction_id``, ``username``, ``amount``, ``confirmed``, and ``comment``.
         """
         return await self.purchases.purchase_stars(username, amount, show_sender=show_sender, payment_method=payment_method)
 
@@ -157,7 +200,7 @@ class FragmentClient:
         """Top up GRAM (ex TON) to a recipient's Telegram balance.
 
         Args:
-            username: Recipient's Telegram username (with or without ``@``).
+            username: Recipient identifier — ``@username``, ``username``, or ``https://t.me/username``.
             amount: Amount in GRAM (ex TON) — integer from ``1`` to ``1 000 000 000``.
             show_sender: Show your name as the sender. Defaults to ``True``.
 
@@ -182,10 +225,45 @@ class FragmentClient:
         """Return the address, state, and balances of the wallet.
 
         Returns:
-            :class:`WalletInfo` with ``address``, ``state``, ``gram_balance``, and ``usdt_balance``
-            (``None`` if the USDT lookup failed).
+            :class:`WalletInfo` with ``address``, ``state``, and exact ``Decimal`` balances ``gram_balance``
+            and ``usdt_balance`` (``None`` if the USDT lookup failed).
         """
-        return await self.tonapi.get_wallet()
+        return await self.wallet.get_wallet()
+
+    async def check_stars_recipient(self, username: str) -> Recipient:
+        """Check that a user can receive Stars, without buying anything.
+
+        Raises:
+            UserNotFoundError: If the username doesn't belong to a Telegram user.
+        """
+        return await self.purchases.check_stars_recipient(username)
+
+    async def check_premium_recipient(self, username: str, months: int = 3) -> Recipient:
+        """Check that a user can be gifted Premium for ``months``, without buying anything.
+
+        Raises:
+            UserNotFoundError: If the username doesn't belong to a Telegram user.
+            AlreadySubscribedError: If the user already has Premium.
+        """
+        return await self.purchases.check_premium_recipient(username, months)
+
+    async def find_transfer(
+        self, *, msg_hash: str | None = None, comment: str | None = None, since: datetime
+    ) -> TransferInfo | None:
+        """Look for a transfer this wallet sent since ``since``: to check a purchase the process didn't see finish.
+
+        Args:
+            msg_hash: The purchase's ``transaction_id`` (or ``TransferIntent.msg_hash``) — the reliable key.
+            comment: Fragment's payment reference, e.g. the purchase's ``comment``.
+            since: When the purchase started; use a timezone-aware datetime.
+
+        Returns:
+            :class:`TransferInfo` (check ``success``), or ``None`` if no such transfer is on-chain.
+
+        Raises:
+            ProviderError: If the wallet's history could not be read.
+        """
+        return await self.wallet.find_transfer(msg_hash=msg_hash, comment=comment, since=since)
 
     async def giveaway_stars(
         self,
