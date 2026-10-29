@@ -98,9 +98,9 @@ GRAM_TOPUP_MIN: int = 1
 GRAM_TOPUP_MAX: int = 1_000_000_000
 
 # GRAM (ex TON) kept on top of a payment by default for storage, gas and forwarding fees; FragmentClient(gas_reserve=...)
-DEFAULT_GAS_RESERVE: Decimal = Decimal("0.33")
+DEFAULT_GAS_RESERVE: Decimal = Decimal("0.05")
 # USDT a USDT payment is assumed to need when Fragment's invoice doesn't state its amount
-MIN_USDT_BALANCE: Decimal = Decimal("0.75")
+MIN_USDT_BALANCE: Decimal = Decimal("0.70")
 
 # Premium subscription durations (months)
 PREMIUM_MONTHS_VALID: frozenset[int] = frozenset({3, 6, 12})

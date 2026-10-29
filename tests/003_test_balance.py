@@ -86,14 +86,14 @@ async def test_insufficient_balance_raises_before_signing() -> None:
             await process_transaction(client, transaction())
 
     error = exc_info.value
-    assert (error.balance, error.required, error.currency) == (Decimal("0.1"), Decimal("0.83"), "GRAM (ex TON)")
+    assert (error.balance, error.required, error.currency) == (Decimal("0.1"), Decimal("0.55"), "GRAM (ex TON)")
     assert ton.sent == [] and ton.seqno_reads == 0
 
 
 @pytest.mark.asyncio
 async def test_balance_exactly_covering_payment_and_reserve_sends() -> None:
-    # 0.5 GRAM (ex TON) payment + 0.33 reserve, compared in nanograms: no float rounding at the boundary.
-    ton = FakeTon(balance=830_000_000)
+    # 0.5 GRAM (ex TON) payment + 0.05 reserve, compared in nanograms: no float rounding at the boundary.
+    ton = FakeTon(balance=550_000_000)
     async with fragment_client(ton) as client:
         await process_transaction(client, transaction())
     assert len(ton.sent) == 1
@@ -101,11 +101,11 @@ async def test_balance_exactly_covering_payment_and_reserve_sends() -> None:
 
 @pytest.mark.asyncio
 async def test_one_nanogram_short_raises() -> None:
-    ton = FakeTon(balance=829_999_999)
+    ton = FakeTon(balance=549_999_999)
     async with fragment_client(ton) as client:
         with pytest.raises(InsufficientBalanceError) as exc_info:
             await process_transaction(client, transaction())
-    assert exc_info.value.balance == Decimal("0.829999999")
+    assert exc_info.value.balance == Decimal("0.549999999")
     assert ton.sent == []
 
 
@@ -124,11 +124,11 @@ async def test_gas_reserve_is_configurable(gas_reserve: object, balance: int, se
 
 @pytest.mark.asyncio
 async def test_invoice_amount_above_the_transfer_is_what_must_be_covered() -> None:
-    ton = FakeTon(balance=929_999_999)
+    ton = FakeTon(balance=649_999_999)
     async with fragment_client(ton) as client:
         with pytest.raises(InsufficientBalanceError) as exc_info:
             await process_transaction(client, transaction(), required_payment_amount=Decimal("0.6"))
-    assert exc_info.value.required == Decimal("0.93")
+    assert exc_info.value.required == Decimal("0.65")
 
 
 @pytest.mark.asyncio
@@ -341,7 +341,7 @@ async def test_highload_transfers_expire_like_the_others(wallet_version: str, se
 
 @pytest.mark.asyncio
 async def test_usdt_payment_needs_the_attached_gram_plus_reserve() -> None:
-    ton = FakeTon(balance=379_999_999)  # 0.05 attached + 0.33 reserve, minus one nanogram
+    ton = FakeTon(balance=99_999_999)  # 0.05 attached + 0.05 reserve, minus one nanogram
     with patch("pyfragment.domains.wallet.balance.get_usdt_balance", AsyncMock(return_value=100_000_000)):
         async with fragment_client(ton) as client:
             with pytest.raises(InsufficientBalanceError) as exc_info:

@@ -26,6 +26,10 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ### Changed
 
+- **`DEFAULT_GAS_RESERVE`** lowered from `0.33` to `0.05` GRAM. GRAM (ex TON) network fees are a fraction
+  of a cent; the old value was overly conservative and blocked purchases on wallets with modest balances.
+  Override with `FragmentClient(gas_reserve=...)`.
+
 - **`DEVICE_INFO`** updated to match current Tonkeeper TON Connect capabilities:
   removed the legacy `"SendTransaction"` string entry, added `"extraCurrencySupported": true` to
   `SendTransaction`, bumped `appVersion` to `26.10.1`.
@@ -46,7 +50,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - **`check_stars_recipient()` / `check_premium_recipient()`** — validate a recipient without starting a
   purchase. Return a `Recipient` (`recipient`, `username`, `name`, `photo`, `myself`).
 - `FragmentClient(gas_reserve=...)` — GRAM the wallet must keep on top of any payment for network fees.
-  Defaults to `0.33`; replaces `MIN_GRAM_BALANCE`.
+  Defaults to `0.05`; replaces `MIN_GRAM_BALANCE`.
 - `FragmentClient(confirm_timeout=...)` — seconds to wait for Fragment's own confirmation after paying.
   Defaults to `60`; pass `0` to skip.
 - **A transfer is signed and sent exactly once.** Fragment's confirmation API is the outcome signal.

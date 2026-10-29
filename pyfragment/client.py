@@ -65,7 +65,7 @@ class FragmentClient:
             or ``"toncenter"`` (t.me/toncenter).
         timeout: HTTP request timeout in seconds. Defaults to ``30.0``.
         headers: Custom HTTP request headers. If omitted, :data:`BASE_HEADERS` is used.
-        gas_reserve: GRAM (ex TON) the wallet must keep on top of a payment for fees. Defaults to ``0.33``.
+        gas_reserve: GRAM (ex TON) the wallet must keep on top of a payment for fees. Defaults to ``0.05``.
         confirm_timeout: Seconds to wait for Fragment to confirm a purchase after paying. ``0`` reports it
             right away (``confirmed=False``). Defaults to ``60``.
         on_transfer_prepared: Async callback receiving each :class:`TransferIntent` after it is signed and
