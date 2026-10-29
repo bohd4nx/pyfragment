@@ -15,7 +15,7 @@ from pyfragment.constants import (
     USERNAME_PATTERN,
 )
 from pyfragment.domains.wallet.wallet import WALLET_CLASSES
-from pyfragment.enums import ApiProvider, AuctionFilter, AuctionSort, GiftAttribute, MnemonicType, WalletVersion
+from pyfragment.enums import ApiProvider, AuctionFilter, AuctionSort, GiftAttribute, MnemonicType, PaymentMethod, WalletVersion
 from pyfragment.exceptions import ConfigurationError, CookieError
 from pyfragment.utils.money import to_units
 
@@ -174,3 +174,12 @@ def normalize_username(recipient: str) -> str:
     value = _TELEGRAM_LINK_RE.sub("", query)
     value = value.split("?", 1)[0].split("#", 1)[0].rstrip("/").removeprefix("@")
     return value if _USERNAME_RE.fullmatch(value) else query
+
+
+def validate_payment_method(payment_method: PaymentMethod) -> None:
+    if payment_method not in {m.value for m in PaymentMethod}:
+        raise ConfigurationError(
+            ConfigurationError.INVALID_PAYMENT_METHOD.format(
+                method=payment_method, supported=", ".join(m.value for m in PaymentMethod)
+            )
+        )
