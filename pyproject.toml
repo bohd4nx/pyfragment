@@ -5,19 +5,25 @@ build-backend = "hatchling.build"
 [project]
 name = "pyfragment"
 version = "2026.5.0"
-description = "Async Python client for the Fragment.com marketplace API."
+description = "Buy Telegram Stars, Premium and usernames on Fragment.com — async Python client"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11"
-authors = [{ name = "bohd4nx" }]
+authors = [{ name = "bohd4nx", email = "bohd4nx@gmail.com" }]
 keywords = [
     "fragment",
+    "fragment.com",
     "telegram",
     "telegram-stars",
     "telegram-premium",
     "ton",
+    "toncoin",
+    "ton-blockchain",
     "tonapi",
     "anonymous-numbers",
+    "usernames",
+    "marketplace",
+    "crypto",
     "asyncio",
 ]
 classifiers = [
@@ -41,6 +47,7 @@ dependencies = ["curl-cffi>=0.16.3", "ton-core>=0.7.1", "tonutils>=2.5.1"]
 dev = ["pytest", "pytest-asyncio", "pytest-mock", "mypy", "ruff"]
 
 [project.urls]
+Homepage = "https://github.com/bohd4nx/pyfragment"
 Repository = "https://github.com/bohd4nx/pyfragment"
 Documentation = "https://bohd4nx.gitbook.io/pyfragment/"
 Issues = "https://github.com/bohd4nx/pyfragment/issues"

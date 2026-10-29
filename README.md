@@ -9,13 +9,22 @@
 [![Tests](https://img.shields.io/github/actions/workflow/status/bohd4nx/pyfragment/ci.yml?style=flat&label=Tests&logo=github)](https://github.com/bohd4nx/pyfragment/actions)
 [![License](https://img.shields.io/github/license/bohd4nx/pyfragment?style=flat&color=blue&label=License)](LICENSE)
 
-Async Python client for the **[Fragment.com](https://fragment.com)** marketplace API.
+Async Python client for **[Fragment.com](https://fragment.com)** — buy Telegram Stars, gift Premium, run giveaways, search the marketplace, and manage anonymous numbers, all from code.
 
 **[Documentation](https://bohd4nx.gitbook.io/pyfragment/)** · **[Examples](https://github.com/bohd4nx/pyfragment/tree/master/examples)**
 
 </div>
 
 > **Disclaimer:** This project is not affiliated with [Fragment](https://fragment.com) or [Telegram](https://telegram.org).
+
+## What you can do
+
+- **Stars** — buy Stars for any Telegram user, run Stars giveaways for channels
+- **Premium** — gift Telegram Premium subscriptions (3 / 6 / 12 months), run Premium giveaways
+- **Marketplace** — search usernames, anonymous numbers and gifts; check live prices
+- **Wallet** — check GRAM and USDT balances, top up GRAM for a user or recharge an Ads account
+- **Anonymous numbers** — fetch login codes, toggle code reception, terminate active sessions
+- **Payments** — GRAM (ex TON) and USDT-on-TON; every transfer signed once with your wallet key
 
 ## Installation
 
