@@ -122,4 +122,5 @@ async def process_transaction(
 
         ton = await ton_wallet.ton()
         await _send_message(ton, external.as_hex, valid_until)
+        ton_wallet._commit_seqno(params, valid_until)
         return intent

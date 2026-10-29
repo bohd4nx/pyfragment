@@ -326,6 +326,19 @@ async def test_concurrent_purchases_from_one_client_use_consecutive_seqnos() -> 
     assert len(ton.landed) == 2
 
 
+@pytest.mark.asyncio
+async def test_second_transfer_uses_cached_seqno_without_extra_rpc() -> None:
+    # After a successful send the seqno is cached locally; the next transfer increments it without
+    # querying the provider again, which matters when the previous message hasn't landed on-chain yet.
+    ton = FakeTon(seqno=5)
+    async with fragment_client(ton) as client:
+        await process_transaction(client, transaction())
+        reads_after_first = ton.seqno_reads
+        await process_transaction(client, transaction())
+    assert sorted(signed_header(boc)[1] for boc in ton.sent) == [5, 6]
+    assert ton.seqno_reads == reads_after_first  # no extra seqno RPC for the second transfer
+
+
 # Wallets without a seqno
 
 

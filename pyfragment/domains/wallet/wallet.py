@@ -67,6 +67,8 @@ class TonWallet:
         self._public_key: Any = None  # set together with _wallet
         self._account: dict[str, Any] | None = None
         self.lock = asyncio.Lock()
+        self._pending_seqno: int | None = None
+        self._pending_expires: float = 0.0
 
     @property
     def version(self) -> WalletVersion:
@@ -128,6 +130,8 @@ class TonWallet:
 
         Seqno wallets also get an explicit seqno, read so that a provider failure raises instead of signing seqno 0.
         Pass ``state`` to reuse a previously fetched on-chain state and avoid a redundant provider call.
+        If a previous message from this wallet is still in-flight (within its valid_until window), the seqno is
+        derived locally as pending + 1 to avoid reusing the same seqno without an extra provider round-trip.
         """
         now = int(time.time())
         if self.version == WalletVersion.HighloadV2:
@@ -135,15 +139,26 @@ class TonWallet:
         if self.version == WalletVersion.HighloadV3R1:
             # A highload v3 message is accepted while created_at > now - timeout (and created_at <= now).
             return WalletHighloadV3Params(created_at=min(now, valid_until - self.wallet().config.timeout))
-        try:
-            seqno = await self.seqno(state)
-        except Exception as exc:
-            raise provider_error(ProviderError.WALLET_STATE_FAILED, exc) from exc
+        if self._pending_seqno is not None and time.time() < self._pending_expires:
+            seqno = self._pending_seqno + 1
+        else:
+            try:
+                seqno = await self.seqno(state)
+            except Exception as exc:
+                raise provider_error(ProviderError.WALLET_STATE_FAILED, exc) from exc
         return SEQNO_PARAMS[self.version](seqno=seqno, valid_until=valid_until)
+
+    def _commit_seqno(self, params: Any, valid_until: int) -> None:
+        """Record that a message with params.seqno was sent; prevents seqno reuse until valid_until passes."""
+        if self.version in SEQNO_PARAMS:
+            self._pending_seqno = params.seqno
+            self._pending_expires = float(valid_until)
 
     async def aclose(self) -> None:
         ton, self._ton = self._ton, None
         self._wallet = None
         self._account = None
+        self._pending_seqno = None
+        self._pending_expires = 0.0
         if ton is not None and ton.connected:
             await ton.close()
