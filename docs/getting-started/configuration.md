@@ -12,7 +12,7 @@ FragmentClient(
     timeout: float = 30.0,
     headers: dict[str, str | None] | None = None,
     mnemonic_type: str | None = None,
-    gas_reserve: Decimal | float | str = Decimal("0.33"),
+    gas_reserve: Decimal | float | str = Decimal("0.05"),
     confirm_timeout: float = 60.0,
     on_transfer_prepared: Callable[[TransferIntent], Awaitable[None]] | None = None,
 )

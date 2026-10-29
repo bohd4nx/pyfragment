@@ -31,6 +31,7 @@
     - [Get Login Code](client/anonymous-numbers/get-login-code.md)
     - [Toggle Login Codes](client/anonymous-numbers/toggle-login-codes.md)
     - [Terminate Sessions](client/anonymous-numbers/terminate-sessions.md)
+  - [Wallet](client/wallet.md)
   - [Payment Safety](client/transfers.md)
   - [Raw API Calls](client/raw-call.md)
 - Reference

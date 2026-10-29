@@ -25,6 +25,7 @@ Main async methods on `FragmentClient`:
 - `recharge_ads(...)`
 - `get_wallet()`
 - `check_stars_recipient(...)`, `check_premium_recipient(...)`
+- `link_wallet()`, `disconnect_wallet()`
 - `get_login_code(...)`
 - `toggle_login_codes(...)`
 - `terminate_sessions(...)`
@@ -42,6 +43,6 @@ All methods are async and should be used inside `async with FragmentClient(...) 
 - Marketplace: [Overview](marketplace/overview.md), Ads: [Overview](ads/overview.md)
 - Numbers: [Anonymous Numbers](anonymous-numbers/overview.md)
 - Payments: [Payment Safety](transfers.md)
-- Utility operations: [Raw API Calls](raw-call.md)
+- Utility operations: [Raw API Calls](raw-call.md), [Wallet](wallet.md)
 
 **If you are new to the library, start with Stars Purchase or Wallet read (`get_wallet`) first.**
