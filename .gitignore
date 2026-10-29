@@ -1,28 +1,37 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
+# Build / packaging
 build/
-develop-eggs/
 dist/
+*.egg-info/
+.installed.cfg
+*.egg
+wheels/
+sdist/
+develop-eggs/
 downloads/
 eggs/
 .eggs/
 lib/
 lib64/
 parts/
-sdist/
 var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
 
-# Virtual Environment
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environment
 venv/
 .venv/
+
+# Credentials / local-only dirs (never commit)
+sandbox/
+scripts/
+
+# Docs build
+*-docs/
 
 # IDE
 .vscode/
@@ -31,16 +40,12 @@ venv/
 *.swo
 *~
 
-# Logs
-*.log
-
-# Local development scripts
-scripts/
-
-#docs
-*-docs/
-
 # OS
 .DS_Store
 Thumbs.db
+
+# Lock file (not shipped with the package)
 uv.lock
+
+# Logs
+*.log
