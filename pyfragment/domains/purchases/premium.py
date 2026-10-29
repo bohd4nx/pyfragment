@@ -7,10 +7,11 @@ from typing import TYPE_CHECKING
 from pyfragment.constants import PREMIUM_MONTHS_VALID, PREMIUM_PAGE
 from pyfragment.domains.base import operation
 from pyfragment.domains.payments import PurchaseFlow, run_purchase, validate_payment_method
-from pyfragment.domains.purchases.models import PremiumResult
+from pyfragment.domains.purchases.models import PremiumPackage, PremiumResult
+from pyfragment.domains.purchases.parser import parse_premium_packages
 from pyfragment.domains.recipients import Recipient, find_user
 from pyfragment.enums import ApiMethod, PaymentMethod
-from pyfragment.exceptions import ConfigurationError
+from pyfragment.exceptions import ConfigurationError, FragmentAPIError
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
@@ -35,6 +36,16 @@ async def _find_recipient(client: FragmentClient, username: str, months: int) ->
         {"query": username, "months": months},
         username,
     )
+
+
+async def get_premium_packages(client: FragmentClient) -> list[PremiumPackage]:
+    """Return all Premium subscription packages with current GRAM and USD prices."""
+    with operation(logger, "get Premium packages"):
+        html = await client._transport.fetch_page(PREMIUM_PAGE)
+        packages = parse_premium_packages(html)
+        if not packages:
+            raise FragmentAPIError("Fragment returned no Premium packages")
+        return packages
 
 
 async def check_premium_recipient(client: FragmentClient, username: str, months: int = 3) -> Recipient:

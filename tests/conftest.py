@@ -9,6 +9,7 @@ import pytest
 
 import pyfragment.domains.ads.recharge  # noqa: F401
 import pyfragment.domains.ads.topup  # noqa: F401
+import pyfragment.domains.assets.service  # noqa: F401
 import pyfragment.domains.giveaways.premium  # noqa: F401
 import pyfragment.domains.giveaways.stars  # noqa: F401
 import pyfragment.domains.purchases.premium  # noqa: F401

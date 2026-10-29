@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from http import HTTPStatus
 from typing import Any
 
 from curl_cffi.requests import AsyncSession
@@ -8,8 +9,8 @@ from curl_cffi.requests import AsyncSession
 from pyfragment.enums import ApiError
 from pyfragment.exceptions import SessionExpiredError
 from pyfragment.schemas import has_error
-from pyfragment.transport.api import fragment_request, is_bad_hash
-from pyfragment.transport.page import get_fragment_hash
+from pyfragment.transport.api import fragment_request, is_bad_hash, send, status_error
+from pyfragment.transport.page import API_HASH_RE, get_fragment_hash, parent_url
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,16 @@ class FragmentTransport:
         if self._session is None:
             self._session = AsyncSession(cookies=self._cookies, timeout=self._timeout, impersonate="chrome")
         return self._session
+
+    async def fetch_page(self, url: str) -> str:
+        """Fetch an authenticated Fragment HTML page (e.g. ``/my/usernames``)."""
+        session = self._get_session()
+        response = await send(session.get(url, headers={"referer": parent_url(url)}), url)
+        if response.status_code != HTTPStatus.OK:
+            raise status_error(response.status_code, url)
+        if not API_HASH_RE.search(response.text):
+            raise SessionExpiredError(SessionExpiredError.NO_HASH.format(url=url))
+        return response.text
 
     async def aclose(self) -> None:
         session, self._session = self._session, None

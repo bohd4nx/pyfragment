@@ -396,7 +396,6 @@ async def test_send_429_is_retried_once() -> None:
     assert len(ton.sent) == 2 and len(ton.landed) == 1
 
 
-
 def test_insufficient_balance_message_has_no_scientific_notation() -> None:
     err = InsufficientBalanceError(Decimal("0"), Decimal("0.000000001"), "GRAM (ex TON)")
     assert "E" not in str(err) and "0.000000001" in str(err)

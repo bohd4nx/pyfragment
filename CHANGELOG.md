@@ -11,6 +11,23 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ### Added
 
+- **`get_stars_price(amount)`** — returns the current GRAM price for a given number of Stars as a `Decimal`.
+- **`get_stars_packages()`** — returns all predefined Stars purchase options (`StarsPackage(stars, gram, usd)`)
+  with live GRAM and USD prices from Fragment.
+- **`get_premium_packages()`** — returns all Telegram Premium subscription options
+  (`PremiumPackage(months, gram, usd)`) with live GRAM and USD prices, fetched from the `/premium/gift` page.
+- **`get_my_usernames()` / `get_my_numbers()` / `get_my_gifts()`** — return assets owned by the authenticated
+  account (`MyUsernamesResult`, `MyNumbersResult`, `MyGiftsResult`, each wrapping a `list[AuctionItem]`).
+- **`disconnect_wallet()`** — disconnects the linked TON wallet from Fragment (`tonLogOut`).
+- `StarsPackage`, `PremiumPackage`, `MyUsernamesResult`, `MyNumbersResult`, `MyGiftsResult` exported from
+  `pyfragment`.
+
+### Changed
+
+- **`DEVICE_INFO`** updated to match current Tonkeeper TON Connect capabilities:
+  removed the legacy `"SendTransaction"` string entry, added `"extraCurrencySupported": true` to
+  `SendTransaction`, bumped `appVersion` to `26.10.1`.
+
 - **Telegram Wallet:** `WalletVersion.TG` for Telegram's self-custodial contract. Always paired with
   `mnemonic_type="multichain"` — the 12-word phrase (or the 24 words shown after a key rotation; words 1–12
   keep the address, words 13–24 are the active key).

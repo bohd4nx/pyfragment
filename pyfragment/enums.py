@@ -41,6 +41,7 @@ class ApiMethod(StrEnum):
     # Stars purchase
     SEARCH_STARS_RECIPIENT = "searchStarsRecipient"
     UPDATE_STARS_BUY_STATE = "updateStarsBuyState"
+    UPDATE_STARS_PRICES = "updateStarsPrices"
     INIT_BUY_STARS_REQUEST = "initBuyStarsRequest"
     GET_BUY_STARS_LINK = "getBuyStarsLink"
 

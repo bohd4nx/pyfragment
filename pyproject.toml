@@ -73,7 +73,7 @@ ignore = ["E501"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
-exclude = ["^examples/", "^logs/", "^tests/"]
+exclude = ["^examples/", "^logs/", "^tests/", "^sandbox/", "^scripts/"]
 
 [[tool.mypy.overrides]]
 module = [

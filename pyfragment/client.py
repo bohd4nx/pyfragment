@@ -15,11 +15,13 @@ from pyfragment.domains.ads.models import AdsRechargeResult, AdsTopupResult
 from pyfragment.domains.ads.service import AdsService
 from pyfragment.domains.anonymous_numbers.models import LoginCodeResult, TerminateSessionsResult
 from pyfragment.domains.anonymous_numbers.service import AnonymousNumbersService
+from pyfragment.domains.assets.models import MyGiftsResult, MyNumbersResult, MyUsernamesResult
+from pyfragment.domains.assets.service import AssetsService
 from pyfragment.domains.giveaways.models import PremiumGiveawayResult, StarsGiveawayResult
 from pyfragment.domains.giveaways.service import GiveawaysService
 from pyfragment.domains.marketplace.models import GiftsResult, NumbersResult, UsernamesResult
 from pyfragment.domains.marketplace.service import MarketplaceService
-from pyfragment.domains.purchases.models import PremiumResult, StarsResult
+from pyfragment.domains.purchases.models import PremiumPackage, PremiumResult, StarsPackage, StarsResult
 from pyfragment.domains.purchases.service import PurchasesService
 from pyfragment.domains.recipients import Recipient
 from pyfragment.domains.wallet.models import TransferIntent, WalletInfo
@@ -134,6 +136,7 @@ class FragmentClient:
         self.wallet = WalletService(self)
         self.anonymous_numbers = AnonymousNumbersService(self)
         self.ads = AdsService(self)
+        self.assets = AssetsService(self)
 
     async def __aenter__(self) -> FragmentClient:
         return self
@@ -227,6 +230,44 @@ class FragmentClient:
             and ``usdt_balance`` (``None`` if the USDT lookup failed).
         """
         return await self.wallet.get_wallet()
+
+    async def get_stars_price(self, amount: int) -> Decimal:
+        """Return the current GRAM price for ``amount`` Stars.
+
+        Useful for pre-checking the wallet balance before calling :meth:`purchase_stars`.
+
+        Args:
+            amount: Number of stars — integer from ``50`` to ``10 000 000``.
+
+        Returns:
+            Price in GRAM as a :class:`~decimal.Decimal`.
+        """
+        return await self.purchases.get_stars_price(amount)
+
+    async def get_stars_packages(self) -> list[StarsPackage]:
+        """Return all predefined Stars purchase packages with current GRAM and USD prices.
+
+        Returns:
+            List of :class:`StarsPackage` with ``stars``, ``gram``, and ``usd`` fields.
+        """
+        return await self.purchases.get_stars_packages()
+
+    async def get_premium_packages(self) -> list[PremiumPackage]:
+        """Return all Telegram Premium subscription options with current GRAM and USD prices.
+
+        Returns:
+            List of :class:`PremiumPackage` with ``months``, ``gram``, and ``usd`` fields.
+            Ordered by the page (12 → 6 → 3 months).
+        """
+        return await self.purchases.get_premium_packages()
+
+    async def logout(self) -> None:
+        """End the Fragment session (invalidates session cookies server-side)."""
+        await self.call("logOut")
+
+    async def disconnect_wallet(self) -> None:
+        """Disconnect the linked TON wallet from Fragment."""
+        await self.call("tonLogOut")
 
     async def check_stars_recipient(self, username: str) -> Recipient:
         """Check that a user can receive Stars, without buying anything.
@@ -394,6 +435,30 @@ class FragmentClient:
         return await self.marketplace.search_gifts(
             query, collection=collection, sort=sort, filter=filter, view=view, attr=attr, offset=offset
         )
+
+    async def get_my_usernames(self) -> MyUsernamesResult:
+        """List Telegram usernames owned by the authenticated account.
+
+        Returns:
+            :class:`MyUsernamesResult` with an ``items`` list of :class:`AuctionItem`.
+        """
+        return await self.assets.get_my_usernames()
+
+    async def get_my_numbers(self) -> MyNumbersResult:
+        """List anonymous phone numbers owned by the authenticated account.
+
+        Returns:
+            :class:`MyNumbersResult` with an ``items`` list of :class:`AuctionItem`.
+        """
+        return await self.assets.get_my_numbers()
+
+    async def get_my_gifts(self) -> MyGiftsResult:
+        """List Telegram gifts owned by the authenticated account.
+
+        Returns:
+            :class:`MyGiftsResult` with an ``items`` list of :class:`AuctionItem`.
+        """
+        return await self.assets.get_my_gifts()
 
     async def call(
         self, method: ApiMethod | str, data: dict[str, Any] | None = None, *, page_url: str = FRAGMENT_BASE_URL

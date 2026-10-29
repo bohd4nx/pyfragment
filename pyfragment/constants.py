@@ -63,15 +63,15 @@ MAINNET_CHAIN_ID: str = "-239"
 # USDT-TON jetton master contract address on GRAM (ex TON) mainnet
 USDT_GRAM_MASTER_ADDRESS: str = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"
 
-# TON Connect device info sent during wallet connection handshake
+# TON Connect device info sent during wallet connection handshake.
+# Based on wallets-v2.json from config.ton.org/wallets-v2.json — updated 2026-10.
 DEVICE_INFO: dict[str, Any] = {
     "platform": "iphone",
     "appName": "Tonkeeper",
-    "appVersion": "26.07.1",
+    "appVersion": "26.10.1",
     "maxProtocolVersion": 2,
     "features": [
-        "SendTransaction",
-        {"name": "SendTransaction", "maxMessages": 255},
+        {"name": "SendTransaction", "maxMessages": 255, "extraCurrencySupported": True},
         {"name": "SignData", "types": ["text", "binary", "cell"]},
     ],
 }

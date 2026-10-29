@@ -178,5 +178,3 @@ async def test_recipient_search_surfaces_unrelated_errors(client: FragmentClient
             await client.purchase_stars("@target", 500)
 
     assert not isinstance(exc_info.value, UserNotFoundError)
-
-
