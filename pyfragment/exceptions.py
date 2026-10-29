@@ -200,7 +200,6 @@ class ProviderError(ChainError):
     BALANCE_CHECK_FAILED = "Failed to fetch the {currency} balance: {exc}"
     WALLET_STATE_FAILED = "Failed to fetch the wallet state: {exc}"
     WALLET_INFO_FAILED = "Failed to retrieve wallet info from the GRAM (ex TON) network: {exc}"
-    TRANSFER_LOOKUP_FAILED = "Failed to look the transfer up on the GRAM (ex TON) network: {exc}"
 
     def __init__(self, message: str, status: int | None = None) -> None:
         self.status = status
@@ -213,7 +212,6 @@ class TransactionError(ChainError):
     INVALID_PAYLOAD = "Fragment returned an invalid transaction payload: 'transaction.messages' is missing or empty."
     MULTIPLE_MESSAGES = "Fragment asked for a transaction of {count} messages; pyfragment only signs single-message transfers."
     EXPIRED = "Fragment's transaction expired at {valid_until} (unix time) before it could be signed."
-
 
 
 class UnexpectedError(FragmentError):
