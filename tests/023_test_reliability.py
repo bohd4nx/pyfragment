@@ -25,7 +25,7 @@ from pyfragment import (
 from pyfragment.constants import GRAM_CURRENCY, STARS_PAGE
 from pyfragment.enums import ApiMethod
 from pyfragment.exceptions import ProviderError, TransactionError
-from pyfragment.transport import fragment_request, get_fragment_hash
+from pyfragment.transport import FragmentTransport, fragment_request, get_fragment_hash
 from tests.shared import FAKE_ACCOUNT, FAKE_HASH, FAKE_RECIPIENT, FAKE_TRANSACTION
 
 
@@ -112,6 +112,19 @@ async def test_page_without_the_api_hash_means_a_logged_out_session() -> None:
     session = _session(_response(200, text="<html>Log in</html>"), method="get")
     with pytest.raises(SessionExpiredError, match="not logged in"):
         await get_fragment_hash(session, STARS_PAGE)
+
+
+@pytest.mark.asyncio
+async def test_fetch_page_raises_when_not_logged_in() -> None:
+    # Fragment redirects unauthenticated /my/* requests to the main page, which HAS an API hash
+    # but no "logged_in":true marker. fetch_page must detect this and raise SessionExpiredError.
+    html_main_page = r'<script src="\/api?hash=abc123def456"></script><html>main page</html>'
+    mock_session = AsyncMock(spec=AsyncSession)
+    mock_session.get = AsyncMock(return_value=_response(200, text=html_main_page))
+    transport = FragmentTransport({}, 30.0, {})
+    transport._session = mock_session
+    with pytest.raises(SessionExpiredError, match="logged-out page"):
+        await transport.fetch_page("https://fragment.com/my/usernames")
 
 
 @pytest.mark.asyncio

@@ -124,6 +124,10 @@ class SessionExpiredError(FragmentAPIError):
         "Could not find the API hash on {url}: you are not logged in, or Fragment changed its page layout. "
         "Refresh your cookies; if that doesn't help, update pyfragment."
     )
+    NOT_LOGGED_IN = (
+        "Fragment returned a logged-out page for {url}. "
+        "Refresh your stel_ssid / stel_token cookies and log in to fragment.com again."
+    )
     STALE_HASH = (
         "Fragment rejected a freshly fetched API hash from {url}: your session may have expired. "
         "Refresh your cookies; if that doesn't help, update pyfragment."

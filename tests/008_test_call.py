@@ -155,10 +155,27 @@ async def test_transport_refreshes_stale_hash_once() -> None:
 
 
 @pytest.mark.asyncio
-async def test_transport_raises_on_persistently_rejected_hash() -> None:
+async def test_bad_request_on_fresh_hash_is_returned_not_raised() -> None:
+    # "Bad request" on a first-ever call (no cache) means the parameters are wrong, not the hash.
+    # The hash IS valid, so we cache it and return the response for the caller to handle.
     session = AsyncMock(spec=AsyncSession)
     session.post = AsyncMock(return_value=_response(200, {"error": "Bad request"}))
     transport = _transport_with_session(session)
+
+    with patch("pyfragment.transport.session.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)):
+        result = await transport.call("a", None, STARS_PAGE)
+
+    assert result == {"error": "Bad request"}
+    assert transport._hashes[STARS_PAGE] == FAKE_HASH  # hash is valid; cached for next call
+
+
+@pytest.mark.asyncio
+async def test_transport_raises_on_persistently_rejected_hash() -> None:
+    # "Bad request" on cached hash, then ALSO on a fresh hash → the session is the issue.
+    session = AsyncMock(spec=AsyncSession)
+    session.post = AsyncMock(return_value=_response(200, {"error": "Bad request"}))
+    transport = _transport_with_session(session)
+    transport._hashes[STARS_PAGE] = "old-hash"
 
     with patch("pyfragment.transport.session.get_fragment_hash", AsyncMock(return_value=FAKE_HASH)):
         with pytest.raises(SessionExpiredError, match="freshly fetched API hash"):

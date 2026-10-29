@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from http import HTTPStatus
 from typing import Any
 
@@ -11,6 +12,8 @@ from pyfragment.exceptions import SessionExpiredError
 from pyfragment.schemas import has_error
 from pyfragment.transport.api import fragment_request, is_bad_hash, send, status_error
 from pyfragment.transport.page import API_HASH_RE, get_fragment_hash, parent_url
+
+_LOGGED_IN_RE = re.compile(r'"logged_in"\s*:\s*true')
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +46,8 @@ class FragmentTransport:
             raise status_error(response.status_code, url)
         if not API_HASH_RE.search(response.text):
             raise SessionExpiredError(SessionExpiredError.NO_HASH.format(url=url))
+        if not _LOGGED_IN_RE.search(response.text):
+            raise SessionExpiredError(SessionExpiredError.NOT_LOGGED_IN.format(url=url))
         return response.text
 
     async def aclose(self) -> None:
@@ -66,6 +71,7 @@ class FragmentTransport:
 
     async def _request(self, page_url: str, headers: dict[str, str | None], payload: dict[str, Any]) -> dict[str, Any]:
         session = self._get_session()
+        retried_stale = False
 
         cached_hash = self._hashes.get(page_url)
         if cached_hash is not None:
@@ -73,11 +79,14 @@ class FragmentTransport:
             if not is_bad_hash(response):
                 return response
             # The cached hash went stale: drop it and retry once with a fresh one.
+            retried_stale = True
             del self._hashes[page_url]
 
         fragment_hash = await get_fragment_hash(session, page_url)
         response = await fragment_request(session, fragment_hash, headers, payload)
-        if is_bad_hash(response):
+        if is_bad_hash(response) and retried_stale:
+            # Both the cached hash and a freshly fetched one were rejected: session issue.
             raise SessionExpiredError(SessionExpiredError.STALE_HASH.format(url=page_url))
+        # Always cache the fresh hash: even if the response is "Bad request", the hash itself is valid.
         self._hashes[page_url] = fragment_hash
         return response
