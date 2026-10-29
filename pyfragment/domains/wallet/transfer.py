@@ -43,7 +43,10 @@ async def _send_message(ton: Any, boc_hex: str, valid_until: int) -> None:
         await ton.send_message(boc_hex)
         return
     except ProviderResponseError as exc:
-        if exc.code != HTTPStatus.TOO_MANY_REQUESTS or time.time() >= valid_until:
+        code = exc.code
+        if code is not None and 400 <= code < 500 and code != HTTPStatus.TOO_MANY_REQUESTS:
+            raise ProviderError(f"Transfer rejected by provider (HTTP {code}): {exc}", status=code) from exc
+        if code != HTTPStatus.TOO_MANY_REQUESTS or time.time() >= valid_until:
             logger.warning("Failed to send transfer: %s", exc)
             return
         await asyncio.sleep(1)

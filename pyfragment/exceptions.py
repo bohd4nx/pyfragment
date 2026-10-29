@@ -104,6 +104,9 @@ class HTTPStatusError(FragmentAPIError):
         template = self.UNAVAILABLE if transient else self.BAD_STATUS
         super().__init__(template.format(status=status, url=url), retryable=transient)
 
+    def __reduce__(self) -> tuple[type, tuple[int, str]]:
+        return (self.__class__, (self.status, self.url))
+
 
 class SessionExpiredError(FragmentAPIError):
     """The Fragment session behind the cookies is no longer logged in: refresh the cookies."""
@@ -199,6 +202,9 @@ class InsufficientBalanceError(ChainError):
             self.LOW_BALANCE.format(balance=format(balance, "f"), required=format(required, "f"), currency=currency)
         )
 
+    def __reduce__(self) -> tuple[type, tuple[Decimal, Decimal, str]]:
+        return (self.__class__, (self.balance, self.required, self.currency))
+
 
 class ProviderError(ChainError):
     """The blockchain API provider (tonapi or toncenter) failed or is unreachable. Nothing was sent."""
@@ -209,7 +215,8 @@ class ProviderError(ChainError):
 
     def __init__(self, message: str, status: int | None = None) -> None:
         self.status = status
-        super().__init__(message, retryable=True)
+        transient = status is None or status == HTTPStatus.TOO_MANY_REQUESTS or status >= HTTPStatus.INTERNAL_SERVER_ERROR
+        super().__init__(message, retryable=transient)
 
 
 class TransactionError(ChainError):

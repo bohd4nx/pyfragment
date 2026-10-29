@@ -260,9 +260,22 @@ async def test_send_error_on_a_transfer_that_landed_is_a_success() -> None:
 
 
 @pytest.mark.asyncio
-async def test_send_error_is_logged_and_result_returned(caplog: pytest.LogCaptureFixture) -> None:
+async def test_definite_send_rejection_raises_non_retryable_provider_error() -> None:
+    # A 4xx response from the provider means the message was definitively rejected — not sent.
     ton = FakeTon()
     ton.send_errors = [(provider_error(401, "invalid token"), False)]
+    async with fragment_client(ton) as client:
+        with pytest.raises(ProviderError, match="401") as exc_info:
+            await process_transaction(client, transaction())
+    assert not exc_info.value.retryable
+    assert ton.landed == []  # provider rejected — nothing actually landed on-chain
+
+
+@pytest.mark.asyncio
+async def test_ambiguous_send_error_is_logged_and_result_returned(caplog: pytest.LogCaptureFixture) -> None:
+    # A non-4xx error (e.g. RuntimeError, network drop) is ambiguous — the message may have gone through.
+    ton = FakeTon()
+    ton.send_errors = [(RuntimeError("connection reset"), False)]
     async with fragment_client(ton) as client:
         with caplog.at_level(logging.WARNING, logger="pyfragment"):
             sent = await process_transaction(client, transaction())
