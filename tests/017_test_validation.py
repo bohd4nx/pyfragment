@@ -180,18 +180,3 @@ async def test_recipient_search_surfaces_unrelated_errors(client: FragmentClient
     assert not isinstance(exc_info.value, UserNotFoundError)
 
 
-@pytest.mark.parametrize(
-    ("recipient", "username"),
-    [
-        ("@durov", "durov"),
-        ("durov", "durov"),
-        ("  https://t.me/durov  ", "durov"),
-        ("t.me/durov?start=1", "durov"),
-        ("http://telegram.me/durov/", "durov"),
-        ("https://t.me/+AbCdEf", "https://t.me/+AbCdEf"),  # not a username: reported as given
-    ],
-)
-def test_normalize_username(recipient: str, username: str) -> None:
-    from pyfragment.utils.validation import normalize_username
-
-    assert normalize_username(recipient) == username

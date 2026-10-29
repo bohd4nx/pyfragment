@@ -80,7 +80,7 @@ async def test_purchase_premium_success(client: FragmentClient) -> None:
     assert isinstance(result, PremiumResult)
     assert result.transaction_id == FAKE_TX_HASH
     assert (result.comment, result.boc) == (FAKE_COMMENT, FAKE_TX_BOC)
-    assert result.username == "user"  # the bare username, whatever form was passed
+    assert result.username == "@user"
     assert result.amount == 3
 
 
@@ -215,7 +215,7 @@ async def test_giveaway_premium_success(client: FragmentClient) -> None:
     assert isinstance(result, PremiumGiveawayResult)
     assert result.transaction_id == FAKE_TX_HASH
     assert (result.comment, result.boc) == (FAKE_COMMENT, FAKE_TX_BOC)
-    assert result.channel == "channel"
+    assert result.channel == "@channel"
     assert result.winners == 10
     assert result.amount == 3
 

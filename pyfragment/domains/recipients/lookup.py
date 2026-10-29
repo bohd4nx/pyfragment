@@ -11,7 +11,6 @@ from pyfragment.exceptions import (
     UserNotFoundError,
 )
 from pyfragment.schemas import RecipientSearch, error_text, has_error
-from pyfragment.utils.validation import normalize_username
 
 if TYPE_CHECKING:
     from pyfragment.client import FragmentClient
@@ -24,7 +23,7 @@ def _recipient_or_raise(
     if found.recipient:
         return Recipient(
             recipient=found.recipient,
-            username=normalize_username(query),
+            username=query,
             name=found.name,
             photo=found.photo,
             myself=found.myself,

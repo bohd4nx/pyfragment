@@ -159,7 +159,7 @@ async def test_check_stars_recipient_returns_what_fragment_found(client: Fragmen
     with patch.object(client, "call", call_mock):
         recipient = await client.check_stars_recipient("https://t.me/durov")
 
-    assert (recipient.recipient, recipient.username, recipient.name) == (FAKE_RECIPIENT, "durov", "Pavel & Co")
+    assert (recipient.recipient, recipient.username, recipient.name) == (FAKE_RECIPIENT, "https://t.me/durov", "Pavel & Co")
     assert recipient.photo == "<img src='x'>" and recipient.myself is False
     assert call_mock.await_args.args[0] == ApiMethod.SEARCH_STARS_RECIPIENT
     assert call_mock.await_args.args[1] == {"query": "https://t.me/durov", "quantity": ""}  # sent as typed

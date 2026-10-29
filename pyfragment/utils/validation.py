@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import math
-import re
 from collections.abc import Mapping, Sequence
 from decimal import Decimal, InvalidOperation
 from typing import Any
@@ -12,15 +11,11 @@ from ton_core import MnemonicType as TonMnemonicType
 from pyfragment.constants import (
     GRAM_DECIMALS,
     REQUIRED_COOKIE_KEYS,
-    USERNAME_PATTERN,
 )
 from pyfragment.domains.wallet.wallet import WALLET_CLASSES
 from pyfragment.enums import ApiProvider, AuctionFilter, AuctionSort, GiftAttribute, MnemonicType, PaymentMethod, WalletVersion
 from pyfragment.exceptions import ConfigurationError, CookieError
 from pyfragment.utils.money import to_units
-
-_USERNAME_RE = re.compile(USERNAME_PATTERN)
-_TELEGRAM_LINK_RE = re.compile(r"^(?:https?://)?(?:www\.)?(?:t|telegram)\.me/", re.IGNORECASE)
 
 
 def parse_cookies(cookies: dict[str, Any] | str) -> dict[str, Any]:
@@ -163,17 +158,6 @@ def normalize_confirm_timeout(confirm_timeout: float) -> float:
     if not is_number or not math.isfinite(confirm_timeout) or confirm_timeout < 0:
         raise ConfigurationError(ConfigurationError.INVALID_CONFIRM_TIMEOUT.format(value=confirm_timeout))
     return float(confirm_timeout)
-
-
-def normalize_username(recipient: str) -> str:
-    """The bare username of ``@username``, ``username`` or a ``https://t.me/username`` link.
-
-    Any other form is returned as given (trimmed): it only names the recipient in results.
-    """
-    query = str(recipient).strip()
-    value = _TELEGRAM_LINK_RE.sub("", query)
-    value = value.split("?", 1)[0].split("#", 1)[0].rstrip("/").removeprefix("@")
-    return value if _USERNAME_RE.fullmatch(value) else query
 
 
 def validate_payment_method(payment_method: PaymentMethod) -> None:

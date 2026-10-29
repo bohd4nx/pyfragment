@@ -111,6 +111,3 @@ MIN_USDT_BALANCE: Decimal = Decimal("0.75")
 
 # Premium subscription durations (months)
 PREMIUM_MONTHS_VALID: frozenset[int] = frozenset({3, 6, 12})
-
-# Telegram usernames (and channel usernames) as Fragment accepts them
-USERNAME_PATTERN: str = r"[A-Za-z0-9_]{4,32}"
