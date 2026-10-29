@@ -8,7 +8,16 @@ Channel can be "@channel", "channel", or "https://t.me/channel".
 
 import asyncio
 
-from pyfragment import ChannelNotFoundError, ConfigurationError, FragmentClient, FragmentError, InsufficientBalanceError
+from pyfragment import (
+    ChannelNotFoundError,
+    ConfigurationError,
+    FragmentClient,
+    FragmentError,
+    InsufficientBalanceError,
+    SessionExpiredError,
+    TransactionError,
+    VerificationError,
+)
 from pyfragment.enums import ApiProvider, PaymentMethod, WalletVersion
 
 SEED = "word1 word2 ... word24"
@@ -50,6 +59,15 @@ async def main() -> None:
             return
         except InsufficientBalanceError as e:
             print(f"Not enough funds in the wallet: {e}")
+            return
+        except VerificationError:
+            print("Fragment requires identity verification for this purchase.")
+            return
+        except SessionExpiredError:
+            print("Fragment session expired — copy fresh cookies from fragment.com.")
+            return
+        except TransactionError as e:
+            print(f"Transaction failed, nothing was paid: {e}")
             return
         except FragmentError as e:
             print(f"Request failed: {e}")

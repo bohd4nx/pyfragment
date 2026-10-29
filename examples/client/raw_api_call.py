@@ -14,7 +14,7 @@ Fragment reports failures as HTTP 200 with an "error" field, so check for it.
 
 import asyncio
 
-from pyfragment import FragmentClient
+from pyfragment import FragmentClient, FragmentError, SessionExpiredError
 from pyfragment.enums import ApiMethod, ApiProvider, WalletVersion
 
 SEED = "word1 word2 ... word24"
@@ -40,11 +40,19 @@ async def main() -> None:
         wallet_version=WalletVersion.V5R1,  # or V4R2, HighloadV2, HighloadV3R1, TG (Telegram Wallet)
         api_provider=ApiProvider.TONAPI,  # or ApiProvider.TONCENTER
     ) as client:
-        result = await client.call(METHOD, DATA, page_url=PAGE_URL)
-        if error := result.get("error"):
-            print(f"Fragment answered with an error: {error}")
-        else:
-            print(result)
+        try:
+            result = await client.call(METHOD, DATA, page_url=PAGE_URL)
+        except SessionExpiredError:
+            print("Fragment session expired — copy fresh cookies from fragment.com.")
+            return
+        except FragmentError as e:
+            print(f"Request failed: {e}")
+            return
+
+    if error := result.get("error"):
+        print(f"Fragment answered with an error: {error}")
+    else:
+        print(result)
 
 
 if __name__ == "__main__":

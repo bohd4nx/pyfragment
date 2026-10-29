@@ -9,7 +9,7 @@ Fragment returns at most 500 items per query and does not page past that — nar
 import asyncio
 import json
 
-from pyfragment import AuctionFilter, AuctionSort, FragmentClient, UsernamesResult
+from pyfragment import AuctionFilter, AuctionSort, FragmentClient, FragmentError, SessionExpiredError, UsernamesResult
 from pyfragment.enums import ApiProvider, WalletVersion
 
 SEED = "word1 word2 ... word24"
@@ -35,10 +35,17 @@ async def main() -> None:
         wallet_version=WalletVersion.V5R1,  # or V4R2, HighloadV2, HighloadV3R1, TG (Telegram Wallet)
         api_provider=ApiProvider.TONAPI,  # or ApiProvider.TONCENTER
     ) as client:
-        result: UsernamesResult = await client.search_usernames(QUERY, sort=SORT, filter=FILTER)
+        try:
+            result: UsernamesResult = await client.search_usernames(QUERY, sort=SORT, filter=FILTER)
+        except SessionExpiredError:
+            print("Fragment session expired — copy fresh cookies from fragment.com.")
+            return
+        except FragmentError as e:
+            print(f"Request failed: {e}")
+            return
 
-        print(f"Found {len(result.items)} result(s):")
-        print(json.dumps(result.items, indent=2))
+    print(f"Found {len(result.items)} result(s):")
+    print(json.dumps(result.items, indent=2))
 
 
 if __name__ == "__main__":

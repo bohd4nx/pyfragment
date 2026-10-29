@@ -10,7 +10,7 @@ Gifts come 60 per page; pass next_offset back as offset for the next one (Fragme
 
 import asyncio
 
-from pyfragment import AuctionFilter, AuctionSort, FragmentClient, GiftAttribute
+from pyfragment import AuctionFilter, AuctionSort, FragmentClient, FragmentError, GiftAttribute, SessionExpiredError
 from pyfragment.enums import ApiProvider, WalletVersion
 
 SEED = "word1 word2 ... word24"
@@ -41,7 +41,17 @@ async def main() -> None:
     ) as client:
         offset = None
         while True:
-            result = await client.search_gifts(QUERY, collection=COLLECTION, sort=SORT, filter=FILTER, attr=ATTR, offset=offset)
+            try:
+                result = await client.search_gifts(
+                    QUERY, collection=COLLECTION, sort=SORT, filter=FILTER, attr=ATTR, offset=offset
+                )
+            except SessionExpiredError:
+                print("Fragment session expired — copy fresh cookies from fragment.com.")
+                return
+            except FragmentError as e:
+                print(f"Request failed: {e}")
+                return
+
             for gift in result.items:
                 print(f"{gift['name']:<28} {gift['status'] or '-':<12} {gift['price'] or '-':>10} GRAM")
 

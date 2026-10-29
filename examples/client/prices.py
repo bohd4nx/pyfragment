@@ -10,7 +10,7 @@ No wallet interaction or purchases are made — these are read-only price checks
 
 import asyncio
 
-from pyfragment import FragmentClient, PremiumPackage, StarsPackage
+from pyfragment import ConfigurationError, FragmentClient, FragmentError, PremiumPackage, SessionExpiredError, StarsPackage
 from pyfragment.enums import ApiProvider, WalletVersion
 
 SEED = "word1 word2 ... word24"
@@ -34,21 +34,29 @@ async def main() -> None:
         wallet_version=WalletVersion.V5R1,  # or V4R2, HighloadV2, HighloadV3R1, TG (Telegram Wallet)
         api_provider=ApiProvider.TONAPI,  # or ApiProvider.TONCENTER
     ) as client:
-        # Price for a specific Stars amount
-        price = await client.get_stars_price(STARS_AMOUNT)
-        print(f"{STARS_AMOUNT} Stars = {price} GRAM")
+        try:
+            price = await client.get_stars_price(STARS_AMOUNT)
+            packages: list[StarsPackage] = await client.get_stars_packages()
+            premium_packages: list[PremiumPackage] = await client.get_premium_packages()
+        except ConfigurationError as e:
+            print(f"Invalid argument: {e}")
+            return
+        except SessionExpiredError:
+            print("Fragment session expired — copy fresh cookies from fragment.com.")
+            return
+        except FragmentError as e:
+            print(f"Request failed: {e}")
+            return
 
-        # All predefined Stars packages
-        packages: list[StarsPackage] = await client.get_stars_packages()
-        print(f"\nStars packages ({len(packages)}):")
-        for pkg in packages:
-            print(f"  {pkg.stars:>9,} Stars — {pkg.gram} GRAM  (~${pkg.usd})")
+    print(f"{STARS_AMOUNT} Stars = {price} GRAM\n")
 
-        # All Premium subscription options
-        premium: list[PremiumPackage] = await client.get_premium_packages()
-        print(f"\nPremium packages ({len(premium)}):")
-        for pkg in premium:
-            print(f"  {pkg.months:>2} month(s) — {pkg.gram} GRAM  (~${pkg.usd})")
+    print(f"Stars packages ({len(packages)}):")
+    for stars_pkg in packages:
+        print(f"  {stars_pkg.stars:>9,} Stars — {stars_pkg.gram} GRAM  (~${stars_pkg.usd})")
+
+    print(f"\nPremium packages ({len(premium_packages)}):")
+    for premium_pkg in premium_packages:
+        print(f"  {premium_pkg.months:>2} month(s) — {premium_pkg.gram} GRAM  (~${premium_pkg.usd})")
 
 
 if __name__ == "__main__":

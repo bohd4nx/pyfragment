@@ -9,7 +9,16 @@ Your wallet must satisfy the current minimum GRAM (ex TON) threshold and transac
 
 import asyncio
 
-from pyfragment import ConfigurationError, FragmentClient, FragmentError, InsufficientBalanceError, UserNotFoundError
+from pyfragment import (
+    ConfigurationError,
+    FragmentClient,
+    FragmentError,
+    InsufficientBalanceError,
+    SessionExpiredError,
+    TransactionError,
+    UserNotFoundError,
+    VerificationError,
+)
 from pyfragment.enums import ApiProvider, WalletVersion
 
 SEED = "word1 word2 ... word24"
@@ -39,11 +48,20 @@ async def main() -> None:
         except UserNotFoundError:
             print(f"User {USERNAME} was not found on fragment.com — check the username and try again.")
             return
+        except ConfigurationError as e:
+            print(f"Invalid argument: {e}")
+            return
         except InsufficientBalanceError as e:
             print(f"Not enough funds in the wallet: {e}")
             return
-        except ConfigurationError as e:
-            print(f"Invalid argument: {e}")
+        except VerificationError:
+            print("Fragment requires identity verification for this purchase.")
+            return
+        except SessionExpiredError:
+            print("Fragment session expired — copy fresh cookies from fragment.com.")
+            return
+        except TransactionError as e:
+            print(f"Transaction failed, nothing was paid: {e}")
             return
         except FragmentError as e:
             print(f"Request failed: {e}")
