@@ -1,5 +1,7 @@
 """Parse Fragment response bodies with the typed schemas and match known error messages."""
 
+from decimal import Decimal
+
 import pytest
 
 from pyfragment.enums import ApiError, StateMode
@@ -60,10 +62,22 @@ def test_invoice_request_parses_id_and_amount() -> None:
 
 @pytest.mark.parametrize(
     ("raw_amount", "expected"),
-    [("0.326", 0.326), ("0.00075", 0.00075), ("1,000,000,000", 1_000_000_000.0), (None, None), ("n/a", None)],
+    [
+        ("0.326", Decimal("0.326")),
+        ("0.00075", Decimal("0.00075")),
+        ("1,000,000,000", Decimal(1_000_000_000)),
+        (0.1, Decimal("0.1")),  # a JSON number is read through its shortest repr, not its binary float value
+        (None, None),
+        ("n/a", None),
+        ("-1", None),
+        ("NaN", None),
+        (True, None),
+    ],
 )
-def test_invoice_request_amount_parsing(raw_amount: str | None, expected: float | None) -> None:
-    assert InvoiceRequest.from_response({"req_id": "r1", "amount": raw_amount}).amount == expected
+def test_invoice_request_amount_parsing(raw_amount: object, expected: Decimal | None) -> None:
+    amount = InvoiceRequest.from_response({"req_id": "r1", "amount": raw_amount}).amount
+    assert amount == expected
+    assert amount is None or isinstance(amount, Decimal)
 
 
 def test_invoice_request_missing_fields() -> None:
@@ -109,7 +123,7 @@ def test_page_state_keeps_the_previous_mode_when_response_has_none() -> None:
 def test_invoice_request_from_real_init_response() -> None:
     invoice = InvoiceRequest.from_response(fixture_json("stars_invoice_response.json"))
 
-    assert (invoice.req_id, invoice.amount) == ("REQ_ID", 0.4609)
+    assert (invoice.req_id, invoice.amount) == ("REQ_ID", Decimal("0.4609"))
 
 
 def test_transaction_link_from_real_link_response() -> None:

@@ -9,16 +9,21 @@ Your wallet must satisfy the current minimum GRAM (ex TON) threshold and transac
 
 import asyncio
 
-from pyfragment import ConfigurationError, FragmentClient, FragmentError, UserNotFoundError, WalletError
+from pyfragment import (
+    ConfigurationError,
+    FragmentClient,
+    FragmentError,
+    InsufficientBalanceError,
+    SessionExpiredError,
+    TransactionError,
+    UserNotFoundError,
+    VerificationError,
+)
 from pyfragment.enums import ApiProvider, WalletVersion
 
 SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_API_KEY"  # tonconsole.com (tonapi, default) or t.me/toncenter
 
-# Option A: extract cookies directly from your browser (no manual copy-paste needed)
-# COOKIES = get_cookies_from_browser("chrome").cookies  # or "firefox", "edge", "brave", ...
-
-# Option B: provide cookies manually
 COOKIES = {
     "stel_ssid": "YOUR_STEL_SSID",
     "stel_dt": "YOUR_STEL_DT",
@@ -35,7 +40,7 @@ async def main() -> None:
         seed=SEED,
         api_key=API_KEY,
         cookies=COOKIES,
-        wallet_version=WalletVersion.V5R1,  # or V4R2, HighloadV2, HighloadV3R1
+        wallet_version=WalletVersion.V5R1,  # or V4R2, HighloadV2, HighloadV3R1, TG (Telegram Wallet)
         api_provider=ApiProvider.TONAPI,  # or ApiProvider.TONCENTER
     ) as client:
         try:
@@ -43,11 +48,20 @@ async def main() -> None:
         except UserNotFoundError:
             print(f"User {USERNAME} was not found on fragment.com — check the username and try again.")
             return
-        except WalletError as e:
-            print(f"Wallet error — insufficient balance or misconfiguration: {e}")
-            return
         except ConfigurationError as e:
             print(f"Invalid argument: {e}")
+            return
+        except InsufficientBalanceError as e:
+            print(f"Not enough funds in the wallet: {e}")
+            return
+        except VerificationError:
+            print("Fragment requires identity verification for this purchase.")
+            return
+        except SessionExpiredError:
+            print("Fragment session expired — copy fresh cookies from fragment.com.")
+            return
+        except TransactionError as e:
+            print(f"Transaction failed, nothing was paid: {e}")
             return
         except FragmentError as e:
             print(f"Request failed: {e}")

@@ -20,7 +20,7 @@ class UsernamesResult:
     next_offset_id: str | None
 
     def __repr__(self) -> str:
-        return f"UsernamesResult(items={len(self.items)}, next_offset_id={self.next_offset_id!r})"
+        return f"UsernamesResult(items={self.items!r}, next_offset_id={self.next_offset_id!r})"
 
 
 @dataclass
@@ -29,7 +29,7 @@ class NumbersResult:
     next_offset_id: str | None
 
     def __repr__(self) -> str:
-        return f"NumbersResult(items={len(self.items)}, next_offset_id={self.next_offset_id!r})"
+        return f"NumbersResult(items={self.items!r}, next_offset_id={self.next_offset_id!r})"
 
 
 @dataclass
@@ -38,4 +38,4 @@ class GiftsResult:
     next_offset: int | None
 
     def __repr__(self) -> str:
-        return f"GiftsResult(items={len(self.items)}, next_offset={self.next_offset!r})"
+        return f"GiftsResult(items={self.items!r}, next_offset={self.next_offset!r})"

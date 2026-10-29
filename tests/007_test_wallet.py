@@ -1,61 +1,68 @@
-"""Verify wallet inspection returns friendly GRAM (ex TON) and USDT balances from Tonapi."""
+"""Verify wallet inspection returns exact GRAM (ex TON) and USDT balances, and the wallet's connection lifecycle."""
 
+from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from ton_core import ContractState
 from tonutils.exceptions import ProviderResponseError, RunGetMethodError
 
-from pyfragment import FragmentClient, WalletError, WalletInfo
-from pyfragment.core.constants import TVM_EXIT_ACCOUNT_NOT_FOUND
-from pyfragment.enums import WalletVersion
-from pyfragment.services.tonapi.account import get_usdt_balance
-from tests.shared import FAKE_ADDRESS, FAKE_BALANCE_NANOGRAM, ton_client_with_account
+from pyfragment import ChainError, FragmentClient, ProviderError, WalletInfo
+from pyfragment.constants import TVM_EXIT_ACCOUNT_NOT_FOUND
+from pyfragment.domains.wallet.balance import get_usdt_balance
+from tests.fake_ton import FakeTon, use_fake_ton
+from tests.shared import VALID_API_KEY, VALID_COOKIES, VALID_SEED
 
-# Wallet mocked tests (GRAM and USDT balances are returned separately)
+# get_wallet()
 
 
 @pytest.mark.asyncio
-async def test_get_wallet_returns_wallet_info(client: FragmentClient) -> None:
-    mock_wallet = MagicMock()
-    mock_wallet.address.to_str.return_value = FAKE_ADDRESS
-
+async def test_get_wallet_returns_exact_balances(client: FragmentClient) -> None:
     with (
-        patch("pyfragment.services.tonapi.account.make_ton_client") as mock_tonapi,
-        patch("pyfragment.services.tonapi.account.WALLET_CLASSES") as mock_classes,
-        patch("pyfragment.services.tonapi.account.get_usdt_balance", AsyncMock(return_value=12.3456)),
+        use_fake_ton(FakeTon(balance=1_500_000_001)),
+        patch("pyfragment.domains.wallet.balance.get_usdt_balance", AsyncMock(return_value=12_345_678)),
     ):
-        mock_tonapi.return_value.__aenter__ = AsyncMock(return_value=ton_client_with_account(FAKE_BALANCE_NANOGRAM))
-        mock_tonapi.return_value.__aexit__ = AsyncMock(return_value=False)  # make_ton_client returns context manager
-        mock_classes[WalletVersion.V5R1].from_mnemonic.return_value = (mock_wallet, MagicMock(), None, None)
-
         result = await client.get_wallet()
 
     assert isinstance(result, WalletInfo)
-    assert result.address == FAKE_ADDRESS
+    assert result.address == client.ton_wallet.wallet().address.to_str(is_user_friendly=True, is_bounceable=False)
     assert result.state == "active"
-    assert result.gram_balance == round(FAKE_BALANCE_NANOGRAM / 1_000_000_000, 4)
-    assert result.usdt_balance == 12.3456
+    assert result.gram_balance == Decimal("1.500000001")  # not rounded to 4 places any more
+    assert result.usdt_balance == Decimal("12.345678")
 
 
 @pytest.mark.asyncio
-async def test_get_wallet_balance_is_zero(client: FragmentClient) -> None:
-    mock_wallet = MagicMock()
-    mock_wallet.address.to_str.return_value = FAKE_ADDRESS
-
+async def test_get_wallet_of_an_empty_undeployed_wallet(client: FragmentClient) -> None:
     with (
-        patch("pyfragment.services.tonapi.account.make_ton_client") as mock_tonapi,
-        patch("pyfragment.services.tonapi.account.WALLET_CLASSES") as mock_classes,
-        patch("pyfragment.services.tonapi.account.get_usdt_balance", AsyncMock(return_value=0.0)),
+        use_fake_ton(FakeTon(balance=0, state=ContractState.UNINIT)),
+        patch("pyfragment.domains.wallet.balance.get_usdt_balance", AsyncMock(return_value=0)),
     ):
-        mock_tonapi.return_value.__aenter__ = AsyncMock(return_value=ton_client_with_account(0, "uninit"))
-        mock_tonapi.return_value.__aexit__ = AsyncMock(return_value=False)  # make_ton_client returns context manager
-        mock_classes[WalletVersion.V5R1].from_mnemonic.return_value = (mock_wallet, MagicMock(), None, None)
-
         result = await client.get_wallet()
 
-    assert result.gram_balance == 0.0
-    assert result.usdt_balance == 0.0
+    assert result.gram_balance == 0 and result.usdt_balance == 0
     assert result.state == "uninit"
+
+
+@pytest.mark.asyncio
+async def test_get_wallet_usdt_failure_reports_unknown(client: FragmentClient) -> None:
+    usdt_down = AsyncMock(side_effect=ProviderError("boom"))
+    with use_fake_ton(FakeTon(balance=2_000_000_000)), patch("pyfragment.domains.wallet.balance.get_usdt_balance", usdt_down):
+        result = await client.get_wallet()
+
+    assert result.gram_balance == Decimal(2)
+    assert result.usdt_balance is None
+
+
+@pytest.mark.asyncio
+async def test_get_wallet_provider_failure_raises_instead_of_reporting_an_empty_wallet(client: FragmentClient) -> None:
+    # tonutils' wallet.refresh() turns a bad API key or an outage into "nonexistent, zero balance";
+    # get_wallet must surface the failure instead.
+    ton = FakeTon()
+    ton.info_errors = [RuntimeError("401 invalid token")]
+    with use_fake_ton(ton):
+        with pytest.raises(ProviderError, match="401 invalid token") as exc_info:
+            await client.get_wallet()
+    assert isinstance(exc_info.value, ChainError) and exc_info.value.retryable
 
 
 # make_ton_client — provider selection
@@ -64,23 +71,51 @@ async def test_get_wallet_balance_is_zero(client: FragmentClient) -> None:
 def test_make_ton_client_uses_toncenter_for_toncenter_provider(client: FragmentClient) -> None:
     from tonutils.clients import ToncenterClient
 
+    from pyfragment.domains.wallet.wallet import make_ton_client
     from pyfragment.enums import ApiProvider
-    from pyfragment.services.tonapi.account import make_ton_client
 
     client.api_provider = ApiProvider.TONCENTER
-    result = make_ton_client(client)
-    assert isinstance(result, ToncenterClient)
+    assert isinstance(make_ton_client(client), ToncenterClient)
 
 
 def test_make_ton_client_uses_tonapi_for_tonapi_provider(client: FragmentClient) -> None:
     from tonutils.clients import TonapiClient
 
+    from pyfragment.domains.wallet.wallet import make_ton_client
     from pyfragment.enums import ApiProvider
-    from pyfragment.services.tonapi.account import make_ton_client
 
     client.api_provider = ApiProvider.TONAPI
-    result = make_ton_client(client)
-    assert isinstance(result, TonapiClient)
+    assert isinstance(make_ton_client(client), TonapiClient)
+
+
+# One connection per client
+
+
+@pytest.mark.asyncio
+async def test_connection_is_reused_and_closed_with_the_client() -> None:
+    ton = FakeTon()
+    with (
+        patch("pyfragment.domains.wallet.wallet.make_ton_client", return_value=ton) as make_ton_client,
+        patch("pyfragment.domains.wallet.balance.get_usdt_balance", AsyncMock(return_value=0)),
+    ):
+        async with FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES) as client:
+            await client.get_wallet()
+            await client.get_wallet()
+            assert ton.connected
+    assert make_ton_client.call_count == 1
+    assert ton.closed and not ton.connected
+
+
+@pytest.mark.asyncio
+async def test_account_info_needs_no_network(client: FragmentClient) -> None:
+    ton = FakeTon()
+    with use_fake_ton(ton):
+        account = client.ton_wallet.account_info()
+        assert client.ton_wallet.account_info() is account
+    assert not ton.connected
+    wallet = client.ton_wallet.wallet()
+    assert account["address"] == wallet.address.to_str(False, False)
+    assert account["chain"] == "-239"
 
 
 # get_usdt_balance — error paths
@@ -97,123 +132,45 @@ def test_make_ton_client_uses_tonapi_for_tonapi_provider(client: FragmentClient)
     ],
 )
 async def test_get_usdt_balance_missing_jetton_wallet_is_zero(error: Exception) -> None:
-    with patch("pyfragment.services.tonapi.account.get_wallet_address_get_method", AsyncMock(side_effect=error)):
-        assert await get_usdt_balance(MagicMock(), "0:abc") == 0.0
+    with patch("pyfragment.domains.wallet.balance.get_wallet_address_get_method", AsyncMock(side_effect=error)):
+        assert await get_usdt_balance(MagicMock(), "0:abc") == 0
 
 
 @pytest.mark.asyncio
-async def test_get_usdt_balance_other_get_method_exit_code_raises() -> None:
-    error = RunGetMethodError(address="0:abc", exit_code=11, method_name="get_wallet_data")
+async def test_get_usdt_balance_reads_units() -> None:
+    with (
+        patch("pyfragment.domains.wallet.balance.get_wallet_address_get_method", AsyncMock(return_value="0:def")),
+        patch("pyfragment.domains.wallet.balance.get_wallet_data_get_method", AsyncMock(return_value=[1_234_567])),
+    ):
+        assert await get_usdt_balance(MagicMock(), "0:abc") == 1_234_567
 
-    with patch("pyfragment.services.tonapi.account.get_wallet_address_get_method", AsyncMock(side_effect=error)):
-        with pytest.raises(WalletError):
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "error",
+    [
+        RunGetMethodError(address="0:abc", exit_code=11, method_name="get_wallet_data"),
+        ProviderResponseError(code=401, message="unauthorized", endpoint="api.tonapi.io"),
+        RuntimeError("timeout"),
+    ],
+)
+async def test_get_usdt_balance_failure_raises_provider_error(error: Exception) -> None:
+    with patch("pyfragment.domains.wallet.balance.get_wallet_address_get_method", AsyncMock(side_effect=error)):
+        with pytest.raises(ProviderError, match="USDT"):
             await get_usdt_balance(MagicMock(), "0:abc")
 
 
-@pytest.mark.asyncio
-async def test_get_usdt_balance_non_404_provider_error_raises() -> None:
-    from tonutils.exceptions import ProviderResponseError
-
-    from pyfragment import WalletError
-    from pyfragment.services.tonapi.account import get_usdt_balance
-
-    ton = MagicMock()
-    err = ProviderResponseError(code=500, message="server error", endpoint="api.tonapi.io")
-
-    with patch("pyfragment.services.tonapi.account.get_wallet_address_get_method", AsyncMock(side_effect=err)):
-        with pytest.raises(WalletError):
-            await get_usdt_balance(ton, "0:abc")
+def test_wallet_repr_uses_fixed_point_for_small_balances() -> None:
+    info = WalletInfo(
+        address="UQCtest",
+        state="active",
+        gram_balance=Decimal("0.000000001"),
+        usdt_balance=Decimal("0"),
+    )
+    r = repr(info)
+    assert "E" not in r and "0.000000001" in r
 
 
-@pytest.mark.asyncio
-async def test_get_usdt_balance_generic_exception_raises() -> None:
-    from pyfragment import WalletError
-    from pyfragment.services.tonapi.account import get_usdt_balance
-
-    ton = MagicMock()
-
-    with patch(
-        "pyfragment.services.tonapi.account.get_wallet_address_get_method", AsyncMock(side_effect=RuntimeError("timeout"))
-    ):
-        with pytest.raises(WalletError):
-            await get_usdt_balance(ton, "0:abc")
-
-
-# get_account_info / get_wallet_info — exception paths
-
-
-@pytest.mark.asyncio
-async def test_get_account_info_exception_raises_wallet_error(client: FragmentClient) -> None:
-    from pyfragment import WalletError
-    from pyfragment.services.tonapi.account import get_account_info
-
-    with (
-        patch("pyfragment.services.tonapi.account.make_ton_client") as mock_tonapi,
-        patch("pyfragment.services.tonapi.account.WALLET_CLASSES") as mock_classes,
-    ):
-        mock_tonapi.return_value.__aenter__ = AsyncMock(return_value=MagicMock())
-        mock_tonapi.return_value.__aexit__ = AsyncMock(return_value=False)
-        mock_classes[WalletVersion.V5R1].from_mnemonic.side_effect = RuntimeError("wallet init failed")
-
-        with pytest.raises(WalletError, match="account info"):
-            await get_account_info(client)
-
-
-@pytest.mark.asyncio
-async def test_get_wallet_info_exception_raises_wallet_error(client: FragmentClient) -> None:
-    from pyfragment import WalletError
-    from pyfragment.services.tonapi.account import get_wallet_info
-
-    with (
-        patch("pyfragment.services.tonapi.account.make_ton_client") as mock_tonapi,
-        patch("pyfragment.services.tonapi.account.WALLET_CLASSES") as mock_classes,
-    ):
-        mock_tonapi.return_value.__aenter__ = AsyncMock(return_value=MagicMock())
-        mock_tonapi.return_value.__aexit__ = AsyncMock(return_value=False)
-        mock_classes[WalletVersion.V5R1].from_mnemonic.side_effect = RuntimeError("key derivation failed")
-
-        with pytest.raises(WalletError, match="wallet info"):
-            await get_wallet_info(client)
-
-
-async def test_get_wallet_usdt_failure_reports_unknown(client: FragmentClient) -> None:
-    from pyfragment.exceptions import WalletError
-
-    mock_wallet = MagicMock()
-    mock_wallet.address.to_str.return_value = FAKE_ADDRESS
-
-    with (
-        patch("pyfragment.services.tonapi.account.make_ton_client") as mock_tonapi,
-        patch("pyfragment.services.tonapi.account.WALLET_CLASSES") as mock_classes,
-        patch("pyfragment.services.tonapi.account.get_usdt_balance", AsyncMock(side_effect=WalletError("boom"))),
-    ):
-        mock_tonapi.return_value.__aenter__ = AsyncMock(return_value=ton_client_with_account(2_000_000_000))
-        mock_tonapi.return_value.__aexit__ = AsyncMock(return_value=False)
-        mock_classes[WalletVersion.V5R1].from_mnemonic.return_value = (mock_wallet, MagicMock(), None, None)
-
-        result = await client.get_wallet()
-
-    assert result.gram_balance == 2.0
-    assert result.usdt_balance is None
-
-
-@pytest.mark.asyncio
-async def test_get_wallet_provider_failure_raises_instead_of_reporting_an_empty_wallet(client: FragmentClient) -> None:
-    # tonutils' wallet.refresh() turns a bad API key or an outage into "nonexistent, zero balance";
-    # get_wallet must surface the failure instead.
-    from pyfragment import WalletError
-
-    mock_wallet = MagicMock()
-    mock_wallet.address.to_str.return_value = FAKE_ADDRESS
-    provider_down = ton_client_with_account(0, error=RuntimeError("401 invalid token"))
-
-    with (
-        patch("pyfragment.services.tonapi.account.make_ton_client") as mock_tonapi,
-        patch("pyfragment.services.tonapi.account.WALLET_CLASSES") as mock_classes,
-    ):
-        mock_tonapi.return_value.__aenter__ = AsyncMock(return_value=provider_down)
-        mock_tonapi.return_value.__aexit__ = AsyncMock(return_value=False)
-        mock_classes[WalletVersion.V5R1].from_mnemonic.return_value = (mock_wallet, MagicMock(), None, None)
-
-        with pytest.raises(WalletError, match="401 invalid token"):
-            await client.get_wallet()
+def test_wallet_repr_unknown_usdt() -> None:
+    info = WalletInfo(address="UQCtest", state="uninit", gram_balance=Decimal("0"), usdt_balance=None)
+    assert "unknown" in repr(info)

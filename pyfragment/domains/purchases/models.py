@@ -1,14 +1,39 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
+
+from pyfragment.domains.payments.models import PaymentResult
+
+
+@dataclass(frozen=True)
+class StarsPackage:
+    """One predefined Stars purchase option with current prices."""
+
+    stars: int
+    gram: Decimal
+    usd: Decimal
+
+    def __repr__(self) -> str:
+        return f"StarsPackage(stars={self.stars}, gram={self.gram}, usd={self.usd})"
+
+
+@dataclass(frozen=True)
+class PremiumPackage:
+    """One predefined Telegram Premium subscription option with current prices."""
+
+    months: int
+    gram: Decimal
+    usd: Decimal
+
+    def __repr__(self) -> str:
+        return f"PremiumPackage(months={self.months}, gram={self.gram}, usd={self.usd})"
 
 
 @dataclass
-class PremiumResult:
-    transaction_id: str
+class PremiumResult(PaymentResult):
     username: str
-    amount: int
-    confirmed: bool = False
+    amount: int  # months
 
     def __repr__(self) -> str:
         return (
@@ -18,11 +43,9 @@ class PremiumResult:
 
 
 @dataclass
-class StarsResult:
-    transaction_id: str
+class StarsResult(PaymentResult):
     username: str
-    amount: int
-    confirmed: bool = False
+    amount: int  # stars
 
     def __repr__(self) -> str:
         return (

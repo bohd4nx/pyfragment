@@ -1,9 +1,16 @@
+"""Exceptions raised by pyfragment.
+
+``retryable`` means nothing was paid and repeating the call may succeed.
+"""
+
 from __future__ import annotations
 
-from pyfragment.core.constants import (
+from decimal import Decimal
+from http import HTTPStatus
+
+from pyfragment.constants import (
     GRAM_TOPUP_MAX,
     GRAM_TOPUP_MIN,
-    MNEMONIC_WORD_COUNTS_VALID,
     PREMIUM_MONTHS_VALID,
     PREMIUM_WINNERS_MAX,
     PREMIUM_WINNERS_MIN,
@@ -19,6 +26,14 @@ from pyfragment.core.constants import (
 class FragmentError(Exception):
     """Base exception for all pyfragment errors."""
 
+    retryable: bool = False
+    """Nothing was paid, and repeating the call may succeed (the cause looks transient)."""
+
+    def __init__(self, message: str = "", *, retryable: bool | None = None) -> None:
+        super().__init__(message)
+        if retryable is not None:
+            self.retryable = retryable
+
 
 class ClientError(FragmentError):
     """Raised for client configuration and setup issues."""
@@ -29,14 +44,10 @@ class ConfigurationError(ClientError):
 
     MISSING_VARS = "Missing required parameter(s): {keys}."
     UNSUPPORTED_VERSION = "Unsupported wallet version '{version}'. Supported values: {supported}."
-    INVALID_MNEMONIC = (
-        f"Invalid mnemonic phrase: expected {', '.join(str(n) for n in sorted(MNEMONIC_WORD_COUNTS_VALID))} words, "
-        "got {count}."
-    )
-    INVALID_MNEMONIC_PHRASE = (
-        "Invalid mnemonic phrase: it is not a valid TON wallet phrase. Check for a misspelled or missing word and the word "
-        "order; BIP39 and password-protected phrases are not supported."
-    )
+    UNSUPPORTED_MNEMONIC_TYPE = "Unsupported mnemonic type '{mnemonic_type}'. Supported values: {supported}."
+    INVALID_SEED = "Invalid seed phrase: {exc}"
+    INVALID_GAS_RESERVE = "Invalid gas_reserve '{value}': must be a non-negative amount of GRAM (ex TON)."
+    INVALID_CONFIRM_TIMEOUT = "Invalid confirm_timeout '{value}': must be a non-negative number of seconds."
     UNSUPPORTED_PROVIDER = "Unsupported API provider '{provider}'. Supported values: {supported}."
     INVALID_MONTHS = f"Invalid Premium duration: choose {', '.join(str(m) for m in sorted(PREMIUM_MONTHS_VALID))} months."
     INVALID_STARS_AMOUNT = (
@@ -61,45 +72,73 @@ class ConfigurationError(ClientError):
 class CookieError(ClientError):
     """Raised when cookies are unreadable or missing required fields."""
 
-    READ_FAILED = "Failed to parse cookies: expected a JSON string or a dict, got {exc}."
+    READ_FAILED = "Failed to parse cookies: expected a JSON object or a dict, got {exc}."
     MISSING_KEYS = (
         "Fragment cookies are missing or empty for key(s): {keys}. "
         "Open fragment.com in your browser, log in, and copy fresh cookies."
     )
-    UNSUPPORTED_BROWSER = "Unsupported browser '{browser}'. Supported values: {supported}."
-    BROWSER_READ_FAILED = (
-        "Failed to read {browser} cookies: {exc}. Make sure {browser} is installed and you are logged in to {url}."
-    )
-    MISSING_BROWSER_KEYS = (
-        "Fragment cookies not found in {browser}: {keys}. "
-        "Make sure you are logged in to {url} and have connected your GRAM (ex TON) wallet in {browser}."
-    )
-    EXPIRED = "Fragment session cookie expired at {expires}. Log in to fragment.com in your browser and extract fresh cookies."
 
 
 class FragmentAPIError(FragmentError):
     """Raised for errors returned by Fragment's API responses."""
 
+
+class NetworkError(FragmentAPIError):
+    """Fragment could not be reached (timeout, refused or dropped connection). Nothing was sent."""
+
+    retryable = True
+
+    UNREACHABLE = "Could not reach Fragment at {url}: {exc}"
+
+
+class HTTPStatusError(FragmentAPIError):
+    """Fragment answered with an unexpected HTTP status."""
+
+    UNAVAILABLE = "Fragment is temporarily unavailable: HTTP {status} from {url}. Retry in a moment."
+    BAD_STATUS = "Fragment returned HTTP {status} for {url}."
+
+    def __init__(self, status: int, url: str) -> None:
+        self.status = status
+        self.url = url
+        transient = status == HTTPStatus.TOO_MANY_REQUESTS or status >= HTTPStatus.INTERNAL_SERVER_ERROR
+        template = self.UNAVAILABLE if transient else self.BAD_STATUS
+        super().__init__(template.format(status=status, url=url), retryable=transient)
+
+    def __reduce__(self) -> tuple[type, tuple[int, str]]:
+        return (self.__class__, (self.status, self.url))
+
+
+class SessionExpiredError(FragmentAPIError):
+    """The Fragment session behind the cookies is no longer logged in: refresh the cookies."""
+
+    REJECTED = "Fragment rejected the session (HTTP {status} from {url}). Log in to fragment.com and refresh your cookies."
+    ACCESS_DENIED = (
+        "Fragment denied access to '{context}'. "
+        "Either your session has expired (refresh stel_ssid / stel_token) "
+        "or your TON wallet is not connected on Fragment (refresh stel_ton_token)."
+    )
     NO_REQUEST_ID = (
-        "Fragment did not return a request ID for '{context}'. "
-        "Your session may have expired. Refresh your cookies and try again."
+        "Fragment did not return a request ID for '{context}'. Your session has likely expired: refresh your cookies."
+    )
+    NO_HASH = (
+        "Could not find the API hash on {url}: you are not logged in, or Fragment changed its page layout. "
+        "Refresh your cookies; if that doesn't help, update pyfragment."
+    )
+    NOT_LOGGED_IN = (
+        "Fragment returned a logged-out page for {url}. "
+        "Refresh your stel_ssid / stel_token cookies and log in to fragment.com again."
+    )
+    STALE_HASH = (
+        "Fragment rejected a freshly fetched API hash from {url}: your session may have expired. "
+        "Refresh your cookies; if that doesn't help, update pyfragment."
     )
 
 
-class FragmentPageError(FragmentAPIError):
-    """Raised when the Fragment page cannot be fetched or the API hash is not found."""
-
-    BAD_STATUS = (
-        "Fragment returned HTTP {status} when loading {url}. "
-        "Your cookies may be invalid or expired. Refresh them and try again."
-    )
-    NOT_FOUND = (
-        "Could not extract the API hash from {url}. "
-        "The page structure may have changed, or you may not be logged in. Refresh your cookies."
-    )
+class RecipientError(FragmentAPIError):
+    """The recipient of a purchase can't receive it."""
 
 
-class UserNotFoundError(FragmentAPIError):
+class UserNotFoundError(RecipientError):
     """Raised when the target Telegram user is not found on Fragment."""
 
     NOT_FOUND = (
@@ -111,7 +150,7 @@ class UserNotFoundError(FragmentAPIError):
     )
 
 
-class ChannelNotFoundError(UserNotFoundError):
+class ChannelNotFoundError(RecipientError):
     """Raised when the target Telegram channel is not found on Fragment."""
 
     NOT_FOUND = (
@@ -119,7 +158,7 @@ class ChannelNotFoundError(UserNotFoundError):
     )
 
 
-class AlreadySubscribedError(FragmentAPIError):
+class AlreadySubscribedError(RecipientError):
     """Raised when trying to gift Premium to a user who already has an active subscription."""
 
     PREMIUM_ACTIVE = "This account is already subscribed to Telegram Premium."
@@ -130,26 +169,7 @@ class AnonymousNumberError(FragmentAPIError):
 
     NOT_OWNED = "Number '{number}' is not associated with your Fragment account or has no active sessions to terminate."
     TERMINATE_FAILED = "Failed to terminate sessions for '{number}': {error}"
-
-
-class TransactionError(FragmentAPIError):
-    """Raised when a GRAM (ex TON) transaction fails to build or broadcast."""
-
-    INVALID_PAYLOAD = "Fragment returned an invalid transaction payload: 'transaction.messages' is missing or empty."
-    BROADCAST_FAILED = "Transaction broadcast failed: {exc}"
-    BROADCAST_FAILED_SSL = (
-        "Transaction broadcast failed due to an SSL certificate error: {exc}\n"
-        "This usually means your system's CA bundle is missing or outdated.\n"
-        "Fix: run `pip install --upgrade certifi` and retry. "
-        "On macOS you may also need to run the 'Install Certificates.command' "
-        "located in your Python installation folder."
-    )
-    DUPLICATE_SEQNO = (
-        "Transaction broadcast failed: the GRAM (ex TON) wallet rejected the message "
-        "because a previous transaction with the same sequence number (seqno) "
-        "is still pending confirmation on-chain.\n"
-        "Wait a few seconds for the previous transaction to confirm, then retry."
-    )
+    TOGGLE_FAILED = "Failed to toggle login codes for '{number}': {error}"
 
 
 class ParseError(FragmentAPIError):
@@ -159,33 +179,60 @@ class ParseError(FragmentAPIError):
 
 
 class VerificationError(FragmentAPIError):
-    """Raised when Fragment requires KYC verification before proceeding."""
+    """Raised when Fragment requires verification before proceeding."""
 
     KYC_REQUIRED = (
-        "Fragment requires identity verification (KYC) before this action can be completed. "
-        "Complete verification at https://fragment.com/my/profile and retry."
+        "Fragment requires verification before this action can be completed. "
+        "Check https://fragment.com/my/profile: either identity verification (KYC) is pending, "
+        "or the wallet used here is not linked to your Fragment account "
+        "(the connected wallet address must match the one the library signs with)."
     )
 
 
-class OperationError(FragmentError):
-    """Raised for runtime operation failures unrelated to Fragment's API."""
+class ChainError(FragmentError):
+    """Raised for failures on the GRAM (ex TON) side: the wallet, its balance, the blockchain API provider."""
 
 
-class WalletError(OperationError):
-    """Raised for GRAM (ex TON) wallet issues (connection, balance, account info)."""
+class InsufficientBalanceError(ChainError):
+    """The wallet can't cover the payment plus the gas reserve. Nothing was sent."""
 
-    LOW_GRAM_BALANCE = (
-        "Insufficient GRAM (ex TON) balance: {balance:.4f} GRAM (ex TON) available, {required:.4f} GRAM (ex TON) required."
-    )
-    LOW_USDT_BALANCE = "Insufficient USDT balance: {balance:.4f} USDT available, {required:.4f} USDT required."
-    GRAM_BALANCE_CHECK_FAILED = "Failed to fetch GRAM (ex TON) balance: {exc}"
-    USDT_BALANCE_CHECK_FAILED = "Failed to fetch USDT balance: {exc}"
-    ACCOUNT_INFO_FAILED = "Failed to retrieve wallet account info from GRAM (ex TON) network: {exc}"
-    WALLET_INFO_FAILED = "Failed to retrieve wallet info from GRAM (ex TON) network: {exc}"
+    LOW_BALANCE = "Insufficient {currency} balance: {balance} {currency} available, {required} {currency} required."
+
+    def __init__(self, balance: Decimal, required: Decimal, currency: str) -> None:
+        self.balance = balance
+        self.required = required
+        self.currency = currency
+        super().__init__(
+            self.LOW_BALANCE.format(balance=format(balance, "f"), required=format(required, "f"), currency=currency)
+        )
+
+    def __reduce__(self) -> tuple[type, tuple[Decimal, Decimal, str]]:
+        return (self.__class__, (self.balance, self.required, self.currency))
 
 
-class UnexpectedError(OperationError):
-    """Raised when an unexpected error occurs during an API call."""
+class ProviderError(ChainError):
+    """The blockchain API provider (tonapi or toncenter) failed or is unreachable. Nothing was sent."""
+
+    BALANCE_CHECK_FAILED = "Failed to fetch the {currency} balance: {exc}"
+    WALLET_STATE_FAILED = "Failed to fetch the wallet state: {exc}"
+    WALLET_INFO_FAILED = "Failed to retrieve wallet info from the GRAM (ex TON) network: {exc}"
+
+    def __init__(self, message: str, status: int | None = None) -> None:
+        self.status = status
+        transient = status is None or status == HTTPStatus.TOO_MANY_REQUESTS or status >= HTTPStatus.INTERNAL_SERVER_ERROR
+        super().__init__(message, retryable=transient)
+
+
+class TransactionError(ChainError):
+    """Fragment's transaction can't be signed. Nothing was sent."""
+
+    INVALID_PAYLOAD = "Fragment returned an invalid transaction payload: 'transaction.messages' is missing or empty."
+    MULTIPLE_MESSAGES = "Fragment asked for a transaction of {count} messages; pyfragment only signs single-message transfers."
+    EXPIRED = "Fragment's transaction expired at {valid_until} (unix time) before it could be signed."
+
+
+class UnexpectedError(FragmentError):
+    """Raised when an unexpected error occurs during an API call. Nothing was sent."""
 
     UNEXPECTED = "An unexpected error occurred during the operation: {exc}"
 
@@ -196,15 +243,19 @@ __all__ = [
     "ConfigurationError",
     "CookieError",
     "FragmentAPIError",
-    "FragmentPageError",
-    "AnonymousNumberError",
-    "AlreadySubscribedError",
+    "NetworkError",
+    "HTTPStatusError",
+    "SessionExpiredError",
+    "RecipientError",
     "UserNotFoundError",
     "ChannelNotFoundError",
-    "TransactionError",
+    "AlreadySubscribedError",
+    "AnonymousNumberError",
     "ParseError",
     "VerificationError",
-    "OperationError",
-    "WalletError",
+    "ChainError",
+    "InsufficientBalanceError",
+    "ProviderError",
+    "TransactionError",
     "UnexpectedError",
 ]

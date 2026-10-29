@@ -10,16 +10,12 @@ Gifts come 60 per page; pass next_offset back as offset for the next one (Fragme
 
 import asyncio
 
-from pyfragment import AuctionFilter, AuctionSort, FragmentClient, GiftAttribute
+from pyfragment import AuctionFilter, AuctionSort, FragmentClient, FragmentError, GiftAttribute, SessionExpiredError
 from pyfragment.enums import ApiProvider, WalletVersion
 
 SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_API_KEY"  # tonconsole.com (tonapi, default) or t.me/toncenter
 
-# Option A: extract cookies directly from your browser (no manual copy-paste needed)
-# COOKIES = get_cookies_from_browser("chrome").cookies  # or "firefox", "edge", "brave", ...
-
-# Option B: provide cookies manually
 COOKIES = {
     "stel_ssid": "YOUR_STEL_SSID",
     "stel_dt": "YOUR_STEL_DT",
@@ -40,12 +36,22 @@ async def main() -> None:
         seed=SEED,
         api_key=API_KEY,
         cookies=COOKIES,
-        wallet_version=WalletVersion.V5R1,  # or V4R2, HighloadV2, HighloadV3R1
+        wallet_version=WalletVersion.V5R1,  # or V4R2, HighloadV2, HighloadV3R1, TG (Telegram Wallet)
         api_provider=ApiProvider.TONAPI,  # or ApiProvider.TONCENTER
     ) as client:
         offset = None
         while True:
-            result = await client.search_gifts(QUERY, collection=COLLECTION, sort=SORT, filter=FILTER, attr=ATTR, offset=offset)
+            try:
+                result = await client.search_gifts(
+                    QUERY, collection=COLLECTION, sort=SORT, filter=FILTER, attr=ATTR, offset=offset
+                )
+            except SessionExpiredError:
+                print("Fragment session expired — copy fresh cookies from fragment.com.")
+                return
+            except FragmentError as e:
+                print(f"Request failed: {e}")
+                return
+
             for gift in result.items:
                 print(f"{gift['name']:<28} {gift['status'] or '-':<12} {gift['price'] or '-':>10} GRAM")
 

@@ -4,20 +4,26 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pyfragment"
-version = "2026.4.0"
-description = "Async Python client for the Fragment.com marketplace API."
+version = "2026.5.0"
+description = "Buy Telegram Stars, Premium and usernames on Fragment.com — async Python client"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11"
-authors = [{ name = "bohd4nx" }]
+authors = [{ name = "bohd4nx", email = "bohd4nx@gmail.com" }]
 keywords = [
     "fragment",
+    "fragment.com",
     "telegram",
     "telegram-stars",
     "telegram-premium",
     "ton",
+    "toncoin",
+    "ton-blockchain",
     "tonapi",
     "anonymous-numbers",
+    "usernames",
+    "marketplace",
+    "crypto",
     "asyncio",
 ]
 classifiers = [
@@ -30,17 +36,18 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Framework :: AsyncIO",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
-dependencies = ["curl-cffi>=0.14.0", "tonutils>=2.0.1"]
+dependencies = ["curl-cffi>=0.16.3", "ton-core>=0.7.1", "tonutils>=2.5.1"]
 
 [project.optional-dependencies]
 dev = ["pytest", "pytest-asyncio", "pytest-mock", "mypy", "ruff"]
-browser = ["rookiepy>=0.5.6"]
 
 [project.urls]
+Homepage = "https://github.com/bohd4nx/pyfragment"
 Repository = "https://github.com/bohd4nx/pyfragment"
 Documentation = "https://bohd4nx.gitbook.io/pyfragment/"
 Issues = "https://github.com/bohd4nx/pyfragment/issues"
@@ -53,6 +60,7 @@ packages = ["pyfragment"]
 testpaths = ["tests"]
 python_files = ["[0-9][0-9][0-9]_test_*.py"]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 addopts = "-v --tb=short"
 
 [tool.ruff]
@@ -72,11 +80,10 @@ ignore = ["E501"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
-exclude = ["^examples/", "^logs/", "^tests/"]
+exclude = ["^examples/", "^logs/", "^tests/", "^sandbox/", "^scripts/"]
 
 [[tool.mypy.overrides]]
 module = [
-    "rookiepy",
     "ton_core",
     "tonutils",
     "tonutils.*",
@@ -84,7 +91,5 @@ module = [
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-# rookiepy = None assignment is valid when the package is installed (type: ModuleType)
-# but mypy on CI (without rookiepy) sees it as Any and flags the comment as unused.
-module = "pyfragment.services.cookies.service"
+module = "pyfragment.transport.api"
 warn_unused_ignores = false

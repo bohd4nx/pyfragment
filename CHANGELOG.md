@@ -7,7 +7,133 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ---
 
-## [Unreleased]
+## [2026.5.0] — 2026-10-29
+
+### Fixed
+
+- `get_my_usernames()` / `get_my_numbers()` / `get_my_gifts()` now raise `SessionExpiredError` when the
+  session is expired instead of silently returning an empty list (Fragment redirects to the main page, which
+  also has an API hash — fixed by checking for `"logged_in":true`).
+- A `{"error": "Bad request"}` on a fresh hash no longer raises `SessionExpiredError`; that error now
+  surfaces as `FragmentAPIError` (bad params, not a stale session). `SessionExpiredError` is still raised
+  when both a cached and a fresh hash are rejected.
+- Concurrent purchases from the same wallet now use sequential seqnos instead of both reading the same
+  on-chain value. Seqno is cached after a successful send and reused as pending + 1 until `valid_until`.
+- `logout()`, `link_wallet()`, `disconnect_wallet()` now raise `FragmentAPIError` on an API error body.
+- A 4xx (non-429) rejection from the TON provider now raises `ProviderError(retryable=False)` instead of
+  being swallowed.
+- `HTTPStatusError` and `InsufficientBalanceError` are now picklable.
+- `ProviderError.retryable` is derived from the status: `True` for transient errors (no status, 429, 5xx),
+  `False` for definite rejections (4xx).
+
+### Added
+
+- **`get_stars_price(amount)`** — returns the current GRAM price for a given number of Stars as a `Decimal`.
+- **`get_stars_packages()`** — returns all predefined Stars purchase options (`StarsPackage(stars, gram, usd)`)
+  with live GRAM and USD prices from Fragment.
+- **`get_premium_packages()`** — returns all Telegram Premium subscription options
+  (`PremiumPackage(months, gram, usd)`) with live GRAM and USD prices, fetched from the `/premium/gift` page.
+- **`get_my_usernames()` / `get_my_numbers()` / `get_my_gifts()`** — return assets owned by the authenticated
+  account (`MyUsernamesResult`, `MyNumbersResult`, `MyGiftsResult`, each wrapping a `list[AuctionItem]`).
+- **`disconnect_wallet()`** — disconnects the linked TON wallet from Fragment (`tonLogOut`).
+- **`link_wallet()`** — links the connected TON wallet to the Fragment account (`linkWallet`).
+  Required once after connecting a new wallet via TON Connect before purchases can be made.
+- `StarsPackage`, `PremiumPackage`, `MyUsernamesResult`, `MyNumbersResult`, `MyGiftsResult` exported from
+  `pyfragment`.
+
+### Changed
+
+- **`DEFAULT_GAS_RESERVE`** lowered from `0.33` to `0.05` GRAM. GRAM (ex TON) network fees are a fraction
+  of a cent; the old value was overly conservative and blocked purchases on wallets with modest balances.
+  Override with `FragmentClient(gas_reserve=...)`.
+
+- **`DEVICE_INFO`** updated to match current Tonkeeper TON Connect capabilities:
+  removed the legacy `"SendTransaction"` string entry, added `"extraCurrencySupported": true` to
+  `SendTransaction`, bumped `appVersion` to `26.10.1`.
+
+- **Telegram Wallet:** `WalletVersion.TG` for Telegram's self-custodial contract. Always paired with
+  `mnemonic_type="multichain"` — the 12-word phrase (or the 24 words shown after a key rotation; words 1–12
+  keep the address, words 13–24 are the active key).
+- **Multichain (BIP-39) phrases:** `FragmentClient(mnemonic_type="multichain")` for BIP-39 wallets
+  (`m/44'/607'/0'`). The default is `"ton"`; the scheme is never guessed automatically.
+  `MnemonicType` is exported from `pyfragment` and `pyfragment.enums`.
+- **`on_transfer_prepared` callback** — `FragmentClient(on_transfer_prepared=async_fn)`. Called with a
+  `TransferIntent` after signing and before sending. If it raises, nothing is sent; a crash after it returns
+  leaves enough information to verify whether the transfer landed.
+- **`comment` and `boc` in all purchase results.** Every result (`StarsResult`, `PremiumResult`, etc.)
+  now carries `comment` (Fragment's `Ref#…` payment reference) and `boc` (the raw signed message). All six
+  results share the new `PaymentResult` base (`transaction_id`, `confirmed`, `comment`, `boc`).
+  `PaymentResult`, `TransferIntent` and `Recipient` are exported from the package root.
+- **`check_stars_recipient()` / `check_premium_recipient()`** — validate a recipient without starting a
+  purchase. Return a `Recipient` (`recipient`, `username`, `name`, `photo`, `myself`).
+- `FragmentClient(gas_reserve=...)` — GRAM the wallet must keep on top of any payment for network fees.
+  Defaults to `0.05`; replaces `MIN_GRAM_BALANCE`.
+- `FragmentClient(confirm_timeout=...)` — seconds to wait for Fragment's own confirmation after paying.
+  Defaults to `60`; pass `0` to skip.
+- **A transfer is signed and sent exactly once.** Fragment's confirmation API is the outcome signal.
+  Send errors are logged but do not raise — the provider's response to `sendBoc` is not authoritative
+  (toncenter answers 500 to some sends that went through). A 429 is retried once while the message is
+  still valid; any other error is logged.
+- **Transfers expire with Fragment's invoice.** The signed message carries a `valid_until` capped at 60 s,
+  never past Fragment's `validUntil`. An expired transaction is refused before signing (`TransactionError`),
+  as is a transaction with multiple messages — signing only the first would pay a partial invoice.
+- **Seqno is read explicitly.** A provider failure raises `ProviderError` instead of silently signing
+  seqno 0, which would deploy an uninitialised wallet and waste the transfer.
+- **Fragment's payload is signed byte-for-byte.** Previously the payload was decoded and re-encoded,
+  silently stripping surrounding whitespace.
+- **Balances and amounts are exact `Decimal` values** (previously rounded to 4 decimal places). A USDT
+  payment requires the attached GRAM plus the gas reserve, the same as a GRAM payment.
+- **Exception hierarchy restructured** — every error carries `retryable` (`True` = nothing was paid,
+  repeating is safe):
+  - `NetworkError` — Fragment unreachable (timeout, dropped connection); always `retryable=True`
+  - `HTTPStatusError` (`status`, `url`) — unexpected HTTP status; `retryable=True` for 429 and 5xx
+  - `SessionExpiredError` — HTTP 401/403, "Access denied", missing request ID, or a freshly fetched API
+    hash also rejected (previously this last case was returned silently as a valid result)
+  - `RecipientError` → `UserNotFoundError`, `ChannelNotFoundError`, `AlreadySubscribedError`
+  - `ChainError` → `InsufficientBalanceError` (`balance`, `required`, `currency`),
+    `ProviderError` (`status`), `TransactionError`
+  - `UnexpectedError` is now a direct subclass of `FragmentError`, not `OperationError`
+  - Blockchain errors (`ChainError` and below) are no longer subclasses of `FragmentAPIError`
+  - `ChannelNotFoundError` is now a subclass of `RecipientError`, not `UserNotFoundError`
+- `toggle_login_codes()` raises `AnonymousNumberError` on failure, like `terminate_sessions()`.
+- The wallet key is derived once at first use and reused; `TonWallet.aclose()` clears the cached account
+  payload so a reconnect never reuses stale on-chain state.
+- The library no longer logs the errors it raises.
+- `Recipient.username` stores the query exactly as the caller passed it (previously normalised:
+  `@durov` → `durov`, `https://t.me/durov` → `durov`).
+- Dependencies: tonutils ≥ 2.5.1, ton-core ≥ 0.7.1 (now declared), curl-cffi ≥ 0.16.3.
+
+### Fixed
+
+- Cookies given as non-object JSON raise `CookieError` instead of `AttributeError`.
+- `get_wallet()` error messages no longer reference Tonapi when toncenter is the configured provider.
+
+### Removed
+
+- `FragmentPageError`, `OperationError`, `WalletError` — replaced by the restructured hierarchy:
+  `HTTPStatusError` / `SessionExpiredError`, `ChainError` / `UnexpectedError`,
+  `InsufficientBalanceError` / `ProviderError`.
+- `get_cookies_from_browser()`, `CookieResult`, `SupportedBrowser`, the `browser` install extra —
+  pass cookies as a dict or JSON string.
+- `MIN_GRAM_BALANCE` → `FragmentClient(gas_reserve=...)` / `DEFAULT_GAS_RESERVE`.
+  `NANO_PER_GRAM`, `USDT_UNITS` → `GRAM_DECIMALS`, `USDT_DECIMALS`.
+- `MAX_BROADCAST_ATTEMPTS` — a transfer is sent once (with one 429 retry).
+- `PaymentMethod.USDT_ETH`, `USDT_POL`, `USDC_ETH`, `USDC_BASE`, `USDC_POL` and `SUPPORTED_PAYMENT_METHODS` —
+  `PaymentMethod` now contains only `GRAM` and `USDT_GRAM`.
+- `client.tonapi` → `client.wallet` (`WalletService`).
+- `clean_decode()` — the payment comment is in the result's `comment` field.
+- `BroadcastError` — send errors are logged; Fragment's confirmation API is the outcome signal.
+- `find_transfer()` / `TransferInfo` — on-chain scan removed; Fragment's confirmation API is the source of truth.
+- `normalize_username()` — see `Recipient.username` change above.
+
+### Migration
+
+- **Exceptions:** catch `RecipientError` (or specifically `ChannelNotFoundError`) for giveaways; `ChainError`
+  for wallet and blockchain failures. Check `error.retryable` before deciding to retry — `True` means nothing
+  was paid and repeating is safe.
+- **Balances** are `Decimal`; use `float(balance)` where a float is needed.
+- **`process_transaction()`** returns `TransferIntent` (`msg_hash`, `boc`, `destination`, `amount_nano`,
+  `comment`, `payment_method`, `req_id`, `valid_until`) instead of `(hash, boc)`.
 
 ---
 
@@ -80,8 +206,6 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
   never did anything. Abandoned invoices expire on their own; the extra request and the `ApiMethod.CANCEL_INVOICE`
   member are gone.
 - `pyfragment.core.transport`: use `pyfragment.transport`.
-- `pyfragment.domains.base.raw_api_call()`, an internal one-shot helper that nothing used: send raw requests with
-  `FragmentClient.call()`.
 - `parse_required_payment_amount()`: use `pyfragment.schemas.InvoiceRequest.amount`.
 
 ### Fixed
@@ -415,6 +539,10 @@ The TON blockchain has been rebranded to **GRAM (ex TON)**. All identifiers, mes
 - `py.typed` marker — full PEP 561 typing support for type-checkers
 - `__repr__` on all result types for readable debug output
 
+[2026.5.0]: https://github.com/bohd4nx/pyfragment/compare/v2026.4.0...v2026.5.0
+[2026.4.0]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.4.0
+[2026.3.4]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.3.4
+[2026.3.3]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.3.3
 [2026.3.2]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.3.2
 [2026.3.1]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.3.1
 [2026.3.0]: https://github.com/bohd4nx/pyfragment/releases/tag/v2026.3.0

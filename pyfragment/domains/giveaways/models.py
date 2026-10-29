@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from pyfragment.domains.payments.models import PaymentResult
+
 
 @dataclass
-class StarsGiveawayResult:
-    transaction_id: str
+class StarsGiveawayResult(PaymentResult):
     channel: str
     winners: int
-    amount: int
-    confirmed: bool = False
+    amount: int  # stars per winner
 
     def __repr__(self) -> str:
         return (
@@ -19,12 +19,10 @@ class StarsGiveawayResult:
 
 
 @dataclass
-class PremiumGiveawayResult:
-    transaction_id: str
+class PremiumGiveawayResult(PaymentResult):
     channel: str
     winners: int
-    amount: int
-    confirmed: bool = False
+    amount: int  # months per winner
 
     def __repr__(self) -> str:
         return (

@@ -6,8 +6,17 @@ import pytest
 
 import pyfragment.domains.payments.flow as _flow_mod
 from pyfragment import AdsTopupResult, ConfigurationError, FragmentClient, UserNotFoundError
-from pyfragment.core.constants import GRAM_TOPUP_MAX, GRAM_TOPUP_MIN
-from tests.shared import FAKE_ACCOUNT, FAKE_RECIPIENT, FAKE_REQ_ID, FAKE_TRANSACTION, FAKE_TX_BOC, FAKE_TX_HASH
+from pyfragment.constants import GRAM_TOPUP_MAX, GRAM_TOPUP_MIN
+from tests.shared import (
+    FAKE_ACCOUNT,
+    FAKE_COMMENT,
+    FAKE_RECIPIENT,
+    FAKE_REQ_ID,
+    FAKE_SENT,
+    FAKE_TRANSACTION,
+    FAKE_TX_BOC,
+    FAKE_TX_HASH,
+)
 
 # Topup GRAM (ex TON) validation tests
 
@@ -48,13 +57,14 @@ async def test_topup_gram_success(client: FragmentClient) -> None:
                 ]
             ),
         ),
-        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
-        patch.object(_flow_mod, "process_transaction", AsyncMock(return_value=(FAKE_TX_HASH, FAKE_TX_BOC))),
+        patch.object(client.ton_wallet, "account_info", return_value=FAKE_ACCOUNT),
+        patch.object(_flow_mod, "process_transaction", AsyncMock(return_value=FAKE_SENT)),
     ):
         result = await client.topup_gram("@user", amount=10)
 
     assert isinstance(result, AdsTopupResult)
     assert result.transaction_id == FAKE_TX_HASH
+    assert (result.comment, result.boc) == (FAKE_COMMENT, FAKE_TX_BOC)
     assert result.username == "@user"
     assert result.amount == 10
 
@@ -94,7 +104,7 @@ async def test_topup_gram_missing_req_id_raises(client: FragmentClient) -> None:
                 ]
             ),
         ),
-        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(client.ton_wallet, "account_info", return_value=FAKE_ACCOUNT),
     ):
         with pytest.raises(FragmentAPIError):
             await client.topup_gram("@user", amount=10)
@@ -116,7 +126,7 @@ async def test_topup_gram_missing_req_id_surfaces_fragment_error(client: Fragmen
                 ]
             ),
         ),
-        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(client.ton_wallet, "account_info", return_value=FAKE_ACCOUNT),
     ):
         with pytest.raises(FragmentAPIError, match="Amount is invalid"):
             await client.topup_gram("@user", amount=10)
@@ -139,7 +149,7 @@ async def test_topup_gram_need_verify_raises(client: FragmentClient) -> None:
                 ]
             ),
         ),
-        patch.object(_flow_mod, "get_account_info", AsyncMock(return_value=FAKE_ACCOUNT)),
+        patch.object(client.ton_wallet, "account_info", return_value=FAKE_ACCOUNT),
     ):
         with pytest.raises(VerificationError):
             await client.topup_gram("@user", amount=10)

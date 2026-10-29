@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from pyfragment.domains.payments.models import PaymentResult
+
 
 @dataclass
-class AdsTopupResult:
-    transaction_id: str
+class AdsTopupResult(PaymentResult):
     username: str
-    amount: int
-    confirmed: bool = False
+    amount: int  # GRAM (ex TON)
 
     def __repr__(self) -> str:
         return (
@@ -18,10 +18,8 @@ class AdsTopupResult:
 
 
 @dataclass
-class AdsRechargeResult:
-    transaction_id: str
-    amount: int
-    confirmed: bool = False
+class AdsRechargeResult(PaymentResult):
+    amount: int  # GRAM (ex TON)
 
     def __repr__(self) -> str:
         return f"AdsRechargeResult(amount={self.amount} GRAM (ex TON), tx='{self.transaction_id}', confirmed={self.confirmed})"

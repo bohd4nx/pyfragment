@@ -4,12 +4,12 @@ import html
 import logging
 from typing import TYPE_CHECKING
 
-from pyfragment.core.constants import NUMBERS_PAGE
+from pyfragment.constants import NUMBERS_PAGE
 from pyfragment.domains.anonymous_numbers.models import LoginCodeResult, TerminateSessionsResult
 from pyfragment.domains.anonymous_numbers.parser import parse_login_code
 from pyfragment.domains.base import operation
 from pyfragment.enums import ApiMethod
-from pyfragment.exceptions import AnonymousNumberError, FragmentAPIError
+from pyfragment.exceptions import AnonymousNumberError
 from pyfragment.schemas import error_text
 
 if TYPE_CHECKING:
@@ -48,7 +48,7 @@ async def toggle_login_codes(client: FragmentClient, number: str, can_receive: b
         )
 
         if error := error_text(result):
-            raise FragmentAPIError(html.unescape(error))
+            raise AnonymousNumberError(AnonymousNumberError.TOGGLE_FAILED.format(number=number, error=html.unescape(error)))
 
 
 async def terminate_sessions(client: FragmentClient, number: str) -> TerminateSessionsResult:

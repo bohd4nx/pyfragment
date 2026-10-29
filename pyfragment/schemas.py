@@ -1,11 +1,12 @@
-"""Typed views of the JSON bodies Fragment's ``/api`` endpoint returns."""
-
 from __future__ import annotations
 
+import html
 from dataclasses import dataclass, field
+from decimal import Decimal
 from typing import Any
 
 from pyfragment.enums import ApiError, StateMode
+from pyfragment.utils.money import parse_amount
 
 
 def error_text(response: dict[str, Any]) -> str | None:
@@ -25,12 +26,23 @@ class RecipientSearch:
     """Result of a ``search*Recipient`` call."""
 
     recipient: str | None
+    name: str | None = None
+    photo: str | None = None  # an HTML <img> tag, as Fragment renders it
+    myself: bool = False
 
     @classmethod
     def from_response(cls, response: dict[str, Any]) -> RecipientSearch:
         found = response.get("found")
-        recipient = found.get("recipient") if isinstance(found, dict) else None
-        return cls(recipient=recipient or None)
+        if not isinstance(found, dict):
+            return cls(recipient=None)
+        name = found.get("name")
+        return cls(
+            recipient=found.get("recipient") or None,
+            # Fragment HTML-escapes the display name (its frontend unescapes it before showing it).
+            name=html.unescape(str(name)) if name else None,
+            photo=found.get("photo") or None,
+            myself=bool(found.get("myself")),
+        )
 
 
 @dataclass(frozen=True)
@@ -38,11 +50,11 @@ class InvoiceRequest:
     """Result of an ``init*Request`` call: the invoice id and the amount Fragment expects to be paid."""
 
     req_id: str | None
-    amount: float | None
+    amount: Decimal | None  # in the payment currency: GRAM (ex TON) or USDT
 
     @classmethod
     def from_response(cls, response: dict[str, Any]) -> InvoiceRequest:
-        return cls(req_id=response.get("req_id") or None, amount=_parse_amount(response.get("amount")))
+        return cls(req_id=response.get("req_id") or None, amount=parse_amount(response.get("amount")))
 
 
 @dataclass(frozen=True)
@@ -77,11 +89,3 @@ class PageState:
     def is_done(self) -> bool:
         """Fragment's definitive signal that it has processed the transaction."""
         return not self.need_update
-
-
-def _parse_amount(raw_amount: object) -> float | None:
-    try:
-        # Fragment formats larger amounts with thousand separators (e.g. "1,000,000,000").
-        return float(str(raw_amount).replace(",", ""))
-    except (TypeError, ValueError):
-        return None

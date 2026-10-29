@@ -10,12 +10,13 @@ from pyfragment import (
     ConfigurationError,
     FragmentAPIError,
     FragmentClient,
+    RecipientError,
     UnexpectedError,
     UserNotFoundError,
 )
-from pyfragment.core.constants import STARS_WINNERS_MAX
-from pyfragment.core.validation import is_int_in_range
+from pyfragment.constants import STARS_WINNERS_MAX
 from pyfragment.enums import AuctionFilter, AuctionSort, GiftAttribute, MarketplaceType
+from pyfragment.utils.validation import is_int_in_range
 
 # is_int_in_range
 
@@ -111,7 +112,9 @@ async def test_giveaway_channel_not_found_raises_channel_error(client: FragmentC
         with pytest.raises(ChannelNotFoundError, match="channel") as exc_info:
             await client.giveaway_stars("@nochannel", 1, 500)
 
-    assert isinstance(exc_info.value, UserNotFoundError)
+    # A missing channel is a recipient error, but not a missing *user*.
+    assert isinstance(exc_info.value, RecipientError)
+    assert not isinstance(exc_info.value, UserNotFoundError)
 
 
 @pytest.mark.asyncio
