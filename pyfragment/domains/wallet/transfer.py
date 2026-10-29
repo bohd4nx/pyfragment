@@ -13,17 +13,16 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
 import tonutils.exceptions
-from ton_core import Address
 from tonutils.contracts.wallet import TONTransferBuilder
 from tonutils.exceptions import ProviderResponseError
 
-from pyfragment.constants import MESSAGE_TTL
 from pyfragment.domains.wallet.balance import check_payment_balance
 from pyfragment.domains.wallet.models import TransferIntent
 from pyfragment.domains.wallet.payload import body_comment, decode_boc
 from pyfragment.domains.wallet.wallet import provider_error
 from pyfragment.enums import PaymentMethod
-from pyfragment.exceptions import ProviderError, TransactionError
+from pyfragment.exceptions import ProviderError
+from pyfragment.utils.transaction import expiry, extract_message, parse_destination, unsigned_int
 
 if TYPE_CHECKING:
     from decimal import Decimal
@@ -32,49 +31,6 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
-
-
-def _extract_message(transaction_data: dict[str, Any]) -> dict[str, Any]:
-    """The one message of a Fragment transaction payload."""
-    transaction = transaction_data.get("transaction")
-    messages = transaction.get("messages") if isinstance(transaction, dict) else None
-    if not messages or not isinstance(messages, list):
-        raise TransactionError(TransactionError.INVALID_PAYLOAD)
-    if len(messages) != 1:
-        # Signing only the first one would pay part of the invoice and check the balance for that part only.
-        raise TransactionError(TransactionError.MULTIPLE_MESSAGES.format(count=len(messages)))
-    message: dict[str, Any] = messages[0]
-    return message
-
-
-def _unsigned_int(raw: object) -> int:
-    """A non-negative integer field of Fragment's transaction (sent as a number or a digit string)."""
-    if isinstance(raw, bool) or not isinstance(raw, (int, str)) or not str(raw).isdigit():
-        raise TransactionError(TransactionError.INVALID_PAYLOAD)
-    return int(raw)
-
-
-def _parse_destination(message: dict[str, Any]) -> Address:
-    # An Address object, never a string: tonutils resolves strings containing a dot as .ton/.t.me domains.
-    try:
-        return Address(str(message["address"]))
-    except Exception as exc:
-        raise TransactionError(TransactionError.INVALID_PAYLOAD) from exc
-
-
-def _expiry(transaction_data: dict[str, Any]) -> int:
-    """When the signed transfer expires: in ``MESSAGE_TTL`` seconds, or earlier if Fragment's own deadline is earlier.
-
-    Paying after Fragment's ``validUntil`` would pay an invoice it may no longer honor, so that is refused outright.
-    """
-    now = int(time.time())
-    raw = transaction_data["transaction"].get("validUntil")
-    if raw is None:
-        return now + MESSAGE_TTL
-    valid_until = _unsigned_int(raw)
-    if valid_until <= now:
-        raise TransactionError(TransactionError.EXPIRED.format(valid_until=valid_until), retryable=True)
-    return min(now + MESSAGE_TTL, valid_until)
 
 
 async def _send_message(ton: Any, boc_hex: str, valid_until: int) -> None:
@@ -117,9 +73,9 @@ async def process_transaction(
     Returns:
         The signed transfer: its normalized message hash, the signed boc and the payment details.
     """
-    message = _extract_message(transaction_data)
-    amount_nano = _unsigned_int(message.get("amount"))
-    destination = _parse_destination(message)
+    message = extract_message(transaction_data)
+    amount_nano = unsigned_int(message.get("amount"))
+    destination = parse_destination(message)
     body = decode_boc(message.get("payload"))
     ton_wallet = client.ton_wallet
 
@@ -131,7 +87,7 @@ async def process_transaction(
             required_payment_amount,
             transaction_data["transaction"].get("from", ""),
         )
-        valid_until = _expiry(transaction_data)
+        valid_until = expiry(transaction_data)
         params = await ton_wallet.transfer_params(valid_until, state=onchain)
         try:
             external = await ton_wallet.wallet().build_external_message(
