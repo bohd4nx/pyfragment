@@ -11,35 +11,20 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ### Fixed
 
-- **Logged-out page redirect not detected.** `get_my_usernames()`, `get_my_numbers()`, and `get_my_gifts()`
-  now raise `SessionExpiredError` when Fragment redirects an expired session to the main page. Previously the
-  redirect silently returned an empty list because the main page also embeds an API hash; the fix checks for
-  the `"logged_in":true` marker that only appears on authenticated `/my/*` pages.
-
-- **Malformed request misdiagnosed as session expiry.** A call with invalid parameters that receives
-  `{"error": "Bad request"}` on a first-ever (not cached) hash now raises `FragmentAPIError` instead of
-  `SessionExpiredError`. `SessionExpiredError` is still raised when both a stale cached hash *and* a freshly
-  fetched hash are rejected — that combination points to a session issue rather than bad parameters, and the
-  fresh hash is cached regardless so the next call doesn't need a page load.
-
-- **Seqno reuse on concurrent purchases.** Back-to-back purchases from the same wallet now use sequential
-  seqnos (N, N+1) instead of both reading N from the chain. The seqno is cached locally after a successful
-  send and reused as pending + 1 until the message's `valid_until` expires, avoiding a redundant provider
-  round-trip. Highload wallets are unaffected (they use query IDs, not seqnos).
-
-- **`logout()`, `link_wallet()`, `disconnect_wallet()`** now raise `FragmentAPIError` when Fragment's API
-  returns an error body instead of silently returning success.
-
-- **Non-retryable `ProviderError` for 4xx send failures.** A definite provider rejection (HTTP 4xx other than
-  429) while sending a signed message now raises `ProviderError(retryable=False)`. Previously all send errors
-  were swallowed and logged; only ambiguous 5xx errors (which may or may not have landed) are still logged and
-  returned as `confirmed=False`.
-
-- **`HTTPStatusError` and `InsufficientBalanceError`** are now picklable, so they can be propagated across
-  `multiprocessing` process boundaries without a `TypeError`.
-
-- **`ProviderError.retryable`** is now derived from the HTTP status code: `True` for no-status and 429/5xx
-  errors (transient), `False` for 4xx errors (definite rejection).
+- `get_my_usernames()` / `get_my_numbers()` / `get_my_gifts()` now raise `SessionExpiredError` when the
+  session is expired instead of silently returning an empty list (Fragment redirects to the main page, which
+  also has an API hash — fixed by checking for `"logged_in":true`).
+- A `{"error": "Bad request"}` on a fresh hash no longer raises `SessionExpiredError`; that error now
+  surfaces as `FragmentAPIError` (bad params, not a stale session). `SessionExpiredError` is still raised
+  when both a cached and a fresh hash are rejected.
+- Concurrent purchases from the same wallet now use sequential seqnos instead of both reading the same
+  on-chain value. Seqno is cached after a successful send and reused as pending + 1 until `valid_until`.
+- `logout()`, `link_wallet()`, `disconnect_wallet()` now raise `FragmentAPIError` on an API error body.
+- A 4xx (non-429) rejection from the TON provider now raises `ProviderError(retryable=False)` instead of
+  being swallowed.
+- `HTTPStatusError` and `InsufficientBalanceError` are now picklable.
+- `ProviderError.retryable` is derived from the status: `True` for transient errors (no status, 429, 5xx),
+  `False` for definite rejections (4xx).
 
 ### Added
 

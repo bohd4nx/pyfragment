@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import re
 from http import HTTPStatus
 from typing import Any
 
@@ -11,9 +10,7 @@ from pyfragment.enums import ApiError
 from pyfragment.exceptions import SessionExpiredError
 from pyfragment.schemas import has_error
 from pyfragment.transport.api import fragment_request, is_bad_hash, send, status_error
-from pyfragment.transport.page import API_HASH_RE, get_fragment_hash, parent_url
-
-_LOGGED_IN_RE = re.compile(r'"logged_in"\s*:\s*true')
+from pyfragment.transport.page import check_authenticated_page, get_fragment_hash, parent_url
 
 logger = logging.getLogger(__name__)
 
@@ -44,10 +41,7 @@ class FragmentTransport:
         response = await send(session.get(url, headers={"referer": parent_url(url)}), url)
         if response.status_code != HTTPStatus.OK:
             raise status_error(response.status_code, url)
-        if not API_HASH_RE.search(response.text):
-            raise SessionExpiredError(SessionExpiredError.NO_HASH.format(url=url))
-        if not _LOGGED_IN_RE.search(response.text):
-            raise SessionExpiredError(SessionExpiredError.NOT_LOGGED_IN.format(url=url))
+        check_authenticated_page(response.text, url)
         return response.text
 
     async def aclose(self) -> None:

@@ -11,6 +11,15 @@ from pyfragment.exceptions import SessionExpiredError
 from pyfragment.transport.api import send, status_error
 
 API_HASH_RE = re.compile(r"(?:https://fragment\.com)?\\\\?/api\?hash=([a-f0-9]+)")
+_LOGGED_IN_RE = re.compile(r'"logged_in"\s*:\s*true')
+
+
+def check_authenticated_page(html: str, url: str) -> None:
+    """Raise ``SessionExpiredError`` if ``html`` is not an authenticated Fragment page."""
+    if not API_HASH_RE.search(html):
+        raise SessionExpiredError(SessionExpiredError.NO_HASH.format(url=url))
+    if not _LOGGED_IN_RE.search(html):
+        raise SessionExpiredError(SessionExpiredError.NOT_LOGGED_IN.format(url=url))
 
 
 def parent_url(page_url: str) -> str:
@@ -37,7 +46,6 @@ async def get_fragment_hash(session: AsyncSession[Any], page_url: str) -> str:
 
     match = API_HASH_RE.search(response.text)
     if not match:
-        # Logged-out pages don't embed the hash (a login redirect lands on one of them too).
         raise SessionExpiredError(SessionExpiredError.NO_HASH.format(url=page_url))
 
     return match.group(1)
