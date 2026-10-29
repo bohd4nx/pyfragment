@@ -4,8 +4,8 @@ from datetime import datetime
 
 from pyfragment.domains.base import BaseService
 from pyfragment.domains.wallet.balance import get_wallet_info
+from pyfragment.domains.wallet.lookup import find_transfer
 from pyfragment.domains.wallet.models import TransferInfo, WalletInfo
-from pyfragment.domains.wallet.transfer import find_transfer
 
 
 class WalletService(BaseService):

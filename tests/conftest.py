@@ -14,6 +14,7 @@ import pyfragment.domains.giveaways.stars  # noqa: F401
 import pyfragment.domains.purchases.premium  # noqa: F401
 import pyfragment.domains.purchases.stars  # noqa: F401
 import pyfragment.domains.wallet.balance  # noqa: F401
+import pyfragment.domains.wallet.lookup  # noqa: F401
 import pyfragment.domains.wallet.transfer  # noqa: F401
 from pyfragment import FragmentClient
 from tests.shared import VALID_API_KEY, VALID_COOKIES, VALID_SEED

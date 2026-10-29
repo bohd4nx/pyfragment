@@ -10,7 +10,7 @@ import pytest
 from ton_core import Slice, Transaction
 
 from pyfragment import ConfigurationError, FragmentClient, ProviderError, TransferInfo
-from pyfragment.domains.wallet.transfer import _find_transfer_by_lt  # white-box: testing lt-bound logic directly
+from pyfragment.domains.wallet.lookup import _find_transfer_by_lt  # white-box: testing lt-bound logic directly
 from tests.fake_ton import FakeTon, provider_error, use_fake_ton
 from tests.shared import fixture_json
 
@@ -92,7 +92,7 @@ async def test_search_pages_through_history(client: FragmentClient) -> None:
     ton = ton_with(*newer, payment())
     calls = AsyncMock(wraps=ton.get_transactions)
     ton.get_transactions = calls  # type: ignore[method-assign]
-    with use_fake_ton(ton), patch("pyfragment.domains.wallet.transfer.TRANSACTIONS_PAGE_SIZE", 2):
+    with use_fake_ton(ton), patch("pyfragment.domains.wallet.lookup.TRANSACTIONS_PAGE_SIZE", 2):
         found = await client.find_transfer(msg_hash=PAYMENT["in_msg_hash"], since=PAID_AT)
     assert found is not None
     assert [c.kwargs["from_lt"] for c in calls.await_args_list] == [None, PAYMENT["lt"] + 3, PAYMENT["lt"] + 1]
