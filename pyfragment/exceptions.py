@@ -109,7 +109,11 @@ class SessionExpiredError(FragmentAPIError):
     """The Fragment session behind the cookies is no longer logged in: refresh the cookies."""
 
     REJECTED = "Fragment rejected the session (HTTP {status} from {url}). Log in to fragment.com and refresh your cookies."
-    ACCESS_DENIED = "Fragment denied access to '{context}'. Your session has likely expired: refresh your cookies."
+    ACCESS_DENIED = (
+        "Fragment denied access to '{context}'. "
+        "Either your session has expired (refresh stel_ssid / stel_token) "
+        "or your TON wallet is not connected on Fragment (refresh stel_ton_token)."
+    )
     NO_REQUEST_ID = (
         "Fragment did not return a request ID for '{context}'. Your session has likely expired: refresh your cookies."
     )

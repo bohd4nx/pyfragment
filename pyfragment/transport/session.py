@@ -56,9 +56,12 @@ class FragmentTransport:
         headers = {**self._headers, "referer": page_url}
         logger.debug("Starting Fragment API call '%s' on %s", method, page_url)
         response = await self._request(page_url, headers, payload)
-        logger.debug("Completed Fragment API call '%s' with response keys: %s", method, sorted(response.keys()))
+        if err := response.get("error"):
+            logger.debug("Completed Fragment API call '%s' with error: %s", method, err)
+        else:
+            logger.debug("Completed Fragment API call '%s' with response keys: %s", method, sorted(response.keys()))
         if has_error(response, ApiError.ACCESS_DENIED):
-            # Fragment answers calls made with a logged-out session this way.
+            # Fragment answers calls made with a logged-out session or disconnected wallet this way.
             raise SessionExpiredError(SessionExpiredError.ACCESS_DENIED.format(context=method))
         return response
 
