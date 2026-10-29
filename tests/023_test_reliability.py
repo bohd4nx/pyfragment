@@ -181,6 +181,13 @@ async def test_check_recipient_not_found(client: FragmentClient) -> None:
             await client.check_stars_recipient("@ghost")
 
 
+@pytest.mark.asyncio
+async def test_check_premium_recipient_not_found(client: FragmentClient) -> None:
+    with patch.object(client, "call", AsyncMock(return_value={"found": {}})):
+        with pytest.raises(UserNotFoundError):
+            await client.check_premium_recipient("@ghost", months=3)
+
+
 # The exception hierarchy
 
 

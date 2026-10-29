@@ -12,14 +12,16 @@ _GRAM_PRICE_RE = re.compile(r'icon-ton">([\d,]*)<span class="mini-frac">(\.\d+)<
 _GRAM_PRICE_WHOLE_RE = re.compile(r'icon-ton">([\d,]+)</div>')
 
 # Stars package: radio value → USD price → GRAM price, all within the same label block.
+# The mini-frac span is optional: whole-number prices render without it.
 _STARS_PACKAGE_RE = re.compile(
-    r'value="(\d+)".*?icon-usd">([\d,.]+)</div>.*?icon-ton">([\d,]*)<span class="mini-frac">(\.\d+)</span>',
+    r'value="(\d+)".*?icon-usd">([\d,.]+)</div>.*?icon-ton">([\d,]*)(?:<span class="mini-frac">(\.\d+)</span>)?',
     re.DOTALL,
 )
 
 # Premium package: months radio → GRAM price → USD price, all within the same label block.
+# The mini-frac span is optional: whole-number prices render without it.
 _PREMIUM_PACKAGE_RE = re.compile(
-    r'name="months"\s+value="(\d+)".*?icon-ton">([\d,]*)<span class="mini-frac">(\.\d+)</span>.*?tm-radio-desc">&#036;([\d.]+)</div>',
+    r'name="months"\s+value="(\d+)".*?icon-ton">([\d,]*)(?:<span class="mini-frac">(\.\d+)</span>)?.*?tm-radio-desc">&#036;([\d.]+)</div>',
     re.DOTALL,
 )
 

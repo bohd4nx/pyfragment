@@ -44,12 +44,12 @@ async def get_usdt_balance(ton: Any, wallet_address: str) -> int:
             client=ton, address=USDT_GRAM_MASTER_ADDRESS, owner_address=wallet_address
         )
         wallet_data = await get_wallet_data_get_method(client=ton, address=jetton_wallet_address)
+        return int(wallet_data[0]) if wallet_data else 0
     except Exception as exc:
         if _is_missing_jetton_wallet(exc):
             logger.debug("No USDT jetton wallet found for '%s'; treating balance as 0", wallet_address)
             return 0
         raise provider_error(ProviderError.BALANCE_CHECK_FAILED, exc, currency=USDT_CURRENCY) from exc
-    return int(wallet_data[0]) if wallet_data else 0
 
 
 async def check_payment_balance(

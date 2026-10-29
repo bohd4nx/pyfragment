@@ -155,3 +155,10 @@ async def test_get_stars_packages_raises_on_empty_html(client: FragmentClient) -
     with patch.object(client, "call", AsyncMock(return_value={"ok": True, "options_html": ""})):
         with pytest.raises(FragmentAPIError):
             await client.get_stars_packages()
+
+
+@pytest.mark.asyncio
+async def test_get_stars_packages_raises_on_missing_options_html(client: FragmentClient) -> None:
+    with patch.object(client, "call", AsyncMock(return_value={"ok": True})):
+        with pytest.raises(FragmentAPIError):
+            await client.get_stars_packages()

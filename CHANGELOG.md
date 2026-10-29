@@ -47,9 +47,6 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
   Defaults to `0.33`; replaces `MIN_GRAM_BALANCE`.
 - `FragmentClient(confirm_timeout=...)` — seconds to wait for Fragment's own confirmation after paying.
   Defaults to `60`; pass `0` to skip.
-
-### Changed
-
 - **A transfer is signed and sent exactly once.** Fragment's confirmation API is the outcome signal.
   Send errors are logged but do not raise — the provider's response to `sendBoc` is not authoritative
   (toncenter answers 500 to some sends that went through). A 429 is retried once while the message is

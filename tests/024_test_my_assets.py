@@ -132,9 +132,28 @@ async def test_get_my_gifts_fetches_correct_url(client: FragmentClient) -> None:
 
 
 @pytest.mark.asyncio
+async def test_get_my_numbers_empty(client: FragmentClient) -> None:
+    with patch.object(client._transport, "fetch_page", AsyncMock(return_value=EMPTY_HTML)):
+        result = await client.get_my_numbers()
+
+    assert isinstance(result, MyNumbersResult)
+    assert result.items == []
+
+
+@pytest.mark.asyncio
 async def test_get_my_gifts_empty(client: FragmentClient) -> None:
     with patch.object(client._transport, "fetch_page", AsyncMock(return_value=EMPTY_HTML)):
         result = await client.get_my_gifts()
 
     assert isinstance(result, MyGiftsResult)
     assert result.items == []
+
+
+@pytest.mark.asyncio
+async def test_disconnect_wallet_calls_ton_logout(client: FragmentClient) -> None:
+    mock_call = AsyncMock(return_value={"ok": True})
+    with patch.object(client, "call", mock_call):
+        await client.disconnect_wallet()
+
+    mock_call.assert_awaited_once()
+    assert mock_call.call_args[0][0] == "tonLogOut"

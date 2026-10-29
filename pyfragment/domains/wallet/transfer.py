@@ -47,6 +47,9 @@ async def _send_message(ton: Any, boc_hex: str, valid_until: int) -> None:
             logger.warning("Failed to send transfer: %s", exc)
             return
         await asyncio.sleep(1)
+        if time.time() >= valid_until:
+            logger.warning("Transfer expired during 429 backoff; skipping retry")
+            return
     except Exception as exc:
         logger.warning("Failed to send transfer: %s", exc)
         return
