@@ -25,6 +25,7 @@ Async Python client for **[Fragment.com](https://fragment.com)** — buy Telegra
 - **Wallet** — check GRAM and USDT balances, top up GRAM for a user or recharge an Ads account
 - **Anonymous numbers** — fetch login codes, toggle code reception, terminate active sessions
 - **Payments** — GRAM (ex TON) and USDT-on-TON; every transfer signed once with your wallet key
+- **Batching** — payments of one wallet queue up and can go out in one message (`max_batch`), on every supported wallet
 
 ## Installation
 

@@ -33,6 +33,7 @@ async def main() -> None:
         api_provider=ApiProvider.TONAPI,  # or ApiProvider.TONCENTER
     ) as client:
         try:
+            await client.toggle_login_codes(NUMBER, can_receive=True)
             result = await client.get_login_code(NUMBER)
         except AnonymousNumberError as e:
             print(f"Could not fetch login code: {e}")

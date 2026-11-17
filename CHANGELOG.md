@@ -9,13 +9,39 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ## [Unreleased]
 
+### Added
+
+- **Batched payments: `FragmentClient(max_batch=...)`.** Payments of a wallet queue up, and with `max_batch` above `1`
+  whatever is queued goes out in one external message: one seqno, one send, a lower total fee. Every kind of purchase
+  queues the same way and kinds can be mixed. The wallet caps the message (W5 and Telegram Wallet 255, V4R2 4,
+  HighloadV2 254, HighloadV3R1 64516). Payments of one message share `msg_hash` and `boc`. Defaults to `1`.
+- `FragmentClient(transfer_coordinator=...)`: a lock plus the seqno of the last sent message that processes buying from
+  one wallet can share (e.g. through Redis). The default, `LocalTransferCoordinator`, covers one process.
+
 ### Fixed
 
-- Stars/Premium purchases and giveaways no longer send `account`/`device` with `get*Link`; Fragment's frontend
-  now sends only `id` / `show_sender` / `transaction` there (the wallet is taken from the session). Ads
-  flows are unchanged.
-- `initBuyStarsRequest` & co. answering `need_ton` (no TON wallet bound to the session) now raise
-  `SessionExpiredError` pointing at `stel_ton_token`, instead of the misleading `NO_REQUEST_ID` message.
+- Stars/Premium purchases and giveaways no longer send `account`/`device` with `get*Link`: Fragment's frontend dropped
+  them (the wallet comes from the session).
+- A session without a bound TON wallet (`need_ton`) now raises `SessionExpiredError` naming `stel_ton_token` instead
+  of a vague missing-request-id error.
+- Overlapping purchases from one wallet lost transfers: a node rejects a seqno that is ahead of the chain. A message
+  now waits until the previous one has landed.
+
+### Changed
+
+- Purchases are serialized only while a message is signed and sent, no longer while waiting for Fragment's
+  confirmation.
+- The amount and count bounds are one table, `constants.LIMITS`, keyed by `enums.Limit`; it replaces the
+  `STARS_PURCHASE_MIN/MAX`, `STARS_GIVEAWAY_*`, `STARS_WINNERS_*`, `PREMIUM_WINNERS_*` and `GRAM_TOPUP_*` constants.
+- `FragmentClient` lives in the `pyfragment.client` package (the import is unchanged); `MnemonicType` is tonutils'
+  own enum; `client.seed` is the phrase as given, tonutils ignores case and extra whitespace itself.
+
+### Removed
+
+- The grouped attributes `client.purchases`, `.giveaways`, `.ads`, `.anonymous_numbers`, `.marketplace`, `.wallet` and
+  `.assets`: call the methods on the client itself.
+- The balance pre-check: `InsufficientBalanceError` and the `gas_reserve` parameter. An underfunded transfer fails
+  on-chain and Fragment never confirms it (`confirmed=False`); use `get_wallet()` to look at the balance beforehand.
 
 ---
 
@@ -176,7 +202,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 ### Changed
 
 - **The seed phrase is validated when the client is created.** tonutils only rejects words outside the wordlist: a
-  phrase with a wrong checksum, a BIP39-style phrase or a password-protected one silently derives a *different*
+  phrase with a wrong checksum, a BIP39-style phrase or a password-protected one silently derives a _different_
   wallet, which showed up much later as an empty balance. `FragmentClient` now raises `ConfigurationError` for anything
   that isn't a valid TON phrase. The phrase is also normalized (lower-cased, whitespace collapsed): `Word` used to
   derive another wallet than `word`.
@@ -201,7 +227,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
   The GRAM balance is still returned.
 - `FragmentClient.headers` is always a copy, so mutating one client's headers no longer leaks into `BASE_HEADERS`
   and other clients.
-- **Internal layout** (import paths of internals changed, see *Removed*):
+- **Internal layout** (import paths of internals changed, see _Removed_):
   - the HTTP layer is the `pyfragment.transport` package (`page`, `api`, `session`);
   - `pyfragment.domains.payments` is a package (`validation`, `state`, `confirmation`, `flow`);
   - `ads/tonup.py` is now `ads/topup.py`;
@@ -223,7 +249,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 ### Fixed
 
 - **`get_wallet()` and the pre-broadcast balance check reported an empty wallet when the blockchain provider failed.**
-  tonutils' `wallet.refresh()` answers *any* provider error (invalid API key, outage, timeout) with "nonexistent
+  tonutils' `wallet.refresh()` answers _any_ provider error (invalid API key, outage, timeout) with "nonexistent
   account, zero balance", so a bad key looked like an empty wallet ("0.0000 GRAM available"). The wallet state is now
   read with `client.get_info()`, and provider failures surface as `WalletError` with the provider's message.
 - **A zero USDT balance was not recognised on toncenter.** For an owner without a USDT jetton wallet tonapi answers
@@ -447,6 +473,7 @@ The TON blockchain has been rebranded to **GRAM (ex TON)**. All identifiers, mes
 ### Added
 
 - `get_cookies_from_browser(browser)` — extract Fragment session cookies directly from an installed browser (Chrome, Firefox, Edge, Brave, Arc, Opera, Safari, and more); no browser extension or manual copy-paste required
+
   ```python
   from pyfragment import get_cookies_from_browser
 
@@ -454,6 +481,7 @@ The TON blockchain has been rebranded to **GRAM (ex TON)**. All identifiers, mes
   client = FragmentClient(seed="...", api_key="...", cookies=result.cookies)
   print(result.expires)  # ISO 8601 expiry of stel_ssid, or None for session cookies
   ```
+
 - `CookieResult` — return type of `get_cookies_from_browser()`; exposes `.cookies` (`dict[str, str]`) and `.expires` (ISO 8601 string or `None`)
 
 ### Changed

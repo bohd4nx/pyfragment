@@ -13,7 +13,6 @@ from pyfragment import (
     ConfigurationError,
     FragmentClient,
     FragmentError,
-    InsufficientBalanceError,
     SessionExpiredError,
     TransactionError,
     UserNotFoundError,
@@ -59,9 +58,6 @@ async def main() -> None:
             return
         except ConfigurationError as e:
             print(f"Invalid argument: {e}")
-            return
-        except InsufficientBalanceError as e:
-            print(f"Not enough funds in the wallet: {e}")
             return
         except VerificationError:
             print("Fragment requires identity verification for this purchase.")
