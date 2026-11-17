@@ -4,7 +4,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from tonutils.contracts.wallet import TONTransferBuilder
+from tonutils.contracts.wallet import ExternalMessage, TONTransferBuilder
 
 from pyfragment.domains.wallet.models import TransferIntent
 from pyfragment.enums import PaymentMethod
@@ -28,7 +28,7 @@ class TransferRequest:
     deadline: int | None  # Fragment's own validUntil for the invoice
     on_prepared: Callable[[TransferIntent], Awaitable[None]] | None
 
-    def intent(self, external: Any, valid_until: int) -> TransferIntent:
+    def intent(self, external: ExternalMessage, valid_until: int) -> TransferIntent:
         return TransferIntent(
             msg_hash=str(external.normalized_hash),
             boc=external.as_b64,

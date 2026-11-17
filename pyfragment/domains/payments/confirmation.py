@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import time
 from typing import TYPE_CHECKING, Any
 
-from pyfragment.constants import CONFIRM_STATE_POLL_INTERVAL, DEVICE_INFO
+from pyfragment.constants.fragment import CONFIRM_STATE_POLL_INTERVAL
+from pyfragment.domains.payments.invoice import wallet_fields
 from pyfragment.domains.payments.state import state_nonce
 from pyfragment.enums import StateMode
 from pyfragment.schemas import PageState, TransactionLink
@@ -37,7 +37,7 @@ async def confirm_purchase(
     dh = state_nonce()
     try:
         if link.confirm_method:
-            body = {"account": json.dumps(account), "device": json.dumps(DEVICE_INFO), "boc": tx_boc, **link.confirm_params}
+            body = {**wallet_fields(account), "boc": tx_boc, **link.confirm_params}
             await client.call(link.confirm_method, body, page_url=flow.page_url)
         return await wait_for_confirmation(client, flow, dh)
     except Exception as exc:

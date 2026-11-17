@@ -140,7 +140,7 @@ async def test_get_stars_packages_sends_minimum_quantity(client: FragmentClient)
         await client.get_stars_packages()
 
     _, data = mock_call.call_args[0]
-    assert data["quantity"] == 50  # LIMITS[Limit.STARS_PURCHASE].min
+    assert data["quantity"] == 50  # STARS_PURCHASE.min
 
 
 @pytest.mark.asyncio

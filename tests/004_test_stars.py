@@ -13,8 +13,8 @@ from pyfragment import (
     StarsResult,
     UserNotFoundError,
 )
-from pyfragment.constants import LIMITS
-from pyfragment.enums import ApiMethod, Limit, PaymentMethod
+from pyfragment.constants.limits import STARS_GIVEAWAY, STARS_PURCHASE, STARS_WINNERS
+from pyfragment.enums import ApiMethod, PaymentMethod
 from tests.shared import (
     FAKE_ACCOUNT,
     FAKE_COMMENT,
@@ -32,13 +32,13 @@ from tests.shared import (
 @pytest.mark.asyncio
 async def test_purchase_stars_amount_too_low(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.purchase_stars("@user", amount=LIMITS[Limit.STARS_PURCHASE].min - 1)
+        await client.purchase_stars("@user", amount=STARS_PURCHASE.min - 1)
 
 
 @pytest.mark.asyncio
 async def test_purchase_stars_amount_too_high(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.purchase_stars("@user", amount=LIMITS[Limit.STARS_PURCHASE].max + 1)
+        await client.purchase_stars("@user", amount=STARS_PURCHASE.max + 1)
 
 
 @pytest.mark.asyncio
@@ -184,33 +184,25 @@ async def test_purchase_stars_user_not_found(client: FragmentClient) -> None:
 @pytest.mark.asyncio
 async def test_giveaway_stars_winners_too_low(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.giveaway_stars(
-            "@channel", winners=LIMITS[Limit.STARS_WINNERS].min - 1, amount=LIMITS[Limit.STARS_GIVEAWAY].min
-        )
+        await client.giveaway_stars("@channel", winners=STARS_WINNERS.min - 1, amount=STARS_GIVEAWAY.min)
 
 
 @pytest.mark.asyncio
 async def test_giveaway_stars_winners_too_high(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.giveaway_stars(
-            "@channel", winners=LIMITS[Limit.STARS_WINNERS].max + 1, amount=LIMITS[Limit.STARS_GIVEAWAY].min
-        )
+        await client.giveaway_stars("@channel", winners=STARS_WINNERS.max + 1, amount=STARS_GIVEAWAY.min)
 
 
 @pytest.mark.asyncio
 async def test_giveaway_stars_amount_too_low(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.giveaway_stars(
-            "@channel", winners=LIMITS[Limit.STARS_WINNERS].min, amount=LIMITS[Limit.STARS_GIVEAWAY].min - 1
-        )
+        await client.giveaway_stars("@channel", winners=STARS_WINNERS.min, amount=STARS_GIVEAWAY.min - 1)
 
 
 @pytest.mark.asyncio
 async def test_giveaway_stars_amount_too_high(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.giveaway_stars(
-            "@channel", winners=LIMITS[Limit.STARS_WINNERS].min, amount=LIMITS[Limit.STARS_GIVEAWAY].max + 1
-        )
+        await client.giveaway_stars("@channel", winners=STARS_WINNERS.min, amount=STARS_GIVEAWAY.max + 1)
 
 
 @pytest.mark.asyncio

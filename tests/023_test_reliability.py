@@ -1,6 +1,7 @@
 """Fragment transport errors, session expiry detection, recipient checks, error classification and logging."""
 
 import logging
+import pickle
 from collections.abc import Iterator
 from contextlib import contextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -18,13 +19,15 @@ from pyfragment import (
     FragmentClient,
     HTTPStatusError,
     NetworkError,
+    ParseError,
     SessionExpiredError,
     UserNotFoundError,
 )
-from pyfragment.constants import STARS_PAGE
+from pyfragment.constants.fragment import STARS_PAGE
 from pyfragment.enums import ApiMethod
 from pyfragment.exceptions import ProviderError, TransactionError
 from pyfragment.transport import FragmentTransport, fragment_request, get_fragment_hash
+from pyfragment.transport.api import parse_json_response
 from tests.shared import FAKE_ACCOUNT, FAKE_HASH, FAKE_RECIPIENT, FAKE_TRANSACTION
 
 
@@ -229,3 +232,16 @@ async def test_expected_failures_are_not_logged_as_errors(client: FragmentClient
         await client.purchase_stars("@user", amount=500)
 
     assert [r for r in caplog.records if r.levelno >= logging.WARNING] == []
+
+
+@pytest.mark.parametrize("status", [429, 502, 404])
+def test_http_status_error_survives_pickling(status: int) -> None:
+    restored = pickle.loads(pickle.dumps(HTTPStatusError(status, "https://fragment.com/api")))
+    assert (restored.status, restored.url, restored.retryable) == (status, "https://fragment.com/api", status != 404)
+
+
+def test_a_body_that_is_not_json_is_a_parse_error() -> None:
+    response = MagicMock(spec=Response)
+    response.json.side_effect = ValueError("no json")
+    with pytest.raises(ParseError, match="searchAuctions"):
+        parse_json_response(response, "searchAuctions")

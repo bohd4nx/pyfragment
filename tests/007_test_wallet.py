@@ -8,7 +8,7 @@ from ton_core import ContractState
 from tonutils.exceptions import ProviderResponseError, RunGetMethodError
 
 from pyfragment import ChainError, FragmentClient, ProviderError, WalletInfo
-from pyfragment.constants import TVM_EXIT_ACCOUNT_NOT_FOUND
+from pyfragment.constants.chain import TVM_EXIT_ACCOUNT_NOT_FOUND
 from pyfragment.domains.wallet.balance import get_usdt_balance
 from tests.fake_ton import FakeTon, use_fake_ton
 from tests.shared import VALID_API_KEY, VALID_COOKIES, VALID_SEED

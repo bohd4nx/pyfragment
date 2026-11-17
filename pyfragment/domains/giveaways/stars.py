@@ -4,14 +4,13 @@ import logging
 from dataclasses import asdict
 from typing import TYPE_CHECKING
 
-from pyfragment.constants import (
-    STARS_GIVEAWAY_PAGE,
-)
+from pyfragment.constants.fragment import STARS_GIVEAWAY_PAGE
+from pyfragment.constants.limits import STARS_GIVEAWAY, STARS_WINNERS
 from pyfragment.domains.base import operation
 from pyfragment.domains.giveaways.models import StarsGiveawayResult
 from pyfragment.domains.payments import PurchaseFlow, run_purchase
 from pyfragment.domains.recipients import find_channel
-from pyfragment.enums import ApiMethod, Limit, PaymentMethod
+from pyfragment.enums import ApiMethod, PaymentMethod
 from pyfragment.utils.validation import check_limit, validate_payment_method
 
 if TYPE_CHECKING:
@@ -37,8 +36,8 @@ async def giveaway_stars(
     amount: int,
     payment_method: PaymentMethod = PaymentMethod.GRAM,
 ) -> StarsGiveawayResult:
-    check_limit(Limit.STARS_WINNERS, winners)
-    check_limit(Limit.STARS_GIVEAWAY, amount)
+    check_limit(STARS_WINNERS, winners)
+    check_limit(STARS_GIVEAWAY, amount)
     validate_payment_method(payment_method)
 
     with operation(

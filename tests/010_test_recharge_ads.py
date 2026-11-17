@@ -6,8 +6,7 @@ import pytest
 
 import pyfragment.domains.payments.flow as _flow_mod
 from pyfragment import AdsRechargeResult, ConfigurationError, FragmentClient
-from pyfragment.constants import LIMITS
-from pyfragment.enums import Limit
+from pyfragment.constants.limits import GRAM_TOPUP
 from tests.shared import (
     FAKE_ACCOUNT,
     FAKE_ADS_ACCOUNT,
@@ -25,13 +24,13 @@ from tests.shared import (
 @pytest.mark.asyncio
 async def test_recharge_ads_amount_zero(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.recharge_ads(FAKE_ADS_ACCOUNT, amount=LIMITS[Limit.GRAM_TOPUP].min - 1)
+        await client.recharge_ads(FAKE_ADS_ACCOUNT, amount=GRAM_TOPUP.min - 1)
 
 
 @pytest.mark.asyncio
 async def test_recharge_ads_amount_too_high(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.recharge_ads(FAKE_ADS_ACCOUNT, amount=LIMITS[Limit.GRAM_TOPUP].max + 1)
+        await client.recharge_ads(FAKE_ADS_ACCOUNT, amount=GRAM_TOPUP.max + 1)
 
 
 @pytest.mark.asyncio

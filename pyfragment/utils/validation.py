@@ -6,14 +6,11 @@ from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import Any, TypeVar
 
-from pyfragment.constants import LIMITS, PREMIUM_MONTHS_VALID, REQUIRED_COOKIE_KEYS
+from pyfragment.constants.fragment import REQUIRED_COOKIE_KEYS
+from pyfragment.constants.limits import PREMIUM_MONTHS_VALID, Range
 from pyfragment.domains.wallet.wallet import WALLET_CLASSES
 from pyfragment.enums import (
-    ApiProvider,
-    AuctionFilter,
-    AuctionSort,
     GiftAttribute,
-    Limit,
     MnemonicType,
     PaymentMethod,
     WalletVersion,
@@ -22,6 +19,7 @@ from pyfragment.exceptions import ConfigurationError, CookieError
 
 
 def parse_cookies(cookies: dict[str, Any] | str) -> dict[str, Any]:
+    """The cookies as a dict (they may be given as a JSON string), checked for the keys Fragment needs."""
     if isinstance(cookies, str):
         try:
             cookies = json.loads(cookies)
@@ -29,15 +27,13 @@ def parse_cookies(cookies: dict[str, Any] | str) -> dict[str, Any]:
             raise CookieError(CookieError.READ_FAILED.format(exc=exc)) from exc
     if not isinstance(cookies, dict):
         raise CookieError(CookieError.READ_FAILED.format(exc=type(cookies).__name__))
-    return cookies
-
-
-def validate_cookie_keys(cookies: dict[str, Any]) -> None:
     missing = [k for k in REQUIRED_COOKIE_KEYS if not str(cookies.get(k, "")).strip()]
     if missing:
         raise CookieError(CookieError.MISSING_KEYS.format(keys=", ".join(missing)))
+    return cookies
 
 
+# Ties the returned member to the enum passed in, so a caller gets ``ApiProvider`` back, not a bare ``Enum``.
 E = TypeVar("E", bound=Enum)
 
 
@@ -51,27 +47,11 @@ def parse_enum(enum: type[E], raw: str, error: str) -> E:
         raise ConfigurationError(error.format(value=raw, supported=supported)) from None
 
 
-def normalize_provider(api_provider: str) -> ApiProvider:
-    return parse_enum(ApiProvider, api_provider, ConfigurationError.UNSUPPORTED_PROVIDER)
-
-
-def normalize_wallet_version(wallet_version: str) -> WalletVersion:
-    return parse_enum(WalletVersion, wallet_version, ConfigurationError.UNSUPPORTED_VERSION)
-
-
 def normalize_mnemonic_type(mnemonic_type: str | None, wallet_version: WalletVersion) -> MnemonicType:
     """The phrase scheme to derive the key with: TON by default, multichain for a Telegram Wallet."""
     if mnemonic_type is None:
         return MnemonicType.MULTICHAIN if wallet_version == WalletVersion.TG else MnemonicType.TON
     return parse_enum(MnemonicType, mnemonic_type, ConfigurationError.UNSUPPORTED_MNEMONIC_TYPE)
-
-
-def normalize_sort(sort: str | None) -> AuctionSort | None:
-    return None if sort is None else parse_enum(AuctionSort, sort, ConfigurationError.INVALID_SORT)
-
-
-def normalize_filter(filter: str | None) -> AuctionFilter | None:
-    return None if filter is None else parse_enum(AuctionFilter, filter, ConfigurationError.INVALID_FILTER)
 
 
 def normalize_gift_attributes(attr: Mapping[str, Sequence[str]] | None) -> dict[GiftAttribute, list[str]]:
@@ -81,20 +61,15 @@ def normalize_gift_attributes(attr: Mapping[str, Sequence[str]] | None) -> dict[
     }
 
 
-def check_limit(limit: Limit, value: object) -> None:
-    bounds = LIMITS[limit]
-    if not is_int_in_range(value, bounds.min, bounds.max):
+def check_limit(bounds: Range, value: object) -> None:
+    # bool is a subclass of int, but `True` is never a meaningful amount or count.
+    if not isinstance(value, int) or isinstance(value, bool) or not bounds.min <= value <= bounds.max:
         raise ConfigurationError(ConfigurationError.OUT_OF_RANGE.format(label=bounds.label, min=bounds.min, max=bounds.max))
 
 
 def check_months(months: object) -> None:
     if months not in PREMIUM_MONTHS_VALID:
         raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
-
-
-def is_int_in_range(value: object, low: int, high: int) -> bool:
-    # bool is a subclass of int, but `True` is never a meaningful amount or count.
-    return isinstance(value, int) and not isinstance(value, bool) and low <= value <= high
 
 
 def validate_credentials(seed: str, api_key: str) -> None:
@@ -129,9 +104,6 @@ def normalize_max_batch(max_batch: int) -> int:
 
 
 def validate_payment_method(payment_method: PaymentMethod) -> None:
-    if payment_method not in {m.value for m in PaymentMethod}:
-        raise ConfigurationError(
-            ConfigurationError.INVALID_PAYMENT_METHOD.format(
-                method=payment_method, supported=", ".join(m.value for m in PaymentMethod)
-            )
-        )
+    if payment_method not in set(PaymentMethod):
+        supported = ", ".join(PaymentMethod)
+        raise ConfigurationError(ConfigurationError.INVALID_PAYMENT_METHOD.format(method=payment_method, supported=supported))

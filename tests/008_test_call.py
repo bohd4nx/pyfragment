@@ -6,7 +6,7 @@ import pytest
 from curl_cffi.requests import AsyncSession, Response
 
 from pyfragment import FragmentClient, HTTPStatusError, SessionExpiredError
-from pyfragment.constants import FRAGMENT_BASE_URL, PREMIUM_PAGE, STARS_PAGE
+from pyfragment.constants.fragment import FRAGMENT_BASE_URL, PREMIUM_PAGE, STARS_PAGE
 from pyfragment.transport import FragmentTransport, fragment_request, get_fragment_hash
 from tests.shared import FAKE_HASH, FAKE_RESPONSE
 

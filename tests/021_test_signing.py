@@ -17,9 +17,10 @@ import pytest
 from ton_core import Address, Cell, ContractState, PrivateKey, WalletTgData, multichain_mnemonic_to_private_key
 from tonutils.exceptions import ContractError
 
-from pyfragment import FragmentClient
+from pyfragment import FragmentClient, TransactionError
 from pyfragment.domains.wallet.transfers import process_transaction
 from pyfragment.enums import PaymentMethod, WalletVersion
+from pyfragment.utils.transaction import parse_destination
 from tests.fake_ton import FakeTon, use_fake_ton
 from tests.shared import (
     BIP39_SEED,
@@ -256,3 +257,10 @@ async def test_every_wallet_carries_a_batch_in_one_signed_message(options: dict[
     signed, signature = split_body(body, version)
     assert signature_matches(signed, signature, bytes.fromhex(account["publicKey"]))
     assert count_internal_messages(signed, Address(asked["address"]), int(asked["amount"])) == batch
+
+
+@pytest.mark.parametrize("address", [None, "", "not-an-address", 5])
+def test_a_transaction_to_an_unreadable_address_is_refused(address: object) -> None:
+    message = {"amount": "1", "address": address} if address is not None else {"amount": "1"}
+    with pytest.raises(TransactionError):
+        parse_destination(message)

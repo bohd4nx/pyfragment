@@ -4,11 +4,12 @@ import logging
 from dataclasses import asdict
 from typing import TYPE_CHECKING
 
-from pyfragment.constants import ADS_TOPUP_PAGE
+from pyfragment.constants.fragment import ADS_TOPUP_PAGE
+from pyfragment.constants.limits import GRAM_TOPUP
 from pyfragment.domains.ads.models import AdsRechargeResult
 from pyfragment.domains.base import operation
 from pyfragment.domains.payments import PurchaseFlow, run_purchase
-from pyfragment.enums import ApiMethod, Limit
+from pyfragment.enums import ApiMethod
 from pyfragment.utils.validation import check_limit
 
 if TYPE_CHECKING:
@@ -28,7 +29,7 @@ RECHARGE_FLOW = PurchaseFlow(
 
 
 async def recharge_ads(client: BaseClient, account: str, amount: int) -> AdsRechargeResult:
-    check_limit(Limit.GRAM_TOPUP, amount)
+    check_limit(GRAM_TOPUP, amount)
 
     with operation(logger, "recharge Ads account '%s' for %s GRAM (ex TON)", account, amount):
         await RECHARGE_FLOW.open(client)

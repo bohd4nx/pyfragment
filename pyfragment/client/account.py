@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from pyfragment.client.base import BaseClient
-from pyfragment.constants import (
-    PROFILE_PAGE,
-)
+from pyfragment.constants.fragment import PROFILE_PAGE
 from pyfragment.domains.assets.models import MyGiftsResult, MyNumbersResult, MyUsernamesResult
 from pyfragment.domains.assets.owned import get_my_gifts, get_my_numbers, get_my_usernames
 from pyfragment.domains.wallet.balance import get_wallet_info

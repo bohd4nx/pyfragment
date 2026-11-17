@@ -3,26 +3,19 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar
 
-from pyfragment.constants import (
-    BASE_HEADERS,
-    CONFIRM_STATE_TIMEOUT,
-    DEFAULT_MAX_BATCH,
-    DEFAULT_TIMEOUT,
-    FRAGMENT_BASE_URL,
-)
+from pyfragment.constants.fragment import BASE_HEADERS, FRAGMENT_BASE_URL
 from pyfragment.domains.wallet.models import TransferIntent
 from pyfragment.domains.wallet.transfers import TransferCoordinator
 from pyfragment.domains.wallet.wallet import TonWallet
 from pyfragment.enums import ApiMethod, ApiProvider, MnemonicType, WalletVersion
+from pyfragment.exceptions import ConfigurationError
 from pyfragment.transport import FragmentTransport
 from pyfragment.utils.validation import (
     normalize_confirm_timeout,
     normalize_max_batch,
     normalize_mnemonic_type,
-    normalize_provider,
-    normalize_wallet_version,
     parse_cookies,
-    validate_cookie_keys,
+    parse_enum,
     validate_credentials,
     validate_seed,
 )
@@ -38,19 +31,18 @@ class BaseClient:
         cookies: dict[str, Any] | str,
         wallet_version: str = "V5R1",
         api_provider: str = "tonapi",
-        timeout: float = DEFAULT_TIMEOUT,
+        timeout: float = 30.0,
         headers: dict[str, str | None] | None = None,
         mnemonic_type: str | None = None,
-        confirm_timeout: float = CONFIRM_STATE_TIMEOUT,
+        confirm_timeout: float = 60.0,
         on_transfer_prepared: Callable[[TransferIntent], Awaitable[None]] | None = None,
         transfer_coordinator: TransferCoordinator | None = None,
-        max_batch: int = DEFAULT_MAX_BATCH,
+        max_batch: int = 1,
     ) -> None:
         validate_credentials(seed, api_key)
-        provider = normalize_provider(api_provider)
+        provider = parse_enum(ApiProvider, api_provider, ConfigurationError.UNSUPPORTED_PROVIDER)
         parsed_cookies = parse_cookies(cookies)
-        validate_cookie_keys(parsed_cookies)
-        version = normalize_wallet_version(wallet_version)
+        version = parse_enum(WalletVersion, wallet_version, ConfigurationError.UNSUPPORTED_VERSION)
         phrase_type = normalize_mnemonic_type(mnemonic_type, version)
         validate_seed(seed, version, phrase_type)
 

@@ -4,7 +4,7 @@ import json
 import logging
 from typing import TYPE_CHECKING, Any
 
-from pyfragment.constants import DEVICE_INFO
+from pyfragment.constants.chain import DEVICE_INFO
 from pyfragment.enums import ApiError
 from pyfragment.exceptions import AlreadySubscribedError, FragmentAPIError, SessionExpiredError, VerificationError
 from pyfragment.schemas import InvoiceRequest, TransactionLink, error_text, has_error
@@ -14,6 +14,11 @@ if TYPE_CHECKING:
     from pyfragment.domains.payments.flow import PurchaseFlow
 
 logger = logging.getLogger(__name__)
+
+
+def wallet_fields(account: dict[str, Any]) -> dict[str, str]:
+    """The ``account``/``device`` pair Fragment's frontend sends so it can tell which wallet is paying."""
+    return {"account": json.dumps(account), "device": json.dumps(DEVICE_INFO)}
 
 
 async def create_invoice(client: BaseClient, flow: PurchaseFlow, init_data: dict[str, Any]) -> str:
@@ -35,7 +40,7 @@ async def request_transaction(
 ) -> dict[str, Any]:
     wallet = {}
     if flow.wallet_in_link:
-        wallet = {"account": json.dumps(client.ton_wallet.account_info()), "device": json.dumps(DEVICE_INFO)}
+        wallet = wallet_fields(client.ton_wallet.account_info())
     transaction = await client.call(
         flow.link_method,
         {**wallet, "transaction": 1, "id": req_id, **(link_data or {})},

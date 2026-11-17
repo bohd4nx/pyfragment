@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from pyfragment.constants import MY_GIFTS_PAGE, MY_NUMBERS_PAGE, MY_USERNAMES_PAGE
+from pyfragment.constants.fragment import MY_GIFTS_PAGE, MY_NUMBERS_PAGE, MY_USERNAMES_PAGE
 from pyfragment.domains.assets.models import MyGiftsResult, MyNumbersResult, MyUsernamesResult
 from pyfragment.domains.base import operation
 from pyfragment.domains.marketplace.parser import parse_auction_rows, parse_gift_items

@@ -20,16 +20,6 @@ class WalletVersion(StrEnum):
     TG = "TG"  # Telegram Wallet (self-custodial): a 12-word phrase, or 24 words after a key rotation
 
 
-class Limit(StrEnum):
-    """Bounds of an amount or a count Fragment accepts; the values are in ``constants.LIMITS``."""
-
-    STARS_PURCHASE = "stars_purchase"
-    STARS_GIVEAWAY = "stars_giveaway"
-    STARS_WINNERS = "stars_winners"
-    PREMIUM_WINNERS = "premium_winners"
-    GRAM_TOPUP = "gram_topup"
-
-
 class ApiProvider(StrEnum):
     """Blockchain API provider used to read the wallet and broadcast transactions."""
 

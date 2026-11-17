@@ -6,7 +6,7 @@ from typing import Any
 
 from ton_core import Address
 
-from pyfragment.constants import MESSAGE_TTL
+from pyfragment.constants.chain import MESSAGE_TTL
 from pyfragment.exceptions import TransactionError
 
 

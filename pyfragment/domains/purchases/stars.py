@@ -5,13 +5,14 @@ from dataclasses import asdict
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from pyfragment.constants import LIMITS, STARS_PAGE
+from pyfragment.constants.fragment import STARS_PAGE
+from pyfragment.constants.limits import STARS_PURCHASE
 from pyfragment.domains.base import operation
 from pyfragment.domains.payments import PurchaseFlow, run_purchase
 from pyfragment.domains.purchases.models import StarsPackage, StarsResult
 from pyfragment.domains.purchases.parser import parse_gram_price, parse_stars_packages
 from pyfragment.domains.recipients import Recipient, find_user
-from pyfragment.enums import ApiMethod, Limit, PaymentMethod
+from pyfragment.enums import ApiMethod, PaymentMethod
 from pyfragment.exceptions import FragmentAPIError
 from pyfragment.schemas import raise_for_error
 from pyfragment.utils.validation import check_limit, validate_payment_method
@@ -39,7 +40,7 @@ async def find_recipient(client: BaseClient, username: str) -> Recipient:
 
 
 async def get_stars_price(client: BaseClient, amount: int) -> Decimal:
-    check_limit(Limit.STARS_PURCHASE, amount)
+    check_limit(STARS_PURCHASE, amount)
     with operation(logger, "get Stars price for %s", amount):
         result = await client.call(ApiMethod.UPDATE_STARS_PRICES, {"quantity": amount}, page_url=STARS_PAGE)
         raise_for_error(result)
@@ -51,9 +52,7 @@ async def get_stars_price(client: BaseClient, amount: int) -> Decimal:
 
 async def get_stars_packages(client: BaseClient) -> list[StarsPackage]:
     with operation(logger, "get Stars packages"):
-        result = await client.call(
-            ApiMethod.UPDATE_STARS_PRICES, {"quantity": LIMITS[Limit.STARS_PURCHASE].min}, page_url=STARS_PAGE
-        )
+        result = await client.call(ApiMethod.UPDATE_STARS_PRICES, {"quantity": STARS_PURCHASE.min}, page_url=STARS_PAGE)
         raise_for_error(result)
         packages = parse_stars_packages(str(result.get("options_html", "")))
         if not packages:
@@ -73,7 +72,7 @@ async def purchase_stars(
     show_sender: bool = True,
     payment_method: PaymentMethod = PaymentMethod.GRAM,
 ) -> StarsResult:
-    check_limit(Limit.STARS_PURCHASE, amount)
+    check_limit(STARS_PURCHASE, amount)
     validate_payment_method(payment_method)
 
     with operation(logger, "purchase %s Stars for user '%s' using '%s'", amount, username, payment_method):

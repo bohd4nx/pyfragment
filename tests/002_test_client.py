@@ -5,7 +5,7 @@ import json
 import pytest
 
 from pyfragment import ConfigurationError, CookieError, FragmentClient
-from pyfragment.constants import BASE_HEADERS
+from pyfragment.constants.fragment import BASE_HEADERS
 from pyfragment.enums import ApiProvider, MnemonicType, WalletVersion
 from tests.shared import (
     BIP39_SEED,
@@ -267,6 +267,12 @@ def test_multichain_phrase_works_with_every_wallet_contract(version: str) -> Non
 def test_invalid_confirm_timeout_raises(confirm_timeout: object) -> None:
     with pytest.raises(ConfigurationError, match="confirm_timeout"):
         _client(confirm_timeout=confirm_timeout)
+
+
+@pytest.mark.parametrize("max_batch", [0, -1, 2.0, True, "5", None])
+def test_invalid_max_batch_raises(max_batch: object) -> None:
+    with pytest.raises(ConfigurationError, match="max_batch"):
+        _client(max_batch=max_batch)
 
 
 @pytest.mark.parametrize("cookies", ['["stel_ssid"]', "42", '"text"'])

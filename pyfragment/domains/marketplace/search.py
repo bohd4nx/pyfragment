@@ -5,13 +5,14 @@ import logging
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
-from pyfragment.constants import FRAGMENT_BASE_URL, GIFTS_PAGE, NUMBERS_PAGE
+from pyfragment.constants.fragment import FRAGMENT_BASE_URL, GIFTS_PAGE, NUMBERS_PAGE
 from pyfragment.domains.base import operation
 from pyfragment.domains.marketplace.models import AuctionItem, GiftsResult, NumbersResult, UsernamesResult
 from pyfragment.domains.marketplace.parser import parse_auction_rows, parse_gift_items
 from pyfragment.enums import ApiMethod, AuctionFilter, AuctionSort, MarketplaceType
+from pyfragment.exceptions import ConfigurationError
 from pyfragment.schemas import raise_for_error
-from pyfragment.utils.validation import normalize_filter, normalize_gift_attributes, normalize_sort
+from pyfragment.utils.validation import normalize_gift_attributes, parse_enum
 
 if TYPE_CHECKING:
     from pyfragment.client.base import BaseClient
@@ -22,10 +23,10 @@ logger = logging.getLogger(__name__)
 
 def listing_query(kind: MarketplaceType, query: str, sort: str | None, filter: str | None, **extra: Any) -> dict[str, Any]:
     data: dict[str, Any] = {"type": kind, "query": query}
-    if (sort_order := normalize_sort(sort)) is not None:
-        data["sort"] = sort_order
-    if (listing_filter := normalize_filter(filter)) is not None:
-        data["filter"] = listing_filter
+    if sort is not None:
+        data["sort"] = parse_enum(AuctionSort, sort, ConfigurationError.INVALID_SORT)
+    if filter is not None:
+        data["filter"] = parse_enum(AuctionFilter, filter, ConfigurationError.INVALID_FILTER)
     data.update({key: value for key, value in extra.items() if value is not None})
     return data
 

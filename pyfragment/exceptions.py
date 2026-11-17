@@ -9,7 +9,8 @@ from http import HTTPStatus
 
 from tonutils.exceptions import ProviderResponseError
 
-from pyfragment.constants import PREMIUM_MONTHS_VALID, PROFILE_PAGE
+from pyfragment.constants.fragment import PROFILE_PAGE
+from pyfragment.constants.limits import PREMIUM_MONTHS_VALID
 
 
 class FragmentError(Exception):

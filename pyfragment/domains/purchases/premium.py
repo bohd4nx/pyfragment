@@ -4,7 +4,7 @@ import logging
 from dataclasses import asdict
 from typing import TYPE_CHECKING
 
-from pyfragment.constants import PREMIUM_PAGE
+from pyfragment.constants.fragment import PREMIUM_PAGE
 from pyfragment.domains.base import operation
 from pyfragment.domains.payments import PurchaseFlow, run_purchase
 from pyfragment.domains.purchases.models import PremiumPackage, PremiumResult

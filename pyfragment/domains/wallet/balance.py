@@ -3,19 +3,14 @@ from __future__ import annotations
 import logging
 from decimal import Decimal
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from ton_core import to_amount
+from tonutils.clients.protocol import ClientProtocol
 from tonutils.contracts.jetton import get_wallet_address_get_method, get_wallet_data_get_method
 from tonutils.exceptions import ProviderResponseError, RunGetMethodError
 
-from pyfragment.constants import (
-    GRAM_DECIMALS,
-    TVM_EXIT_ACCOUNT_NOT_FOUND,
-    USDT_CURRENCY,
-    USDT_DECIMALS,
-    USDT_GRAM_MASTER_ADDRESS,
-)
+from pyfragment.constants.chain import GRAM_DECIMALS, TVM_EXIT_ACCOUNT_NOT_FOUND, USDT_DECIMALS, USDT_GRAM_MASTER_ADDRESS
 from pyfragment.domains.wallet.models import WalletInfo
 from pyfragment.exceptions import ProviderError
 
@@ -34,7 +29,7 @@ def is_missing_jetton_wallet(exc: Exception) -> bool:
     return isinstance(exc, RunGetMethodError) and exc.exit_code == TVM_EXIT_ACCOUNT_NOT_FOUND
 
 
-async def get_usdt_balance(ton: Any, wallet_address: str) -> int:
+async def get_usdt_balance(ton: ClientProtocol, wallet_address: str) -> int:
     """The USDT balance of a GRAM (ex TON) wallet, in units of 10^-6 USDT. Raises ``ProviderError`` if it can't be read."""
     try:
         jetton_wallet_address = await get_wallet_address_get_method(
@@ -46,7 +41,7 @@ async def get_usdt_balance(ton: Any, wallet_address: str) -> int:
         if is_missing_jetton_wallet(exc):
             logger.debug("No USDT jetton wallet found for '%s'; treating balance as 0", wallet_address)
             return 0
-        raise ProviderError.from_exception(ProviderError.BALANCE_CHECK_FAILED, exc, currency=USDT_CURRENCY) from exc
+        raise ProviderError.from_exception(ProviderError.BALANCE_CHECK_FAILED, exc, currency="USDT") from exc
 
 
 async def get_wallet_info(client: BaseClient) -> WalletInfo:

@@ -5,9 +5,10 @@ import logging
 import time
 from dataclasses import dataclass
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from weakref import WeakKeyDictionary
 
+from tonutils.clients.protocol import ClientProtocol
 from tonutils.exceptions import ProviderResponseError
 
 from pyfragment.domains.wallet.models import TransferIntent
@@ -97,7 +98,7 @@ def drop_expired(group: list[Entry]) -> list[Entry]:
     return kept
 
 
-async def broadcast(ton: Any, boc_hex: str) -> None:
+async def broadcast(ton: ClientProtocol, boc_hex: str) -> None:
     """Send the signed message. Only a definite rejection raises: the chain decides whether it landed.
 
     Other send errors are logged: Fragment's confirmation API reports the outcome, and toncenter answers 500 to some

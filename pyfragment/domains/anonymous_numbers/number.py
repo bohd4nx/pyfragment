@@ -4,7 +4,7 @@ import html
 import logging
 from typing import TYPE_CHECKING, Any
 
-from pyfragment.constants import NUMBERS_PAGE
+from pyfragment.constants.fragment import NUMBERS_PAGE
 from pyfragment.domains.anonymous_numbers.models import LoginCodeResult, TerminateSessionsResult
 from pyfragment.domains.anonymous_numbers.parser import parse_login_code
 from pyfragment.domains.base import operation

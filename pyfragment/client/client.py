@@ -46,7 +46,7 @@ class FragmentClient(PurchaseMethods, MarketplaceMethods, NumberMethods, Account
 
     Raises:
         ConfigurationError: If ``seed``, ``api_key``, ``wallet_version``, ``mnemonic_type``,
-            ``api_provider`` or ``confirm_timeout`` are missing or invalid.
+            ``api_provider``, ``confirm_timeout`` or ``max_batch`` are missing or invalid.
         CookieError: If ``cookies`` cannot be parsed or are missing required keys.
 
     Example::

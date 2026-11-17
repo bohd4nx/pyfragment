@@ -1,11 +1,13 @@
 """Parse real fragment.com listing markup (trimmed fixtures) and check every extracted field."""
 
+from decimal import Decimal
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from pyfragment import AuctionItem, FragmentClient
 from pyfragment.domains.marketplace.parser import parse_auction_rows, parse_gift_items
+from pyfragment.utils.money import parse_amount
 from tests.shared import fixture_html, fixture_json
 
 # (slug, name, status, price, date)
@@ -108,3 +110,16 @@ async def test_search_gifts_paginated_response(client: FragmentClient) -> None:
 
     assert [i["name"] for i in result.items] == ["Scared Cat #17302", "Plush Pepe #1485", "Plush Pepe #1213"]
     assert result.next_offset == 120
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [("0.4609", Decimal("0.4609")), ("1,000,000", Decimal(1_000_000)), (" 5 ", Decimal(5)), (7, Decimal(7))],
+)
+def test_parse_amount_reads_fragments_formatting(raw: object, expected: Decimal) -> None:
+    assert parse_amount(raw) == expected
+
+
+@pytest.mark.parametrize("raw", [None, True, "", "abc", "-1", "NaN", "Infinity"])
+def test_parse_amount_rejects_what_is_not_a_non_negative_number(raw: object) -> None:
+    assert parse_amount(raw) is None

@@ -9,7 +9,7 @@ from typing import Any, cast
 from curl_cffi.requests import AsyncSession, Response
 from curl_cffi.requests.exceptions import RequestException
 
-from pyfragment.constants import FRAGMENT_API_URL, MAX_API_ATTEMPTS
+from pyfragment.constants.fragment import FRAGMENT_API_URL, MAX_API_ATTEMPTS
 from pyfragment.enums import ApiError
 from pyfragment.exceptions import HTTPStatusError, NetworkError, ParseError, SessionExpiredError
 from pyfragment.schemas import has_error
