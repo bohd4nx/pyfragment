@@ -7,6 +7,16 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- Stars/Premium purchases and giveaways no longer send `account`/`device` with `get*Link`; Fragment's frontend
+  now sends only `id` / `show_sender` / `transaction` there (the wallet is taken from the session). Ads
+  flows are unchanged.
+
+---
+
 ## [2026.5.0] — 2026-10-29
 
 ### Fixed

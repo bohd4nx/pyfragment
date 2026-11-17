@@ -32,6 +32,9 @@ class PurchaseFlow:
     # Whether the page's update*State calls carry the lv/dh pair: the Stars and Premium pages send it,
     # the Ads pages only send the mode (as fragment.com's own frontend does).
     versioned_state: bool = True
+    # Whether the get*Link call carries account/device: fragment.com's Stars, Premium and giveaway pages
+    # send only id/transaction (the wallet comes from the session), the Ads pages still send both.
+    wallet_in_link: bool = True
 
     def state_params(self, mode: str = StateMode.NEW, dh: str | None = None, **extra: Any) -> dict[str, Any]:
         """Parameters of an ``update*State`` call of this page, as fragment.com's frontend sends them."""
@@ -68,15 +71,10 @@ async def run_purchase(
     logger.debug("Invoice %s obtained for %s (%s)", invoice.req_id, flow.label, payment_method)
 
     account = client.ton_wallet.account_info()
+    wallet_params = {"account": json.dumps(account), "device": json.dumps(DEVICE_INFO)} if flow.wallet_in_link else {}
     transaction = await client.call(
         flow.link_method,
-        {
-            "account": json.dumps(account),
-            "device": json.dumps(DEVICE_INFO),
-            "transaction": 1,
-            "id": invoice.req_id,
-            **(link_data or {}),
-        },
+        {**wallet_params, "transaction": 1, "id": invoice.req_id, **(link_data or {})},
         page_url=flow.page_url,
     )
     link = TransactionLink.from_response(transaction)
