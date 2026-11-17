@@ -117,6 +117,10 @@ class SessionExpiredError(FragmentAPIError):
         "Either your session has expired (refresh stel_ssid / stel_token) "
         "or your TON wallet is not connected on Fragment (refresh stel_ton_token)."
     )
+    NEED_TON = (
+        "Fragment says no TON wallet is connected to this session (need_ton) for '{context}'. "
+        "Connect the wallet on fragment.com and refresh stel_ton_token."
+    )
     NO_REQUEST_ID = (
         "Fragment did not return a request ID for '{context}'. Your session has likely expired: refresh your cookies."
     )

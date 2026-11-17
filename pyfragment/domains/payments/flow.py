@@ -63,6 +63,8 @@ async def run_purchase(
     result = await client.call(flow.init_method, init_data, page_url=flow.page_url)
     if has_error(result, ApiError.ALREADY_SUBSCRIBED):
         raise AlreadySubscribedError(AlreadySubscribedError.PREMIUM_ACTIVE)
+    if result.get("need_ton"):
+        raise SessionExpiredError(SessionExpiredError.NEED_TON.format(context=flow.label))
     invoice = InvoiceRequest.from_response(result)
     if not invoice.req_id:
         if error := error_text(result):

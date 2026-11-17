@@ -373,6 +373,22 @@ async def test_purchase_stars_missing_req_id_raises(client: FragmentClient) -> N
 
 
 @pytest.mark.asyncio
+async def test_purchase_stars_need_ton_raises_session_expired(client: FragmentClient) -> None:
+    from pyfragment.exceptions import SessionExpiredError
+
+    call_mock = AsyncMock(
+        side_effect=[
+            {"found": {"recipient": FAKE_RECIPIENT}},
+            {},  # updateStarsBuyState
+            {"need_ton": True},  # initBuyStarsRequest — no wallet bound to the session
+        ]
+    )
+    with patch.object(client, "call", call_mock):
+        with pytest.raises(SessionExpiredError, match="stel_ton_token"):
+            await client.purchase_stars("@user", amount=500)
+
+
+@pytest.mark.asyncio
 async def test_purchase_stars_need_verify_raises(client: FragmentClient) -> None:
     with (
         patch.object(

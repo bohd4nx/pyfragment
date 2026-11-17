@@ -14,6 +14,8 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - Stars/Premium purchases and giveaways no longer send `account`/`device` with `get*Link`; Fragment's frontend
   now sends only `id` / `show_sender` / `transaction` there (the wallet is taken from the session). Ads
   flows are unchanged.
+- `initBuyStarsRequest` & co. answering `need_ton` (no TON wallet bound to the session) now raise
+  `SessionExpiredError` pointing at `stel_ton_token`, instead of the misleading `NO_REQUEST_ID` message.
 
 ---
 
