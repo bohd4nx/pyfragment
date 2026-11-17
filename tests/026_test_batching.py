@@ -15,6 +15,7 @@ import pytest
 from pyfragment import (
     FragmentClient,
     LocalTransferCoordinator,
+    ProviderError,
     TransactionError,
     TransferIntent,
 )
@@ -23,7 +24,7 @@ from pyfragment.domains.wallet.transfers.queue import Entry, TransferQueue, drop
 from pyfragment.domains.wallet.transfers.request import TransferRequest
 from pyfragment.domains.wallet.wallet import TonWallet
 from pyfragment.enums import PaymentMethod
-from tests.fake_ton import FakeTon, use_fake_ton
+from tests.fake_ton import FakeTon, provider_error, use_fake_ton
 from tests.shared import VALID_API_KEY, VALID_COOKIES, VALID_SEED, fixture_json
 
 STARS_NANO = 460_900_000  # what the recorded Stars invoice asks for
@@ -412,6 +413,185 @@ async def test_a_finished_runner_is_not_kept_alive_by_its_queue() -> None:
         async with new_client() as client:
             await pay(client, 2)
             assert queue_for(client.ton_wallet.address)._runner is None
+
+
+@pytest.mark.asyncio
+async def test_a_hook_that_is_cancelled_cancels_only_its_own_payment() -> None:
+    async def cancelled_hook(_: TransferIntent) -> None:
+        raise asyncio.CancelledError
+
+    ton = FakeTon()
+    with use_fake_ton(ton):
+        async with new_client(max_batch=4) as fine, new_client(max_batch=4, on_transfer_prepared=cancelled_hook) as odd:
+            ok, cancelled = await asyncio.gather(
+                process_transaction(fine, stars_link()), process_transaction(odd, stars_link()), return_exceptions=True
+            )
+    assert isinstance(ok, TransferIntent)
+    assert isinstance(cancelled, asyncio.CancelledError)
+    assert len(ton.sent) == 1
+
+
+@pytest.mark.asyncio
+async def test_cancelling_the_runner_itself_settles_everyone_still_waiting() -> None:
+    ton = FakeTon(seqno=5, landing_delay=0.3)
+    with use_fake_ton(ton), patch("pyfragment.domains.wallet.wallet.SEQNO_POLL_INTERVAL", 0.01):
+        async with new_client(max_batch=1) as client:
+            client.ton_wallet.wallet()
+            first = asyncio.ensure_future(process_transaction(client, stars_link()))
+            await asyncio.sleep(0.05)
+            waiting = [asyncio.ensure_future(process_transaction(client, stars_link())) for _ in range(2)]
+            await asyncio.sleep(0.05)
+            runner = queue_for(client.ton_wallet.address)._runner
+            assert runner is not None
+            runner.cancel()
+            results = await asyncio.wait_for(asyncio.gather(first, *waiting, return_exceptions=True), timeout=2)
+    assert isinstance(results[0], TransferIntent)
+    assert all(isinstance(result, asyncio.CancelledError) for result in results[1:])
+
+
+@pytest.mark.asyncio
+async def test_slow_hooks_that_outlast_the_message_fail_it_as_retryable_without_sending() -> None:
+    clock = [time.time()]
+
+    async def slow_hook(_: TransferIntent) -> None:
+        clock[0] += 1000
+
+    fake_time = type("FakeTime", (), {"time": staticmethod(lambda: clock[0])})
+    ton = FakeTon()
+    with use_fake_ton(ton), patch("pyfragment.domains.wallet.transfers.queue.time", fake_time):
+        async with new_client(on_transfer_prepared=slow_hook) as client:
+            result = (await asyncio.gather(process_transaction(client, stars_link()), return_exceptions=True))[0]
+    assert isinstance(result, TransactionError) and result.retryable
+    assert ton.sent == []
+
+
+@pytest.mark.asyncio
+async def test_a_lock_that_fails_to_release_does_not_fail_a_group_that_was_never_tried() -> None:
+    class FailsToRelease:
+        async def __aenter__(self) -> None:
+            return None
+
+        async def __aexit__(self, *_: object) -> None:
+            raise ConnectionError("redis is down")
+
+    class Coordinator(LocalTransferCoordinator):
+        def lock(self, address: str) -> Any:
+            return FailsToRelease()
+
+    callers: list[asyncio.Future[Any]] = []
+    hooks_run = 0
+
+    async def cancel_the_first(_: TransferIntent) -> None:
+        nonlocal hooks_run
+        hooks_run += 1
+        if hooks_run == 1:
+            callers[0].cancel()
+            await asyncio.sleep(0)
+            await asyncio.sleep(0)
+
+    ton = FakeTon()
+    with use_fake_ton(ton):
+        async with new_client(max_batch=1, transfer_coordinator=Coordinator(), on_transfer_prepared=cancel_the_first) as client:
+            callers.append(asyncio.ensure_future(process_transaction(client, stars_link())))
+            callers.append(asyncio.ensure_future(process_transaction(client, stars_link())))
+            results = await asyncio.wait_for(asyncio.gather(*callers, return_exceptions=True), timeout=2)
+    assert isinstance(results[0], asyncio.CancelledError)
+    assert isinstance(results[1], TransferIntent)
+    assert len(ton.sent) == 1
+
+
+@pytest.mark.asyncio
+async def test_a_runner_cancelled_while_a_hook_runs_cancels_the_group_and_the_queue() -> None:
+    started = asyncio.Event()
+
+    async def slow_hook(_: TransferIntent) -> None:
+        started.set()
+        await asyncio.sleep(10)
+
+    ton = FakeTon()
+    with use_fake_ton(ton):
+        async with new_client(max_batch=1, on_transfer_prepared=slow_hook) as client:
+            callers = [asyncio.ensure_future(process_transaction(client, stars_link())) for _ in range(2)]
+            await asyncio.wait_for(started.wait(), timeout=2)
+            runner = queue_for(client.ton_wallet.address)._runner
+            assert runner is not None
+            runner.cancel()
+            results = await asyncio.wait_for(asyncio.gather(*callers, return_exceptions=True), timeout=2)
+    assert all(isinstance(result, asyncio.CancelledError) for result in results)
+    assert ton.sent == []
+
+
+@pytest.mark.asyncio
+async def test_a_payment_cancelled_before_the_runner_starts_is_never_signed() -> None:
+    ton = FakeTon()
+    with use_fake_ton(ton):
+        async with new_client() as client, recording() as messages:
+            caller = asyncio.ensure_future(process_transaction(client, stars_link()))
+            await asyncio.sleep(0)
+            caller.cancel()
+            await asyncio.gather(caller, return_exceptions=True)
+            await asyncio.sleep(0.05)
+    assert messages.sizes == []
+    assert ton.sent == []
+
+
+@pytest.mark.asyncio
+async def test_a_group_whose_every_hook_fails_sends_nothing() -> None:
+    async def refuse(_: TransferIntent) -> None:
+        raise RuntimeError("database is down")
+
+    ton = FakeTon()
+    with use_fake_ton(ton):
+        async with new_client(on_transfer_prepared=refuse) as client:
+            result = (await asyncio.gather(process_transaction(client, stars_link()), return_exceptions=True))[0]
+    assert isinstance(result, RuntimeError)
+    assert ton.sent == []
+
+
+@pytest.mark.asyncio
+async def test_a_payment_whose_invoice_ran_out_while_queued_fails_as_retryable() -> None:
+    later = type("Later", (), {"time": staticmethod(lambda: time.time() + 1000)})
+    ton = FakeTon()
+    with use_fake_ton(ton), patch("pyfragment.domains.wallet.transfers.queue.time", later):
+        async with new_client() as client:
+            result = (await asyncio.gather(process_transaction(client, stars_link()), return_exceptions=True))[0]
+    assert isinstance(result, TransactionError) and result.retryable
+    assert ton.sent == []
+
+
+@pytest.mark.asyncio
+async def test_a_sent_payment_is_still_delivered_when_the_lock_release_is_cancelled() -> None:
+    class CancelledOnRelease:
+        async def __aenter__(self) -> None:
+            return None
+
+        async def __aexit__(self, *_: object) -> None:
+            raise asyncio.CancelledError
+
+    class Coordinator(LocalTransferCoordinator):
+        def lock(self, address: str) -> Any:
+            return CancelledOnRelease()
+
+    ton = FakeTon()
+    with use_fake_ton(ton):
+        async with new_client(transfer_coordinator=Coordinator()) as client:
+            result = (await asyncio.gather(process_transaction(client, stars_link()), return_exceptions=True))[0]
+    assert isinstance(result, TransferIntent)
+    assert len(ton.sent) == 1
+
+
+@pytest.mark.asyncio
+async def test_a_provider_failure_while_signing_is_a_provider_error() -> None:
+    ton = FakeTon()
+    failure = provider_error(500)
+    with (
+        use_fake_ton(ton),
+        patch("tonutils.contracts.wallet.WalletV5R1.build_external_message", side_effect=failure),
+    ):
+        async with new_client() as client:
+            with pytest.raises(ProviderError):
+                await process_transaction(client, stars_link())
+    assert ton.sent == []
 
 
 # Settling single entries

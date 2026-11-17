@@ -31,7 +31,8 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
   during a burst. The group is now formed after that wait and takes everything that queued meanwhile; a lone payment
   still goes out at once, and the seqno is read once per message instead of twice.
 - A failing `on_transfer_prepared` hook fails only its own payment: the message is signed again without it and the hooks
-  of the others are called again with the new intent.
+  of the others are called again with the new intent. If the hooks take so long that the message is no longer valid,
+  its payments fail as retryable and nothing is sent.
 - Overlapping purchases from one wallet lost transfers: a node rejects a seqno that is ahead of the chain. A message
   now waits until the previous one has landed.
 
