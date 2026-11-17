@@ -32,7 +32,7 @@ from tonutils.contracts.wallet import (
 from tonutils.contracts.wallet.base import BaseWallet
 from tonutils.types import DEFAULT_HTTP_RETRY_POLICY, ContractInfo
 
-from pyfragment.constants.chain import MAINNET_CHAIN_ID, SEQNO_POLL_INTERVAL
+from pyfragment.constants.chain import LANDING_WARN_AFTER, MAINNET_CHAIN_ID, SEQNO_POLL_INTERVAL
 from pyfragment.domains.wallet.models import TransferIntent
 from pyfragment.domains.wallet.transfers.coordinator import TransferCoordinator
 from pyfragment.domains.wallet.transfers.queue import queue_for
@@ -170,8 +170,8 @@ class TonWallet:
 
     async def pending(self) -> tuple[int, float] | None:
         """The last sent message not known to have landed: the later of this process's and the shared coordinator's."""
-        local = await queue_for(self.address).coordinator.load_pending()
-        shared = await self.coordinator.load_pending()
+        local = await queue_for(self.address).coordinator.load_pending(self.address)
+        shared = await self.coordinator.load_pending(self.address)
         return max((entry for entry in (local, shared) if entry is not None), default=None)
 
     async def next_seqno(self) -> int | None:
@@ -183,6 +183,7 @@ class TonWallet:
         if self.version not in SEQNO_PARAMS:
             return None
         pending = await self.pending()
+        waiting_since, warned = time.time(), False
         while True:
             try:
                 seqno = await self.seqno()
@@ -190,6 +191,14 @@ class TonWallet:
                 raise ProviderError.from_exception(ProviderError.WALLET_STATE_FAILED, exc) from exc
             if pending is None or seqno > pending[0] or time.time() >= pending[1]:
                 return seqno
+            if not warned and time.time() - waiting_since >= LANDING_WARN_AFTER:
+                warned = True
+                logger.warning(
+                    "The previous transfer has not landed yet, is the wallet funded? (address=%s, seqno=%s, valid_until=%d)",
+                    self.address,
+                    pending[0],
+                    pending[1],
+                )
             await asyncio.sleep(SEQNO_POLL_INTERVAL)
 
     async def transfer(self, request: TransferRequest) -> TransferIntent:
@@ -209,10 +218,10 @@ class TonWallet:
         """
         if isinstance(params, SeqnoParams) and params.seqno is not None:
             local = queue_for(self.address).coordinator
-            await local.save_pending(params.seqno, float(valid_until))
+            await local.save_pending(self.address, params.seqno, float(valid_until))
             if self.coordinator is not local:
                 try:
-                    await self.coordinator.save_pending(params.seqno, float(valid_until))
+                    await self.coordinator.save_pending(self.address, params.seqno, float(valid_until))
                 except Exception as exc:
                     logger.warning("Failed to save the pending seqno after sending: %s", exc)
 

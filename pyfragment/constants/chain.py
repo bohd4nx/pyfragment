@@ -21,6 +21,9 @@ MESSAGE_TTL: int = 60
 # How often a transfer looks for the previous one to land before taking the next seqno (about a quarter of a block)
 SEQNO_POLL_INTERVAL: float = 1.0
 
+# How long the previous transfer may stay unlanded before a transfer waiting for it says so in the log
+LANDING_WARN_AFTER: float = 15.0
+
 # TON Connect device info sent during wallet connection handshake.
 # Based on wallets-v2.json from config.ton.org/wallets-v2.json — updated 2026-10.
 DEVICE_INFO: dict[str, Any] = {

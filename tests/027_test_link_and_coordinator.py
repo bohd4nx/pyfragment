@@ -121,9 +121,16 @@ async def test_slow_confirmations_of_concurrent_purchases_overlap(client: Fragme
 @pytest.mark.asyncio
 async def test_local_coordinator_remembers_the_pending_seqno() -> None:
     coordinator = LocalTransferCoordinator()
-    assert await coordinator.load_pending() is None
-    await coordinator.save_pending(7, 123.0)
-    assert await coordinator.load_pending() == (7, 123.0)
+    assert await coordinator.load_pending("wallet-a") is None
+    await coordinator.save_pending("wallet-a", 7, 123.0)
+    assert await coordinator.load_pending("wallet-a") == (7, 123.0)
+    assert await coordinator.load_pending("wallet-b") is None
+
+
+def test_local_coordinator_locks_each_wallet_on_its_own() -> None:
+    coordinator = LocalTransferCoordinator()
+    assert coordinator.lock("wallet-a") is coordinator.lock("wallet-a")
+    assert coordinator.lock("wallet-a") is not coordinator.lock("wallet-b")
 
 
 @pytest.mark.asyncio
@@ -148,7 +155,7 @@ async def test_expired_pending_seqno_falls_back_to_the_chain() -> None:
     ton = FakeTon(seqno=9)
     with use_fake_ton(ton):
         async with FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES) as client:
-            await client.ton_wallet.coordinator.save_pending(3, time.time() - 1)
+            await client.ton_wallet.coordinator.save_pending(client.ton_wallet.address, 3, time.time() - 1)
             seqno = await client.ton_wallet.next_seqno()
     assert seqno == 9
 
@@ -163,7 +170,7 @@ async def test_a_transfer_waits_for_the_pending_one_to_land_before_taking_the_ne
     sleep = AsyncMock(side_effect=block_arrives)
     with use_fake_ton(ton), patch("pyfragment.domains.wallet.wallet.asyncio.sleep", sleep):
         async with FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES) as client:
-            await client.ton_wallet.coordinator.save_pending(7, time.time() + 60)
+            await client.ton_wallet.coordinator.save_pending(client.ton_wallet.address, 7, time.time() + 60)
             seqno = await client.ton_wallet.next_seqno()
     assert seqno == 8
     assert sleep.await_count == 1
@@ -184,7 +191,7 @@ async def test_a_pending_transfer_that_expired_unlanded_no_longer_blocks_the_nex
         patch("pyfragment.domains.wallet.wallet.time", fake_time),
     ):
         async with FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES) as client:
-            await client.ton_wallet.coordinator.save_pending(7, clock[0] + 60)
+            await client.ton_wallet.coordinator.save_pending(client.ton_wallet.address, 7, clock[0] + 60)
             seqno = await client.ton_wallet.next_seqno()
     assert seqno == 7
 
@@ -196,15 +203,15 @@ async def test_a_custom_coordinator_is_used_instead_of_the_default() -> None:
             self.local = LocalTransferCoordinator()
             self.locked = 0
 
-        def lock(self) -> Any:
+        def lock(self, address: str) -> Any:
             self.locked += 1
-            return self.local.lock()
+            return self.local.lock(address)
 
-        async def load_pending(self) -> tuple[int, float] | None:
-            return await self.local.load_pending()
+        async def load_pending(self, address: str) -> tuple[int, float] | None:
+            return await self.local.load_pending(address)
 
-        async def save_pending(self, seqno: int, valid_until: float) -> None:
-            await self.local.save_pending(seqno, valid_until)
+        async def save_pending(self, address: str, seqno: int, valid_until: float) -> None:
+            await self.local.save_pending(address, seqno, valid_until)
 
     spy = Spy()
     ton = FakeTon()
@@ -214,7 +221,7 @@ async def test_a_custom_coordinator_is_used_instead_of_the_default() -> None:
         ) as client:
             await process_transaction(client, stars_link())
     assert spy.locked == 1
-    assert await spy.load_pending() is not None
+    assert await spy.load_pending(client.ton_wallet.address) is not None
 
 
 # The provider client retries rate limits and transient errors itself

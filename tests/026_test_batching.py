@@ -3,6 +3,7 @@
 import asyncio
 import contextvars
 import itertools
+import logging
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -191,19 +192,93 @@ async def test_a_group_expires_with_its_earliest_invoice() -> None:
 
 
 @pytest.mark.asyncio
-async def test_a_failing_hook_stops_the_whole_group() -> None:
+async def test_a_failing_hook_fails_only_its_own_payment() -> None:
     ton = FakeTon()
+    first_seen: list[TransferIntent] = []
+
+    async def record(intent: TransferIntent) -> None:
+        first_seen.append(intent)
 
     async def refuse(_: TransferIntent) -> None:
         raise RuntimeError("database is down")
 
     with use_fake_ton(ton):
-        async with new_client(max_batch=4) as fine, new_client(max_batch=4, on_transfer_prepared=refuse) as failing:
-            results = await asyncio.gather(
+        async with (
+            new_client(max_batch=4, on_transfer_prepared=record) as fine,
+            new_client(max_batch=4, on_transfer_prepared=refuse) as failing,
+        ):
+            ok, bad = await asyncio.gather(
                 process_transaction(fine, stars_link()), process_transaction(failing, stars_link()), return_exceptions=True
             )
-    assert all(isinstance(result, RuntimeError) for result in results)
+    assert isinstance(ok, TransferIntent) and isinstance(bad, RuntimeError)
+    assert len(ton.sent) == 1
+    # The message was signed again without the failed payment, and the hook of the other one saw its new intent.
+    assert len(first_seen) == 2 and first_seen[0].msg_hash != first_seen[1].msg_hash
+    assert ok.msg_hash == first_seen[-1].msg_hash
+
+
+@pytest.mark.asyncio
+async def test_nothing_is_sent_when_every_caller_is_cancelled_while_the_hooks_run() -> None:
+    ton = FakeTon()
+    callers: list[asyncio.Future[Any]] = []
+
+    async def cancel_the_callers(_: TransferIntent) -> None:
+        for caller in callers:
+            caller.cancel()
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
+
+    with use_fake_ton(ton):
+        async with new_client(on_transfer_prepared=cancel_the_callers) as client:
+            callers.append(asyncio.ensure_future(process_transaction(client, stars_link())))
+            results = await asyncio.gather(*callers, return_exceptions=True)
+    assert isinstance(results[0], asyncio.CancelledError)
     assert ton.sent == []
+
+
+@pytest.mark.asyncio
+async def test_a_payment_sent_after_its_caller_was_cancelled_is_logged(caplog: pytest.LogCaptureFixture) -> None:
+    ton = FakeTon()
+    doomed: list[asyncio.Future[Any]] = []
+
+    async def cancel_one(_: TransferIntent) -> None:
+        doomed[0].cancel()
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
+
+    with use_fake_ton(ton), caplog.at_level(logging.WARNING, logger="pyfragment"):
+        async with new_client(max_batch=4, on_transfer_prepared=cancel_one) as client:
+            doomed.append(asyncio.ensure_future(process_transaction(client, stars_link())))
+            survivor = asyncio.ensure_future(process_transaction(client, stars_link()))
+            await asyncio.gather(*doomed, survivor, return_exceptions=True)
+    assert len(ton.sent) == 1
+    assert "Payment sent after its caller was cancelled (msg_hash=" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_a_coordinator_serves_several_wallets_with_their_own_pending_seqnos() -> None:
+    coordinator = LocalTransferCoordinator()
+    ton = FakeTon(seqno=5, landing_delay=0.1)
+    with use_fake_ton(ton), patch("pyfragment.domains.wallet.wallet.SEQNO_POLL_INTERVAL", 0.01):
+        async with new_client(transfer_coordinator=coordinator) as client:
+            await pay(client, 1)
+            pending = await coordinator.load_pending(client.ton_wallet.address)
+    assert pending is not None and pending[0] == 5
+    assert await coordinator.load_pending("another-wallet") is None
+
+
+@pytest.mark.asyncio
+async def test_a_transfer_that_waits_long_for_the_previous_one_says_so(caplog: pytest.LogCaptureFixture) -> None:
+    ton = FakeTon(seqno=5, landing_delay=0.15)
+    with (
+        use_fake_ton(ton),
+        patch("pyfragment.domains.wallet.wallet.SEQNO_POLL_INTERVAL", 0.01),
+        patch("pyfragment.domains.wallet.wallet.LANDING_WARN_AFTER", 0.05),
+        caplog.at_level(logging.WARNING, logger="pyfragment"),
+    ):
+        async with new_client() as client:
+            await pay(client, 2)
+    assert caplog.text.count("The previous transfer has not landed yet") == 1
 
 
 @pytest.mark.asyncio
@@ -256,7 +331,7 @@ async def test_a_payment_cancelled_while_waiting_for_the_previous_block_is_never
 @pytest.mark.asyncio
 async def test_a_pending_seqno_that_cannot_be_saved_does_not_fail_a_sent_payment() -> None:
     class BrokenCoordinator(LocalTransferCoordinator):
-        async def save_pending(self, seqno: int, valid_until: float) -> None:
+        async def save_pending(self, address: str, seqno: int, valid_until: float) -> None:
             raise ConnectionError("redis is down")
 
     ton = FakeTon()
@@ -301,7 +376,7 @@ async def test_a_cancelled_runner_settles_every_waiting_caller() -> None:
 @pytest.mark.asyncio
 async def test_the_next_message_waits_even_when_the_shared_coordinator_cannot_save() -> None:
     class BrokenCoordinator(LocalTransferCoordinator):
-        async def save_pending(self, seqno: int, valid_until: float) -> None:
+        async def save_pending(self, address: str, seqno: int, valid_until: float) -> None:
             raise ConnectionError("redis is down")
 
     ton = FakeTon(seqno=5, landing_delay=0.1)

@@ -29,10 +29,11 @@ class FragmentClient(PurchaseMethods, MarketplaceMethods, NumberMethods, Account
             right away (``confirmed=False``). Defaults to ``60``.
         on_transfer_prepared: Async callback receiving each :class:`TransferIntent` after it is signed and
             before it is sent. Save it to verify the transfer on-chain by ``msg_hash`` if the process dies
-            before returning the purchase result; if it raises, nothing is sent.
+            before returning the purchase result. If it raises, that payment is not sent; the other payments of its
+            group go out signed again, so a hook may be called again for the same ``req_id`` with a new ``msg_hash``.
         transfer_coordinator: Serializes signing and sending of the wallet's transfers and shares its pending
-            seqno. Defaults to one that covers this process; pass a shared one (e.g. Redis-backed) when
-            several processes buy from the same wallet.
+            seqno, per wallet address. Defaults to one that covers this process; pass a shared one (e.g.
+            Redis-backed) when several processes buy from the same wallet.
         max_batch: Most payments sent to Fragment in one message of the wallet. Purchases that queue up while the
             previous message waits for its block go out together, one seqno and one provider call for all of them.
             Defaults to ``1``; the wallet caps it (W5 and Telegram Wallet 255, V4R2 4, highload 254 / 64516).

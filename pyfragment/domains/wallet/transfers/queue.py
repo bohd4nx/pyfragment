@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(eq=False)
 class Entry:
     request: TransferRequest
     wallet: TonWallet
@@ -65,12 +65,12 @@ class TransferQueue:
                 group: list[Entry] = []
                 intents: list[TransferIntent] = []
                 try:
-                    async with wallet.coordinator.lock():
+                    async with wallet.coordinator.lock(wallet.address):
                         # The group is formed only after the previous message has landed, so whatever queued while
                         # waiting for its block goes out together instead of one block per group.
                         seqno = await wallet.next_seqno()
                         group = self._take(wallet.batch_limit)
-                        intents = await self._send(wallet, group, seqno) if group else []
+                        group, intents = await self._send(wallet, group, seqno) if group else ([], [])
                 except BaseException as exc:
                     if intents:
                         logger.warning("Failed to release the transfer lock after sending: %s", exc)
@@ -93,18 +93,47 @@ class TransferQueue:
         del self._waiting[:limit]
         return drop_expired(taken)
 
-    async def _send(self, wallet: TonWallet, group: list[Entry], seqno: int | None) -> list[TransferIntent]:
-        valid_until = signing_expiry((entry.request.deadline for entry in group), time.time())
-        params = await wallet.transfer_params(valid_until, seqno)
-        external = await wallet.sign([entry.request.builder for entry in group], params)
-        intents = [entry.request.intent(external, valid_until) for entry in group]
-        logger.debug("Signed transfers (count=%d, msg_hash=%s, valid_until=%d)", len(intents), intents[0].msg_hash, valid_until)
-        for entry, intent in zip(group, intents, strict=True):
-            if entry.request.on_prepared is not None:
-                await asyncio.create_task(call_hook(entry.request.on_prepared, intent), context=entry.context)
+    async def _send(self, wallet: TonWallet, group: list[Entry], seqno: int | None) -> tuple[list[Entry], list[TransferIntent]]:
+        """Sign, announce and send ``group``; returns the entries that went out with their intents.
+
+        A payment whose hook raises fails alone: the message is signed again without it, and the hooks of the others
+        are called again with the new intent (same ``req_id``, new ``msg_hash``).
+        """
+        while group:
+            valid_until = signing_expiry((entry.request.deadline for entry in group), time.time())
+            params = await wallet.transfer_params(valid_until, seqno)
+            external = await wallet.sign([entry.request.builder for entry in group], params)
+            intents = [entry.request.intent(external, valid_until) for entry in group]
+            logger.debug(
+                "Signed transfers (count=%d, msg_hash=%s, valid_until=%d)", len(intents), intents[0].msg_hash, valid_until
+            )
+            rejected = await announce(group, intents)
+            if not rejected:
+                break
+            group = [entry for entry in group if entry not in rejected]
+        else:
+            return [], []
+        if all(entry.done.cancelled() for entry in group):
+            return [], []  # nobody is left to learn the outcome, and nothing has gone out yet
         await broadcast(await wallet.ton(), external.as_hex)
         await wallet.commit_seqno(params, valid_until)
-        return intents
+        return group, intents
+
+
+async def announce(group: list[Entry], intents: list[TransferIntent]) -> list[Entry]:
+    """Run every entry's ``on_transfer_prepared`` hook; the entries whose hook raised fail with its error."""
+    rejected = []
+    for entry, intent in zip(group, intents, strict=True):
+        hook = entry.request.on_prepared
+        if hook is None:
+            continue
+        try:
+            await asyncio.create_task(call_hook(hook, intent), context=entry.context)
+        except Exception as exc:
+            if not entry.done.done():
+                entry.done.set_exception(exc)
+            rejected.append(entry)
+    return rejected
 
 
 async def call_hook(hook: Callable[[TransferIntent], Awaitable[None]], intent: TransferIntent) -> None:
@@ -116,7 +145,11 @@ def resolve(group: list[Entry], intents: list[TransferIntent]) -> None:
     if not intents:
         return
     for entry, intent in zip(group, intents, strict=True):
-        if not entry.done.done():
+        if entry.done.cancelled():
+            logger.warning(
+                "Payment sent after its caller was cancelled (msg_hash=%s, comment=%s)", intent.msg_hash, intent.comment
+            )
+        elif not entry.done.done():
             entry.done.set_result(intent)
 
 

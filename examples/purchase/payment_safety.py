@@ -3,7 +3,7 @@ Example: never lose track of a payment.
 
 on_transfer_prepared receives every signed transfer BEFORE it is sent. Save it: if the process dies before
 purchase_stars() returns, msg_hash and comment tell you on-chain whether the payment went out. If the callback raises,
-nothing is sent. confirm_timeout is how long to wait for Fragment's own confirmation. confirmed=False usually means
+that payment is not sent. confirm_timeout is how long to wait for Fragment's own confirmation. confirmed=False usually means
 Fragment is just slow, but an underfunded wallet looks the same (its transfer fails on-chain), so neither retry nor
 assume it was paid: look the transfer up by transaction_id first. retryable=True on an error means nothing was paid.
 """

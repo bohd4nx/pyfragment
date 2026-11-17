@@ -24,23 +24,23 @@ COOKIES = {
     "stel_ton_token": "YOUR_STEL_TON_TOKEN",
 }
 
-# One coordinator per wallet: its keys carry no wallet address, so use other keys for another wallet.
 redis = Redis.from_url("redis://localhost:6379/0")
 
 
 class RedisCoordinator:
-    def lock(self) -> AbstractAsyncContextManager[object]:
-        return cast(AbstractAsyncContextManager[object], redis.lock("wallet-lock", timeout=120, blocking_timeout=300))
+    # Every call names the wallet, so one coordinator serves any number of wallets.
+    def lock(self, address: str) -> AbstractAsyncContextManager[object]:
+        return cast(AbstractAsyncContextManager[object], redis.lock(f"lock:{address}", timeout=120, blocking_timeout=300))
 
-    async def load_pending(self) -> tuple[int, float] | None:
-        raw = await redis.get("wallet-pending")
+    async def load_pending(self, address: str) -> tuple[int, float] | None:
+        raw = await redis.get(f"pending:{address}")
         if raw is None:
             return None
         seqno, valid_until = raw.decode().split(":")
         return int(seqno), float(valid_until)
 
-    async def save_pending(self, seqno: int, valid_until: float) -> None:
-        await redis.set("wallet-pending", f"{seqno}:{valid_until}", ex=120)
+    async def save_pending(self, address: str, seqno: int, valid_until: float) -> None:
+        await redis.set(f"pending:{address}", f"{seqno}:{valid_until}", ex=120)
 
 
 async def main() -> None:
