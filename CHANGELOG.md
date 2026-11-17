@@ -24,6 +24,9 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
   them (the wallet comes from the session).
 - A session without a bound TON wallet (`need_ton`) now raises `SessionExpiredError` naming `stel_ton_token` instead
   of a vague missing-request-id error.
+- Batching formed a group before waiting for the previous message's block, so every group cost a block of its own
+  during a burst. The group is now formed after that wait and takes everything that queued meanwhile; a lone payment
+  still goes out at once, and the seqno is read once per message instead of twice.
 - Overlapping purchases from one wallet lost transfers: a node rejects a seqno that is ahead of the chain. A message
   now waits until the previous one has landed.
 

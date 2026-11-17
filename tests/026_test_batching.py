@@ -57,8 +57,8 @@ async def recording() -> AsyncIterator[Messages]:
         messages.sizes.append(len(builders))
         return await sign(self, builders, params)
 
-    async def recording_params(self: TonWallet, valid_until: int) -> Any:
-        params = await transfer_params(self, valid_until)
+    async def recording_params(self: TonWallet, valid_until: int, seqno: int | None) -> Any:
+        params = await transfer_params(self, valid_until, seqno)
         messages.seqnos.append(getattr(params, "seqno", None))
         return params
 
@@ -146,6 +146,24 @@ async def test_a_group_is_capped_by_what_the_wallet_can_carry() -> None:
         async with new_client(wallet_version="V4R2", max_batch=100) as client, recording() as messages:
             await pay(client, 9)
     assert messages.sizes == [4, 4, 1]
+
+
+@pytest.mark.asyncio
+async def test_the_group_is_formed_after_the_previous_message_has_landed() -> None:
+    ton = FakeTon(seqno=5, landing_delay=0.15)
+    with (
+        use_fake_ton(ton),
+        patch("pyfragment.domains.wallet.wallet.SEQNO_POLL_INTERVAL", 0.01),
+    ):
+        async with new_client(max_batch=10) as client, recording() as messages:
+            client.ton_wallet.wallet()  # deriving the key is slow and would skew the arrival times below
+            tasks = []
+            for _ in range(4):
+                tasks.append(asyncio.ensure_future(process_transaction(client, stars_link())))
+                await asyncio.sleep(0.04)
+            await asyncio.gather(*tasks)
+    # Everything that queued while the first message waited for its block goes out together.
+    assert messages.sizes == [1, 3]
 
 
 @pytest.mark.asyncio

@@ -152,21 +152,23 @@ class TonWallet:
         assert isinstance(wallet, (WalletV4R2, WalletV5R1, WalletTg))  # only these order transfers by seqno
         return int(await wallet.seqno())
 
-    async def transfer_params(self, valid_until: int) -> TransferParams:
+    async def transfer_params(self, valid_until: int, seqno: int | None) -> TransferParams:
         now = int(time.time())
         if self.version == WalletVersion.HighloadV2:
             return WalletHighloadV2Params(message_ttl=max(1, valid_until - now))
         if self.version == WalletVersion.HighloadV3R1:
             # A highload v3 message is accepted while created_at > now - timeout (and created_at <= now).
             return WalletHighloadV3Params(created_at=min(now, valid_until - self.wallet().config.timeout))
-        return SEQNO_PARAMS[self.version](seqno=await self.next_seqno(), valid_until=valid_until)
+        return SEQNO_PARAMS[self.version](seqno=seqno, valid_until=valid_until)
 
-    async def next_seqno(self) -> int:
-        """The chain's seqno once the previous message has landed or expired.
+    async def next_seqno(self) -> int | None:
+        """The chain's seqno once the previous message has landed or expired; ``None`` for a highload wallet.
 
         A node rejects a message whose seqno is ahead of the chain, so the seqno can't be counted on from a pending
         message: its landing is waited for.
         """
+        if self.version not in SEQNO_PARAMS:
+            return None
         pending = await self.coordinator.load_pending()
         while True:
             try:

@@ -4,6 +4,7 @@ It models what matters for money: a sent message lands at most once, and only a 
 A send can fail without landing, or fail after landing (toncenter answers 500 to sendBoc calls that went through).
 """
 
+import asyncio
 from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any
@@ -27,7 +28,9 @@ class FakeTon:
         state: ContractState = ContractState.ACTIVE,
         seqno: int = 5,
         data_raw: str | None = None,
+        landing_delay: float = 0.0,
     ) -> None:
+        self.landing_delay = landing_delay  # seconds until a sent message is in a block; 0 lands it at once
         self.balance = balance
         self.state = state
         self.seqno = seqno
@@ -69,7 +72,10 @@ class FakeTon:
             if landed:
                 self._land(message)
             raise error
-        self._land(message)
+        if self.landing_delay:
+            asyncio.get_running_loop().call_later(self.landing_delay, self._land, message)
+        else:
+            self._land(message)
 
     def _land(self, message: bytes) -> None:
         if message not in self.landed:

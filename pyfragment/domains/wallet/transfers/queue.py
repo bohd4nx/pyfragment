@@ -53,37 +53,41 @@ class TransferQueue:
 
     async def _run(self) -> None:
         while self._waiting:
-            limit = self._waiting[0].wallet.batch_limit
-            group = [entry for entry in self._waiting[:limit] if not entry.done.cancelled()]
-            del self._waiting[:limit]
-            if not group:
-                continue
+            wallet = self._waiting[0].wallet
+            group: list[Entry] = []
             try:
-                await self._send(group)
+                async with wallet.coordinator.lock():
+                    # The group is formed only after the previous message has landed, so whatever queued while
+                    # waiting for its block goes out together instead of one block per group.
+                    seqno = await wallet.next_seqno()
+                    group = self._take(wallet.batch_limit)
+                    intents = await self._send(wallet, group, seqno) if group else []
+                for entry, intent in zip(group, intents, strict=True):
+                    if not entry.done.done():
+                        entry.done.set_result(intent)
             except Exception as exc:
-                for entry in group:
+                for entry in group or self._take(wallet.batch_limit):
                     if not entry.done.done():
                         entry.done.set_exception(exc)
 
-    async def _send(self, group: list[Entry]) -> None:
-        wallet = group[0].wallet
-        async with wallet.coordinator.lock():
-            group = drop_expired(group)
-            if not group:
-                return
-            valid_until = signing_expiry((entry.request.deadline for entry in group), time.time())
-            params = await wallet.transfer_params(valid_until)
-            external = await wallet.sign([entry.request.builder for entry in group], params)
-            intents = [entry.request.intent(external, valid_until) for entry in group]
-            logger.debug("Signed %d transfer(s) as %s (valid_until=%d)", len(intents), intents[0].msg_hash, valid_until)
-            for entry, intent in zip(group, intents, strict=True):
-                if entry.request.on_prepared is not None:
-                    await entry.request.on_prepared(intent)
-            await broadcast(await wallet.ton(), external.as_hex)
-            await wallet.commit_seqno(params, valid_until)
+    def _take(self, limit: int) -> list[Entry]:
+        """The next entries still worth sending: not cancelled, and with their invoice still open."""
+        taken = [entry for entry in self._waiting[:limit] if not entry.done.cancelled()]
+        del self._waiting[:limit]
+        return drop_expired(taken)
+
+    async def _send(self, wallet: TonWallet, group: list[Entry], seqno: int | None) -> list[TransferIntent]:
+        valid_until = signing_expiry((entry.request.deadline for entry in group), time.time())
+        params = await wallet.transfer_params(valid_until, seqno)
+        external = await wallet.sign([entry.request.builder for entry in group], params)
+        intents = [entry.request.intent(external, valid_until) for entry in group]
+        logger.debug("Signed %d transfer(s) as %s (valid_until=%d)", len(intents), intents[0].msg_hash, valid_until)
         for entry, intent in zip(group, intents, strict=True):
-            if not entry.done.done():
-                entry.done.set_result(intent)
+            if entry.request.on_prepared is not None:
+                await entry.request.on_prepared(intent)
+        await broadcast(await wallet.ton(), external.as_hex)
+        await wallet.commit_seqno(params, valid_until)
+        return intents
 
 
 def drop_expired(group: list[Entry]) -> list[Entry]:

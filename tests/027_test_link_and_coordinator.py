@@ -149,8 +149,8 @@ async def test_expired_pending_seqno_falls_back_to_the_chain() -> None:
     with use_fake_ton(ton):
         async with FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES) as client:
             await client.ton_wallet.coordinator.save_pending(3, time.time() - 1)
-            params = await client.ton_wallet.transfer_params(int(time.time()) + 60)
-    assert params.seqno == 9
+            seqno = await client.ton_wallet.next_seqno()
+    assert seqno == 9
 
 
 @pytest.mark.asyncio
@@ -164,8 +164,8 @@ async def test_a_transfer_waits_for_the_pending_one_to_land_before_taking_the_ne
     with use_fake_ton(ton), patch("pyfragment.domains.wallet.wallet.asyncio.sleep", sleep):
         async with FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES) as client:
             await client.ton_wallet.coordinator.save_pending(7, time.time() + 60)
-            params = await client.ton_wallet.transfer_params(int(time.time()) + 60)
-    assert params.seqno == 8
+            seqno = await client.ton_wallet.next_seqno()
+    assert seqno == 8
     assert sleep.await_count == 1
 
 
@@ -185,8 +185,8 @@ async def test_a_pending_transfer_that_expired_unlanded_no_longer_blocks_the_nex
     ):
         async with FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES) as client:
             await client.ton_wallet.coordinator.save_pending(7, clock[0] + 60)
-            params = await client.ton_wallet.transfer_params(int(clock[0]) + 120)
-    assert params.seqno == 7
+            seqno = await client.ton_wallet.next_seqno()
+    assert seqno == 7
 
 
 @pytest.mark.asyncio
