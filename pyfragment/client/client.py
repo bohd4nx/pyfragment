@@ -37,6 +37,9 @@ class FragmentClient(PurchaseMethods, MarketplaceMethods, NumberMethods, Account
             previous message waits for its block go out together, one seqno and one provider call for all of them.
             Defaults to ``1``; the wallet caps it (W5 and Telegram Wallet 255, V4R2 4, highload 254 / 64516).
 
+    Clients of one wallet in a process share its payment queue, and a group follows the settings of its first payment:
+    give them the same ``max_batch`` and ``transfer_coordinator``.
+
     The client keeps one HTTP session and one blockchain API connection and reuses them across calls.
     Use ``async with`` (or call :meth:`aclose`) to release them when you are done.
 

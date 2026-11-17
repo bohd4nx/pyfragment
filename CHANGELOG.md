@@ -47,7 +47,8 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - The grouped attributes `client.purchases`, `.giveaways`, `.ads`, `.anonymous_numbers`, `.marketplace`, `.wallet` and
   `.assets`: call the methods on the client itself.
 - The balance pre-check: `InsufficientBalanceError` and the `gas_reserve` parameter. An underfunded transfer fails
-  on-chain and Fragment never confirms it (`confirmed=False`); use `get_wallet()` to look at the balance beforehand.
+  on-chain and Fragment never confirms it (`confirmed=False`), which looks like a slow confirmation; use `get_wallet()` to look
+  at the balance beforehand, and look the transfer up by `transaction_id` before retrying.
 
 ---
 
