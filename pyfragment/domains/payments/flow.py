@@ -1,21 +1,18 @@
 from __future__ import annotations
 
-import json
 import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from pyfragment.constants import DEVICE_INFO
-from pyfragment.domains.payments.confirmation import confirm_purchase, is_confirmed
+from pyfragment.domains.payments.confirmation import confirm_purchase
+from pyfragment.domains.payments.invoice import create_invoice, request_transaction
 from pyfragment.domains.payments.models import PaymentResult
 from pyfragment.domains.payments.state import state_nonce
-from pyfragment.domains.wallet.transfer import process_transaction
-from pyfragment.enums import ApiError, ApiMethod, PaymentMethod, StateMode
-from pyfragment.exceptions import AlreadySubscribedError, FragmentAPIError, SessionExpiredError, VerificationError
-from pyfragment.schemas import InvoiceRequest, TransactionLink, error_text, has_error
+from pyfragment.domains.wallet.transfers import process_transaction
+from pyfragment.enums import ApiMethod, PaymentMethod, StateMode
 
 if TYPE_CHECKING:
-    from pyfragment.client import FragmentClient
+    from pyfragment.client.base import BaseClient
 
 logger = logging.getLogger(__name__)
 
@@ -42,13 +39,13 @@ class PurchaseFlow:
             return {"mode": mode, **extra}
         return {"mode": mode, "lv": "false", "dh": dh or state_nonce(), **extra}
 
-    async def open(self, client: FragmentClient, **extra: Any) -> None:
+    async def open(self, client: BaseClient, **extra: Any) -> None:
         """The ``update*State`` call Fragment's frontend makes when the purchase page opens."""
         await client.call(self.state_method, self.state_params(**extra), page_url=self.page_url)
 
 
 async def run_purchase(
-    client: FragmentClient,
+    client: BaseClient,
     flow: PurchaseFlow,
     init_data: dict[str, Any],
     link_data: dict[str, Any] | None = None,
@@ -60,44 +57,12 @@ async def run_purchase(
     Fragment cannot cancel a GRAM/USDT invoice (``cancelInvoice`` answers "Bad request" for it), so an invoice
     abandoned by a failure simply expires on its own.
     """
-    result = await client.call(flow.init_method, init_data, page_url=flow.page_url)
-    if has_error(result, ApiError.ALREADY_SUBSCRIBED):
-        raise AlreadySubscribedError(AlreadySubscribedError.PREMIUM_ACTIVE)
-    if result.get("need_ton"):
-        raise SessionExpiredError(SessionExpiredError.NEED_TON.format(context=flow.label))
-    invoice = InvoiceRequest.from_response(result)
-    if not invoice.req_id:
-        if error := error_text(result):
-            raise FragmentAPIError(error)
-        raise SessionExpiredError(SessionExpiredError.NO_REQUEST_ID.format(context=flow.label))
-    logger.debug("Invoice %s obtained for %s (%s)", invoice.req_id, flow.label, payment_method)
-
-    account = client.ton_wallet.account_info()
-    wallet_params = {"account": json.dumps(account), "device": json.dumps(DEVICE_INFO)} if flow.wallet_in_link else {}
-    transaction = await client.call(
-        flow.link_method,
-        {**wallet_params, "transaction": 1, "id": invoice.req_id, **(link_data or {})},
-        page_url=flow.page_url,
-    )
-    link = TransactionLink.from_response(transaction)
-    if link.need_verify:
-        logger.debug(
-            "Fragment returned need_verify for %s (error=%r, confirm_method=%r)",
-            flow.label,
-            transaction.get("error"),
-            link.confirm_method,
-        )
-        raise VerificationError(VerificationError.KYC_REQUIRED)
-
-    sent = await process_transaction(
-        client,
-        transaction,
-        payment_method=payment_method,
-        required_payment_amount=invoice.amount,
-        req_id=invoice.req_id,
-    )
+    req_id = await create_invoice(client, flow, init_data)
+    logger.debug("Invoice %s obtained for %s (%s)", req_id, flow.label, payment_method)
+    transaction = await request_transaction(client, flow, req_id, link_data)
+    sent = await process_transaction(client, transaction, payment_method=payment_method, req_id=req_id)
     # The money is out: from here on nothing raises (confirmation failures only leave confirmed=False).
-    state_response = await confirm_purchase(client, flow, account, sent.boc, transaction)
-    confirmed = is_confirmed(state_response)
-    logger.debug("Invoice %s: purchase %s (confirmed=%s)", invoice.req_id, flow.label, confirmed)
+    account = client.ton_wallet.account_info()
+    confirmed = await confirm_purchase(client, flow, account, sent.boc, transaction)
+    logger.debug("Invoice %s: purchase %s (confirmed=%s)", req_id, flow.label, confirmed)
     return PaymentResult(transaction_id=sent.msg_hash, confirmed=confirmed, comment=sent.comment, boc=sent.boc)
