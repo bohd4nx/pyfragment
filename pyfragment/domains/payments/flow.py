@@ -58,11 +58,11 @@ async def run_purchase(
     abandoned by a failure simply expires on its own.
     """
     req_id = await create_invoice(client, flow, init_data)
-    logger.debug("Invoice %s obtained for %s (%s)", req_id, flow.label, payment_method)
+    logger.debug("Obtained invoice (req_id=%s, flow=%s, payment_method=%s)", req_id, flow.label, payment_method)
     transaction = await request_transaction(client, flow, req_id, link_data)
     sent = await process_transaction(client, transaction, payment_method=payment_method, req_id=req_id)
     # The money is out: from here on nothing raises (confirmation failures only leave confirmed=False).
     account = client.ton_wallet.account_info()
     confirmed = await confirm_purchase(client, flow, account, sent.boc, transaction)
-    logger.debug("Invoice %s: purchase %s (confirmed=%s)", req_id, flow.label, confirmed)
+    logger.debug("Completed purchase (req_id=%s, flow=%s, confirmed=%s)", req_id, flow.label, confirmed)
     return PaymentResult(transaction_id=sent.msg_hash, confirmed=confirmed, comment=sent.comment, boc=sent.boc)

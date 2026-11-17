@@ -42,7 +42,7 @@ async def giveaway_premium(
 
     with operation(
         logger,
-        "run Premium giveaway for channel '%s' (winners=%s, months=%s, payment_method='%s')",
+        "run Premium giveaway (channel=%s, winners=%s, months=%s, payment_method=%s)",
         channel,
         winners,
         months,

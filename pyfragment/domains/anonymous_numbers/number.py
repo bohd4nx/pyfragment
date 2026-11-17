@@ -29,7 +29,7 @@ def raise_unless_ok(result: dict[str, Any], template: str, number: str) -> None:
 
 
 async def get_login_code(client: BaseClient, number: str) -> LoginCodeResult:
-    with operation(logger, "get login code for number '%s'", number):
+    with operation(logger, "get login code (number=%s)", number):
         result = await client.call(
             ApiMethod.UPDATE_LOGIN_CODES,
             {"number": strip_plus(number), "lt": "0", "from_app": "1"},
@@ -41,7 +41,7 @@ async def get_login_code(client: BaseClient, number: str) -> LoginCodeResult:
 
 
 async def toggle_login_codes(client: BaseClient, number: str, can_receive: bool) -> None:
-    with operation(logger, "toggle login code delivery for number '%s' (can_receive=%s)", number, can_receive):
+    with operation(logger, "toggle login codes (number=%s, can_receive=%s)", number, can_receive):
         result = await client.call(
             ApiMethod.TOGGLE_LOGIN_CODES,
             {"number": strip_plus(number), "can_receive": int(can_receive)},
@@ -52,7 +52,7 @@ async def toggle_login_codes(client: BaseClient, number: str, can_receive: bool)
 
 
 async def terminate_sessions(client: BaseClient, number: str) -> TerminateSessionsResult:
-    with operation(logger, "terminate sessions for number '%s'", number):
+    with operation(logger, "terminate sessions (number=%s)", number):
         clean = strip_plus(number)
 
         confirmation = await client.call(ApiMethod.TERMINATE_PHONE_SESSIONS, {"number": clean}, page_url=NUMBERS_PAGE)

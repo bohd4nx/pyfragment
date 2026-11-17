@@ -41,7 +41,7 @@ async def confirm_purchase(
             await client.call(link.confirm_method, body, page_url=flow.page_url)
         return await wait_for_confirmation(client, flow, dh)
     except Exception as exc:
-        logger.debug("Failed to confirm Fragment purchase via '%s' (dh=%s): %s", flow.state_method, dh, exc)
+        logger.debug("Failed to confirm purchase (method=%s, dh=%s): %s", flow.state_method, dh, exc)
         return False
 
 
@@ -54,9 +54,9 @@ async def wait_for_confirmation(client: BaseClient, flow: PurchaseFlow, dh: str)
         state = PageState.from_response(response, default_mode=mode)
         mode = state.mode
         if state.is_done:
-            logger.debug("Fragment confirmed '%s' (dh=%s)", flow.state_method, dh)
+            logger.debug("Confirmed purchase (method=%s, dh=%s)", flow.state_method, dh)
             return True
         await asyncio.sleep(CONFIRM_STATE_POLL_INTERVAL)
     if client.confirm_timeout:
-        logger.debug("Timed out waiting for Fragment to confirm '%s' (dh=%s)", flow.state_method, dh)
+        logger.debug("Timed out waiting for purchase confirmation (method=%s, dh=%s)", flow.state_method, dh)
     return False

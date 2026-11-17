@@ -42,7 +42,7 @@ async def giveaway_stars(
 
     with operation(
         logger,
-        "run Stars giveaway for channel '%s' (winners=%s, amount=%s, payment_method='%s')",
+        "run Stars giveaway (channel=%s, winners=%s, amount=%s, payment_method=%s)",
         channel,
         winners,
         amount,

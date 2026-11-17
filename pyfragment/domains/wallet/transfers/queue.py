@@ -65,7 +65,7 @@ class TransferQueue:
                     intents = await self._send(wallet, group, seqno) if group else []
             except BaseException as exc:
                 if intents:
-                    logger.warning("Releasing the transfer lock failed after the message was sent: %s", exc)
+                    logger.warning("Failed to release the transfer lock after sending: %s", exc)
                 else:
                     fail(group or self._take(wallet.batch_limit), exc)
                 resolve(group, intents)
@@ -85,7 +85,7 @@ class TransferQueue:
         params = await wallet.transfer_params(valid_until, seqno)
         external = await wallet.sign([entry.request.builder for entry in group], params)
         intents = [entry.request.intent(external, valid_until) for entry in group]
-        logger.debug("Signed %d transfer(s) as %s (valid_until=%d)", len(intents), intents[0].msg_hash, valid_until)
+        logger.debug("Signed transfers (count=%d, msg_hash=%s, valid_until=%d)", len(intents), intents[0].msg_hash, valid_until)
         for entry, intent in zip(group, intents, strict=True):
             if entry.request.on_prepared is not None:
                 await entry.request.on_prepared(intent)
@@ -94,7 +94,7 @@ class TransferQueue:
             await wallet.commit_seqno(params, valid_until)
         except Exception as exc:
             # The message is out: its payments must be reported as sent, not as failed (a retry would pay twice).
-            logger.warning("Could not save the pending seqno of a sent message: %s", exc)
+            logger.warning("Failed to save the pending seqno after sending: %s", exc)
         return intents
 
 

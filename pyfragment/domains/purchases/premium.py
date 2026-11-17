@@ -51,7 +51,7 @@ async def get_premium_packages(client: BaseClient) -> list[PremiumPackage]:
 
 async def check_premium_recipient(client: BaseClient, username: str, months: int = 3) -> Recipient:
     check_months(months)
-    with operation(logger, "check Premium recipient '%s' for %s months", username, months):
+    with operation(logger, "check Premium recipient (username=%s, months=%s)", username, months):
         return await find_recipient(client, username, months)
 
 
@@ -65,7 +65,7 @@ async def purchase_premium(
     check_months(months)
     validate_payment_method(payment_method)
 
-    with operation(logger, "purchase %s months of Premium for user '%s' using '%s'", months, username, payment_method):
+    with operation(logger, "purchase Premium (username=%s, months=%s, payment_method=%s)", username, months, payment_method):
         recipient = await find_recipient(client, username, months)
         await PREMIUM_FLOW.open(client)
         payment = await run_purchase(

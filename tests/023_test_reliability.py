@@ -234,6 +234,16 @@ async def test_expected_failures_are_not_logged_as_errors(client: FragmentClient
     assert [r for r in caplog.records if r.levelno >= logging.WARNING] == []
 
 
+@pytest.mark.asyncio
+async def test_a_failed_operation_logs_its_context_as_key_value_pairs(
+    client: FragmentClient, caplog: pytest.LogCaptureFixture
+) -> None:
+    caplog.set_level(logging.DEBUG, logger="pyfragment")
+    with patch.object(client, "call", AsyncMock(return_value={"found": {}})), pytest.raises(UserNotFoundError):
+        await client.purchase_stars("@ghost", amount=500)
+    assert "Failed to purchase Stars (username=@ghost, amount=500, payment_method=ton): " in caplog.text
+
+
 @pytest.mark.parametrize("status", [429, 502, 404])
 def test_http_status_error_survives_pickling(status: int) -> None:
     restored = pickle.loads(pickle.dumps(HTTPStatusError(status, "https://fragment.com/api")))

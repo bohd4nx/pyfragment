@@ -31,7 +31,7 @@ RECHARGE_FLOW = PurchaseFlow(
 async def recharge_ads(client: BaseClient, account: str, amount: int) -> AdsRechargeResult:
     check_limit(GRAM_TOPUP, amount)
 
-    with operation(logger, "recharge Ads account '%s' for %s GRAM (ex TON)", account, amount):
+    with operation(logger, "recharge Ads account (account=%s, amount=%s)", account, amount):
         await RECHARGE_FLOW.open(client)
         payment = await run_purchase(client, RECHARGE_FLOW, {"account": account, "amount": amount})
         return AdsRechargeResult(

@@ -32,7 +32,7 @@ TOPUP_FLOW = PurchaseFlow(
 async def topup_gram(client: BaseClient, username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
     check_limit(GRAM_TOPUP, amount)
 
-    with operation(logger, "top up GRAM (ex TON) for user '%s' with %s GRAM (ex TON)", username, amount):
+    with operation(logger, "top up GRAM (username=%s, amount=%s)", username, amount):
         await TOPUP_FLOW.open(client)
         recipient = await find_user(
             client, ApiMethod.SEARCH_ADS_TOPUP_RECIPIENT, TOPUP_FLOW.page_url, {"query": username}, username

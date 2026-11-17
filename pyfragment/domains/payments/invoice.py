@@ -49,7 +49,7 @@ async def request_transaction(
     link = TransactionLink.from_response(transaction)
     if link.need_verify:
         logger.debug(
-            "Fragment returned need_verify for %s (error=%r, confirm_method=%r)",
+            "Fragment requires verification (flow=%s, error=%s, confirm_method=%s)",
             flow.label,
             transaction.get("error"),
             link.confirm_method,

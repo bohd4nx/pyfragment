@@ -41,7 +41,7 @@ async def find_recipient(client: BaseClient, username: str) -> Recipient:
 
 async def get_stars_price(client: BaseClient, amount: int) -> Decimal:
     check_limit(STARS_PURCHASE, amount)
-    with operation(logger, "get Stars price for %s", amount):
+    with operation(logger, "get Stars price (amount=%s)", amount):
         result = await client.call(ApiMethod.UPDATE_STARS_PRICES, {"quantity": amount}, page_url=STARS_PAGE)
         raise_for_error(result)
         price = parse_gram_price(str(result.get("cur_price", "")))
@@ -61,7 +61,7 @@ async def get_stars_packages(client: BaseClient) -> list[StarsPackage]:
 
 
 async def check_stars_recipient(client: BaseClient, username: str) -> Recipient:
-    with operation(logger, "check Stars recipient '%s'", username):
+    with operation(logger, "check Stars recipient (username=%s)", username):
         return await find_recipient(client, username)
 
 
@@ -75,7 +75,7 @@ async def purchase_stars(
     check_limit(STARS_PURCHASE, amount)
     validate_payment_method(payment_method)
 
-    with operation(logger, "purchase %s Stars for user '%s' using '%s'", amount, username, payment_method):
+    with operation(logger, "purchase Stars (username=%s, amount=%s, payment_method=%s)", username, amount, payment_method):
         recipient = await find_recipient(client, username)
         await STARS_FLOW.open(client)
         payment = await run_purchase(

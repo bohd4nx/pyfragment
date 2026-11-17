@@ -52,11 +52,11 @@ class FragmentTransport:
     async def call(self, method: str, data: dict[str, Any] | None, page_url: str) -> dict[str, Any]:
         payload = {"method": method, **(data or {})}
         headers = {**self._headers, "referer": page_url}
-        logger.debug("Starting Fragment API call '%s' on %s", method, page_url)
+        logger.debug("Starting API call (method=%s, page_url=%s)", method, page_url)
         response = await self._request(page_url, headers, payload)
-        logger.debug("Completed Fragment API call '%s' with response keys: %s", method, sorted(response.keys()))
+        logger.debug("Completed API call (method=%s, keys=%s)", method, sorted(response.keys()))
         if err := response.get("error"):
-            logger.debug("Fragment API call '%s' returned error: %s", method, err)
+            logger.debug("API call returned an error (method=%s): %s", method, err)
         if has_error(response, ApiError.ACCESS_DENIED):
             # Fragment answers calls made with a logged-out session or disconnected wallet this way.
             raise SessionExpiredError(SessionExpiredError.ACCESS_DENIED.format(context=method))

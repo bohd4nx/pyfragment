@@ -39,7 +39,7 @@ async def get_usdt_balance(ton: ClientProtocol, wallet_address: str) -> int:
         return int(wallet_data[0]) if wallet_data else 0
     except Exception as exc:
         if is_missing_jetton_wallet(exc):
-            logger.debug("No USDT jetton wallet found for '%s'; treating balance as 0", wallet_address)
+            logger.debug("No USDT jetton wallet, treating balance as 0 (address=%s)", wallet_address)
             return 0
         raise ProviderError.from_exception(ProviderError.BALANCE_CHECK_FAILED, exc, currency="USDT") from exc
 
@@ -63,6 +63,6 @@ async def usdt_balance_or_none(ton_wallet: TonWallet) -> Decimal | None:
     try:
         units = await get_usdt_balance(await ton_wallet.ton(), ton_wallet.address)
     except ProviderError:
-        logger.debug("USDT balance check failed for wallet '%s'", ton_wallet.address, exc_info=True)
+        logger.debug("USDT balance check failed (address=%s)", ton_wallet.address, exc_info=True)
         return None
     return to_amount(units, USDT_DECIMALS, precision=USDT_DECIMALS)

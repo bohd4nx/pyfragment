@@ -53,9 +53,7 @@ async def search_rows(
     offset_id: str | None,
 ) -> tuple[list[AuctionItem], str | None]:
     data = listing_query(kind, query, sort, filter, offset_id=offset_id)
-    with operation(
-        logger, "search %s (query='%s', sort='%s', filter='%s', offset_id='%s')", kind, query, sort, filter, offset_id
-    ):
+    with operation(logger, "search %s (query=%s, sort=%s, filter=%s, offset_id=%s)", kind, query, sort, filter, offset_id):
         return parse_auction_rows(await fetch_listing(client, page_url, data))
 
 
@@ -99,7 +97,7 @@ async def search_gifts(
 
     with operation(
         logger,
-        "search gifts (query='%s', collection='%s', sort='%s', filter='%s', view='%s', offset='%s')",
+        "search gifts (query=%s, collection=%s, sort=%s, filter=%s, view=%s, offset=%s)",
         query,
         collection,
         sort,
