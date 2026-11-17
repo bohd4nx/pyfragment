@@ -15,8 +15,11 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
   whatever is queued goes out in one external message: one seqno, one send, a lower total fee. Every kind of purchase
   queues the same way and kinds can be mixed. The wallet caps the message (W5 and Telegram Wallet 255, V4R2 4,
   HighloadV2 254, HighloadV3R1 64516). Payments of one message share `msg_hash` and `boc`. Defaults to `1`.
-- `FragmentClient(transfer_coordinator=...)`: a lock plus the seqno of the last sent message that processes buying from
-  one wallet can share (e.g. through Redis). The default, `LocalTransferCoordinator`, covers one process.
+- `FragmentClient(transfer_coordinator=...)`: a lock plus the seqno of the last sent message, per wallet address, that
+  processes buying from one wallet can share (e.g. through Redis); one coordinator serves any number of wallets. The
+  default, `LocalTransferCoordinator`, covers one process.
+- A payment is logged when it goes out after its caller was cancelled, and a transfer that waits over 15 seconds for the
+  previous one to land says so. A group whose callers are all cancelled before the send is not sent.
 
 ### Fixed
 
@@ -27,6 +30,8 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 - Batching formed a group before waiting for the previous message's block, so every group cost a block of its own
   during a burst. The group is now formed after that wait and takes everything that queued meanwhile; a lone payment
   still goes out at once, and the seqno is read once per message instead of twice.
+- A failing `on_transfer_prepared` hook fails only its own payment: the message is signed again without it and the hooks
+  of the others are called again with the new intent.
 - Overlapping purchases from one wallet lost transfers: a node rejects a seqno that is ahead of the chain. A message
   now waits until the previous one has landed.
 
