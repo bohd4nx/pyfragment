@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import logging
 import time
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
@@ -46,6 +47,8 @@ SeqnoWallet = WalletV4R2 | WalletV5R1 | WalletTg
 SeqnoParams = WalletV4Params | WalletV5Params | WalletTgParams
 TransferParams = SeqnoParams | WalletHighloadV2Params | WalletHighloadV3Params
 
+logger = logging.getLogger(__name__)
+
 WALLET_CLASSES: dict[WalletVersion, type[BaseWallet[Any, Any, Any]]] = {
     WalletVersion.V4R2: WalletV4R2,
     WalletVersion.V5R1: WalletV5R1,
@@ -80,6 +83,7 @@ class TonWallet:
         self._ton: ClientProtocol | None = None
         self._signer: tuple[BaseWallet[Any, Any, Any], PublicKey] | None = None
         self._account: dict[str, Any] | None = None
+        self._active = False  # a deployed wallet never goes back, so its state is not asked for again
 
     @property
     def version(self) -> WalletVersion:
@@ -147,8 +151,10 @@ class TonWallet:
         return await ton.get_info(address)
 
     async def seqno(self) -> int:
-        if (await self.state()).state != ContractState.ACTIVE:
-            return 0
+        if not self._active:
+            if (await self.state()).state != ContractState.ACTIVE:
+                return 0
+            self._active = True
         wallet = self.wallet()
         assert isinstance(wallet, SeqnoWallet)  # only these order transfers by seqno
         return int(await wallet.seqno())
@@ -162,6 +168,12 @@ class TonWallet:
             return WalletHighloadV3Params(created_at=min(now, valid_until - self.wallet().config.timeout))
         return SEQNO_PARAMS[self.version](seqno=seqno, valid_until=valid_until)
 
+    async def pending(self) -> tuple[int, float] | None:
+        """The last sent message not known to have landed: the later of this process's and the shared coordinator's."""
+        local = await queue_for(self.address).coordinator.load_pending()
+        shared = await self.coordinator.load_pending()
+        return max((entry for entry in (local, shared) if entry is not None), default=None)
+
     async def next_seqno(self) -> int | None:
         """The chain's seqno once the previous message has landed or expired; ``None`` for a highload wallet.
 
@@ -170,7 +182,7 @@ class TonWallet:
         """
         if self.version not in SEQNO_PARAMS:
             return None
-        pending = await self.coordinator.load_pending()
+        pending = await self.pending()
         while True:
             try:
                 seqno = await self.seqno()
@@ -190,9 +202,19 @@ class TonWallet:
             raise ProviderError.from_exception(ProviderError.WALLET_STATE_FAILED, exc) from exc
 
     async def commit_seqno(self, params: TransferParams, valid_until: int) -> None:
-        """Record that a message with params.seqno was sent; prevents seqno reuse until valid_until passes."""
+        """Record that a message with params.seqno was sent; prevents seqno reuse until valid_until passes.
+
+        The process-local record is always kept: a shared coordinator that fails to save must not turn a sent message
+        into a failed payment (a retry would pay twice) nor let the next message take the same seqno.
+        """
         if isinstance(params, SeqnoParams) and params.seqno is not None:
-            await self.coordinator.save_pending(params.seqno, float(valid_until))
+            local = queue_for(self.address).coordinator
+            await local.save_pending(params.seqno, float(valid_until))
+            if self.coordinator is not local:
+                try:
+                    await self.coordinator.save_pending(params.seqno, float(valid_until))
+                except Exception as exc:
+                    logger.warning("Failed to save the pending seqno after sending: %s", exc)
 
     async def aclose(self) -> None:
         ton, self._ton = self._ton, None

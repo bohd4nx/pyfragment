@@ -1,6 +1,7 @@
 """Payments of one wallet are queued and sent in groups: one external message and one seqno each."""
 
 import asyncio
+import contextvars
 import itertools
 import time
 from collections.abc import AsyncIterator
@@ -17,7 +18,7 @@ from pyfragment import (
     TransferIntent,
 )
 from pyfragment.domains.wallet.transfers import process_transaction
-from pyfragment.domains.wallet.transfers.queue import Entry, TransferQueue, drop_expired
+from pyfragment.domains.wallet.transfers.queue import Entry, TransferQueue, drop_expired, queue_for
 from pyfragment.domains.wallet.transfers.request import TransferRequest
 from pyfragment.domains.wallet.wallet import TonWallet
 from pyfragment.enums import PaymentMethod
@@ -280,6 +281,62 @@ async def test_a_cancellation_inside_the_runner_does_not_leave_callers_hanging()
             )
     assert all(isinstance(result, asyncio.CancelledError) for result in results)
     assert ton.sent == []
+
+
+@pytest.mark.asyncio
+async def test_a_cancelled_runner_settles_every_waiting_caller() -> None:
+    async def cancelled_hook(_: TransferIntent) -> None:
+        raise asyncio.CancelledError
+
+    ton = FakeTon()
+    with use_fake_ton(ton):
+        async with new_client(max_batch=1, on_transfer_prepared=cancelled_hook) as client:
+            results = await asyncio.wait_for(
+                asyncio.gather(*(process_transaction(client, stars_link()) for _ in range(3)), return_exceptions=True),
+                timeout=2,
+            )
+    assert all(isinstance(result, asyncio.CancelledError) for result in results)
+
+
+@pytest.mark.asyncio
+async def test_the_next_message_waits_even_when_the_shared_coordinator_cannot_save() -> None:
+    class BrokenCoordinator(LocalTransferCoordinator):
+        async def save_pending(self, seqno: int, valid_until: float) -> None:
+            raise ConnectionError("redis is down")
+
+    ton = FakeTon(seqno=5, landing_delay=0.1)
+    with use_fake_ton(ton), patch("pyfragment.domains.wallet.wallet.SEQNO_POLL_INTERVAL", 0.01):
+        async with new_client(transfer_coordinator=BrokenCoordinator()) as client, recording() as messages:
+            await pay(client, 2)
+    assert messages.seqnos == [5, 6]
+
+
+@pytest.mark.asyncio
+async def test_a_hook_runs_in_the_context_of_its_own_caller() -> None:
+    request_id: contextvars.ContextVar[str] = contextvars.ContextVar("request_id")
+    seen: list[str] = []
+
+    async def hook(_: TransferIntent) -> None:
+        seen.append(request_id.get())
+
+    async def purchase(name: str) -> TransferIntent:
+        request_id.set(name)
+        return await process_transaction(client, stars_link())
+
+    ton = FakeTon()
+    with use_fake_ton(ton):
+        async with new_client(max_batch=4, on_transfer_prepared=hook) as client:
+            await asyncio.gather(purchase("first"), purchase("second"))
+    assert sorted(seen) == ["first", "second"]
+
+
+@pytest.mark.asyncio
+async def test_a_finished_runner_is_not_kept_alive_by_its_queue() -> None:
+    ton = FakeTon()
+    with use_fake_ton(ton):
+        async with new_client() as client:
+            await pay(client, 2)
+            assert queue_for(client.ton_wallet.address)._runner is None
 
 
 # Settling single entries

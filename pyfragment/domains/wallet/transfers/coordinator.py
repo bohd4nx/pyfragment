@@ -10,7 +10,8 @@ class TransferCoordinator(Protocol):
 
     ``lock()`` covers one message, from reading its seqno to sending it, never the wait for Fragment's confirmation.
     Processes signing from the same wallet share one coordinator (e.g. backed by Redis): the pending seqno tells the
-    next message to wait until the previous one has landed.
+    next message to wait until the previous one has landed. One instance serves one wallet: the pending seqno and the
+    lock carry no wallet identity, so key them by the wallet when the backing store is shared.
     """
 
     def lock(self) -> AbstractAsyncContextManager[object]: ...

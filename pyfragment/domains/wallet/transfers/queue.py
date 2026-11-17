@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import logging
 import time
-from dataclasses import dataclass
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass, field
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 from weakref import WeakKeyDictionary
@@ -28,6 +30,8 @@ class Entry:
     request: TransferRequest
     wallet: TonWallet
     done: asyncio.Future[TransferIntent]
+    # The caller's context, so its on_transfer_prepared hook sees the caller's request-scoped contextvars.
+    context: contextvars.Context = field(default_factory=contextvars.copy_context)
 
 
 class TransferQueue:
@@ -52,27 +56,36 @@ class TransferQueue:
         return await entry.done
 
     async def _run(self) -> None:
-        while self._waiting:
-            wallet = self._waiting[0].wallet
-            group: list[Entry] = []
-            intents: list[TransferIntent] = []
-            try:
-                async with wallet.coordinator.lock():
-                    # The group is formed only after the previous message has landed, so whatever queued while
-                    # waiting for its block goes out together instead of one block per group.
-                    seqno = await wallet.next_seqno()
-                    group = self._take(wallet.batch_limit)
-                    intents = await self._send(wallet, group, seqno) if group else []
-            except BaseException as exc:
-                if intents:
-                    logger.warning("Failed to release the transfer lock after sending: %s", exc)
-                else:
-                    fail(group or self._take(wallet.batch_limit), exc)
+        try:
+            while self._waiting:
+                self._waiting[:] = [entry for entry in self._waiting if not entry.done.cancelled()]
+                if not self._waiting:
+                    break
+                wallet = self._waiting[0].wallet
+                group: list[Entry] = []
+                intents: list[TransferIntent] = []
+                try:
+                    async with wallet.coordinator.lock():
+                        # The group is formed only after the previous message has landed, so whatever queued while
+                        # waiting for its block goes out together instead of one block per group.
+                        seqno = await wallet.next_seqno()
+                        group = self._take(wallet.batch_limit)
+                        intents = await self._send(wallet, group, seqno) if group else []
+                except BaseException as exc:
+                    if intents:
+                        logger.warning("Failed to release the transfer lock after sending: %s", exc)
+                    else:
+                        fail(group or self._take(wallet.batch_limit), exc)
+                    resolve(group, intents)
+                    if not isinstance(exc, Exception):
+                        # No runner is left to serve the rest, so none of them may keep waiting.
+                        fail(self._waiting, exc)
+                        self._waiting.clear()
+                        raise
+                    continue
                 resolve(group, intents)
-                if not isinstance(exc, Exception):
-                    raise
-                continue
-            resolve(group, intents)
+        finally:
+            self._runner = None
 
     def _take(self, limit: int) -> list[Entry]:
         """The next entries still worth sending: not cancelled, and with their invoice still open."""
@@ -88,14 +101,14 @@ class TransferQueue:
         logger.debug("Signed transfers (count=%d, msg_hash=%s, valid_until=%d)", len(intents), intents[0].msg_hash, valid_until)
         for entry, intent in zip(group, intents, strict=True):
             if entry.request.on_prepared is not None:
-                await entry.request.on_prepared(intent)
+                await asyncio.create_task(call_hook(entry.request.on_prepared, intent), context=entry.context)
         await broadcast(await wallet.ton(), external.as_hex)
-        try:
-            await wallet.commit_seqno(params, valid_until)
-        except Exception as exc:
-            # The message is out: its payments must be reported as sent, not as failed (a retry would pay twice).
-            logger.warning("Failed to save the pending seqno after sending: %s", exc)
+        await wallet.commit_seqno(params, valid_until)
         return intents
+
+
+async def call_hook(hook: Callable[[TransferIntent], Awaitable[None]], intent: TransferIntent) -> None:
+    await hook(intent)
 
 
 def resolve(group: list[Entry], intents: list[TransferIntent]) -> None:

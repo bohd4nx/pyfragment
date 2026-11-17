@@ -24,6 +24,7 @@ COOKIES = {
     "stel_ton_token": "YOUR_STEL_TON_TOKEN",
 }
 
+# One coordinator per wallet: its keys carry no wallet address, so use other keys for another wallet.
 redis = Redis.from_url("redis://localhost:6379/0")
 
 
