@@ -83,11 +83,7 @@ strict = true
 exclude = ["^examples/", "^logs/", "^tests/", "^sandbox/", "^scripts/"]
 
 [[tool.mypy.overrides]]
-module = [
-    "ton_core",
-    "tonutils",
-    "tonutils.*",
-]
+module = "redis.*"  # only the shared_wallet example uses it
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

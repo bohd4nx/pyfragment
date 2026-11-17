@@ -7,6 +7,8 @@ This one is backed by Redis (pip install redis). Combine it with max_batch to se
 """
 
 import asyncio
+from contextlib import AbstractAsyncContextManager
+from typing import cast
 
 from redis.asyncio import Redis
 
@@ -26,8 +28,8 @@ redis = Redis.from_url("redis://localhost:6379/0")
 
 
 class RedisCoordinator:
-    def lock(self):  # noqa: ANN201
-        return redis.lock("wallet-lock", timeout=120, blocking_timeout=300)
+    def lock(self) -> AbstractAsyncContextManager[object]:
+        return cast(AbstractAsyncContextManager[object], redis.lock("wallet-lock", timeout=120, blocking_timeout=300))
 
     async def load_pending(self) -> tuple[int, float] | None:
         raw = await redis.get("wallet-pending")
