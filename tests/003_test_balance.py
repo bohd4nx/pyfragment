@@ -1,34 +1,27 @@
-"""Sign and send Fragment transactions with a real wallet against an in-memory provider: balance checks, the seqno and
+"""Sign and send Fragment transactions with a real wallet against an in-memory provider: the seqno and
 expiry that get signed, and how the library handles send errors."""
 
 import asyncio
 import logging
 import time
-from collections.abc import AsyncIterator, Iterator
-from contextlib import asynccontextmanager, contextmanager
-from decimal import Decimal
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Any
-from unittest.mock import AsyncMock, patch
 
 import pytest
 from ton_core import ContractState
 
 from pyfragment import (
     FragmentClient,
-    InsufficientBalanceError,
     ProviderError,
     TransactionError,
     TransferIntent,
 )
-from pyfragment.constants import DEFAULT_GAS_RESERVE, GRAM_CURRENCY, GRAM_DECIMALS, USDT_CURRENCY
-from pyfragment.domains.wallet.transfer import process_transaction
+from pyfragment.domains.wallet.transfers import process_transaction
 from pyfragment.enums import PaymentMethod
-from pyfragment.utils.money import from_units, to_units
 from tests.fake_ton import FakeTon, provider_error, use_fake_ton
 from tests.shared import VALID_API_KEY, VALID_COOKIES, VALID_SEED
 from tests.signing import external_message_body, has_state_init, split_leading_signature, split_signature, w5_header
-
-_GAS_NANO: int = to_units(DEFAULT_GAS_RESERVE, GRAM_DECIMALS)
 
 FRAGMENT_ADDRESS = "UQCFJEP4WZ_mpdo0_kMEmsTgvrMHG7K_tWY16pQhKHwoOtFz"
 STARS_PAYLOAD = "te6ccgEBAQEAJwAASgAAAAA1MCBUZWxlZ3JhbSBTdGFycyAKClJlZiNrcEo1NWgzQlc="
@@ -46,15 +39,9 @@ def transaction(amount: str = "500000000", valid_until: int | None = None, messa
     }
 
 
-@contextmanager
-def no_sleep() -> Iterator[None]:
-    with patch("pyfragment.domains.wallet.transfer.asyncio.sleep", AsyncMock()):
-        yield
-
-
 @asynccontextmanager
 async def fragment_client(ton: FakeTon, **options: Any) -> AsyncIterator[FragmentClient]:
-    with use_fake_ton(ton), no_sleep():
+    with use_fake_ton(ton):
         async with FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES, **options) as client:
             yield client
 
@@ -65,7 +52,7 @@ def signed_header(boc: bytes) -> tuple[int, int]:
     return w5_header(split_signature(body)[0])
 
 
-# Balance checks
+# Sending a valid transaction
 
 
 @pytest.mark.asyncio
@@ -80,75 +67,6 @@ async def test_sufficient_balance_sends_once() -> None:
     assert sent.destination == FRAGMENT_ADDRESS
     assert sent.comment == "50 Telegram Stars \n\nRef#kpJ55h3BW"
     assert len(sent.msg_hash) == 64
-
-
-@pytest.mark.asyncio
-async def test_insufficient_balance_raises_before_signing() -> None:
-    ton = FakeTon(balance=100_000_000)
-    async with fragment_client(ton) as client:
-        with pytest.raises(InsufficientBalanceError) as exc_info:
-            await process_transaction(client, transaction())
-
-    error = exc_info.value
-    assert (error.balance, error.required, error.currency) == (
-        Decimal("0.1"),
-        from_units(500_000_000 + _GAS_NANO, GRAM_DECIMALS),
-        GRAM_CURRENCY,
-    )
-    assert ton.sent == [] and ton.seqno_reads == 0
-
-
-@pytest.mark.asyncio
-async def test_balance_exactly_covering_payment_and_reserve_sends() -> None:
-    # 0.5 GRAM (ex TON) payment + DEFAULT_GAS_RESERVE, compared in nanograms: no float rounding at the boundary.
-    ton = FakeTon(balance=500_000_000 + _GAS_NANO)
-    async with fragment_client(ton) as client:
-        await process_transaction(client, transaction())
-    assert len(ton.sent) == 1
-
-
-@pytest.mark.asyncio
-async def test_one_nanogram_short_raises() -> None:
-    ton = FakeTon(balance=500_000_000 + _GAS_NANO - 1)
-    async with fragment_client(ton) as client:
-        with pytest.raises(InsufficientBalanceError) as exc_info:
-            await process_transaction(client, transaction())
-    assert exc_info.value.balance == from_units(500_000_000 + _GAS_NANO - 1, GRAM_DECIMALS)
-    assert ton.sent == []
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize(("gas_reserve", "balance", "sends"), [("0", 500_000_000, True), (Decimal("1"), 1_499_999_999, False)])
-async def test_gas_reserve_is_configurable(gas_reserve: object, balance: int, sends: bool) -> None:
-    ton = FakeTon(balance=balance)
-    async with fragment_client(ton, gas_reserve=gas_reserve) as client:
-        if sends:
-            await process_transaction(client, transaction())
-        else:
-            with pytest.raises(InsufficientBalanceError):
-                await process_transaction(client, transaction())
-    assert len(ton.sent) == (1 if sends else 0)
-
-
-@pytest.mark.asyncio
-async def test_invoice_amount_above_the_transfer_is_what_must_be_covered() -> None:
-    _inv_nano = to_units(Decimal("0.6"), GRAM_DECIMALS)
-    ton = FakeTon(balance=_inv_nano + _GAS_NANO - 1)
-    async with fragment_client(ton) as client:
-        with pytest.raises(InsufficientBalanceError) as exc_info:
-            await process_transaction(client, transaction(), required_payment_amount=Decimal("0.6"))
-    assert exc_info.value.required == from_units(_inv_nano + _GAS_NANO, GRAM_DECIMALS)
-
-
-@pytest.mark.asyncio
-async def test_balance_read_failure_raises_provider_error_before_signing() -> None:
-    ton = FakeTon()
-    ton.info_errors = [RuntimeError("401 invalid token")]
-    async with fragment_client(ton) as client:
-        with pytest.raises(ProviderError, match="401 invalid token") as exc_info:
-            await process_transaction(client, transaction())
-    assert exc_info.value.retryable
-    assert ton.sent == []
 
 
 # Fragment's payload
@@ -170,7 +88,7 @@ async def test_invalid_payload_raises_before_signing(data: dict[str, Any]) -> No
 
 @pytest.mark.asyncio
 async def test_multi_message_transaction_is_refused() -> None:
-    # Signing only the first message would pay part of the invoice and check the balance for that part only.
+    # Signing only the first message would pay part of the invoice.
     ton = FakeTon()
     async with fragment_client(ton) as client:
         with pytest.raises(TransactionError, match="2 messages"):
@@ -327,16 +245,15 @@ async def test_concurrent_purchases_from_one_client_use_consecutive_seqnos() -> 
 
 
 @pytest.mark.asyncio
-async def test_second_transfer_uses_cached_seqno_without_extra_rpc() -> None:
-    # After a successful send the seqno is cached locally; the next transfer increments it without
-    # querying the provider again, which matters when the previous message hasn't landed on-chain yet.
+async def test_second_transfer_takes_its_seqno_from_the_chain_once_the_first_landed() -> None:
+    # A node rejects a seqno that is ahead of the chain, so the next transfer never counts on from the pending one.
     ton = FakeTon(seqno=5)
     async with fragment_client(ton) as client:
         await process_transaction(client, transaction())
         reads_after_first = ton.seqno_reads
         await process_transaction(client, transaction())
     assert sorted(signed_header(boc)[1] for boc in ton.sent) == [5, 6]
-    assert ton.seqno_reads == reads_after_first  # no extra seqno RPC for the second transfer
+    assert ton.seqno_reads == reads_after_first + 1
 
 
 # Wallets without a seqno
@@ -369,68 +286,3 @@ async def test_highload_transfers_expire_like_the_others(wallet_version: str, se
     expiry = highload_expiry(ton.sent[0], wallet_version)
     assert expiry == sent.valid_until
     assert expiry <= int(time.time()) + min(seconds_left, 60)
-
-
-# USDT payments
-
-
-@pytest.mark.asyncio
-async def test_usdt_payment_needs_the_attached_gram_plus_reserve() -> None:
-    ton = FakeTon(balance=50_000_000 + _GAS_NANO - 1)  # 0.05 GRAM attached + DEFAULT_GAS_RESERVE, minus one nanogram
-    with patch("pyfragment.domains.wallet.balance.get_usdt_balance", AsyncMock(return_value=100_000_000)):
-        async with fragment_client(ton) as client:
-            with pytest.raises(InsufficientBalanceError) as exc_info:
-                await process_transaction(client, transaction(amount="50000000"), payment_method=PaymentMethod.USDT_GRAM)
-    assert exc_info.value.currency == GRAM_CURRENCY
-    assert ton.sent == []
-
-
-@pytest.mark.asyncio
-async def test_usdt_payment_checks_usdt_balance() -> None:
-    ton = FakeTon()
-    with patch("pyfragment.domains.wallet.balance.get_usdt_balance", AsyncMock(return_value=5_000_000)):
-        async with fragment_client(ton) as client:
-            with pytest.raises(InsufficientBalanceError) as exc_info:
-                await process_transaction(
-                    client,
-                    transaction(amount="50000000"),
-                    payment_method=PaymentMethod.USDT_GRAM,
-                    required_payment_amount=Decimal("12.5"),
-                )
-    assert (exc_info.value.balance, exc_info.value.required, exc_info.value.currency) == (
-        Decimal("5"),
-        Decimal("12.5"),
-        USDT_CURRENCY,
-    )
-    assert ton.sent == []
-
-
-@pytest.mark.asyncio
-async def test_usdt_payment_with_enough_usdt_sends() -> None:
-    ton = FakeTon()
-    with patch("pyfragment.domains.wallet.balance.get_usdt_balance", AsyncMock(return_value=12_500_000)):
-        async with fragment_client(ton) as client:
-            await process_transaction(
-                client,
-                transaction(amount="50000000"),
-                payment_method=PaymentMethod.USDT_GRAM,
-                required_payment_amount=Decimal("12.5"),
-            )
-    assert len(ton.sent) == 1
-
-
-# 429 rate-limit retry
-
-
-@pytest.mark.asyncio
-async def test_send_429_is_retried_once() -> None:
-    ton = FakeTon()
-    ton.send_errors = [(provider_error(429, "rate limited"), False)]
-    async with fragment_client(ton) as client:
-        await process_transaction(client, transaction())
-    assert len(ton.sent) == 2 and len(ton.landed) == 1
-
-
-def test_insufficient_balance_message_has_no_scientific_notation() -> None:
-    err = InsufficientBalanceError(Decimal("0"), Decimal("0.000000001"), GRAM_CURRENCY)
-    assert "E" not in str(err) and "0.000000001" in str(err)

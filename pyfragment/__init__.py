@@ -11,6 +11,7 @@ from pyfragment.domains.payments.models import PaymentResult
 from pyfragment.domains.purchases.models import PremiumPackage, PremiumResult, StarsPackage, StarsResult
 from pyfragment.domains.recipients import Recipient
 from pyfragment.domains.wallet.models import TransferIntent, WalletInfo
+from pyfragment.domains.wallet.transfers import LocalTransferCoordinator, TransferCoordinator
 from pyfragment.enums import (
     ApiError,
     ApiMethod,
@@ -35,7 +36,6 @@ from pyfragment.exceptions import (
     FragmentAPIError,
     FragmentError,
     HTTPStatusError,
-    InsufficientBalanceError,
     NetworkError,
     ParseError,
     ProviderError,
@@ -64,6 +64,8 @@ __all__ = [
     "PremiumGiveawayResult",
     "WalletInfo",
     "TransferIntent",
+    "TransferCoordinator",
+    "LocalTransferCoordinator",
     "Recipient",
     "AdsTopupResult",
     "AdsRechargeResult",
@@ -93,7 +95,6 @@ __all__ = [
     "ParseError",
     "AnonymousNumberError",
     "ChainError",
-    "InsufficientBalanceError",
     "ProviderError",
     "TransactionError",
     "UnexpectedError",

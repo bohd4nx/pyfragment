@@ -137,6 +137,21 @@ def find_internal_message(root: Cell, destination: Address, amount: int) -> Mess
     return None
 
 
+def count_internal_messages(root: Cell, destination: Address, amount: int) -> int:
+    """How many internal messages paying ``amount`` nanograms to ``destination`` a signed cell tree carries."""
+    count, queue = 0, deque([root])
+    while queue:
+        cell = queue.popleft()
+        queue.extend(cell.refs)
+        try:
+            info = MessageAny.deserialize(Slice.one_from_boc(cell.to_boc())).info
+        except Exception:
+            continue
+        if getattr(info, "dest", None) == destination and getattr(getattr(info, "value", None), "grams", None) == amount:
+            count += 1
+    return count
+
+
 def split_body(body: Cell, wallet_version: str) -> tuple[Cell, bytes]:
     """The signed cell and the signature of any supported wallet's body: W5 signs last, the others first."""
     if wallet_version == "V5R1":

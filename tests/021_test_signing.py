@@ -5,20 +5,20 @@ its signature is valid for the key the wallet gave Fragment, that it targets the
 it pays exactly what Fragment asked for, with Fragment's payload untouched.
 """
 
+import asyncio
 import base64
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import Any
-from unittest.mock import AsyncMock, patch
 
 import pytest
 from ton_core import Address, Cell, ContractState, PrivateKey, WalletTgData, multichain_mnemonic_to_private_key
 from tonutils.exceptions import ContractError
 
 from pyfragment import FragmentClient
-from pyfragment.domains.wallet.transfer import process_transaction
+from pyfragment.domains.wallet.transfers import process_transaction
 from pyfragment.enums import PaymentMethod, WalletVersion
 from tests.fake_ton import FakeTon, use_fake_ton
 from tests.shared import (
@@ -31,6 +31,7 @@ from tests.shared import (
     fixture_json,
 )
 from tests.signing import (
+    count_internal_messages,
     external_message_body,
     find_internal_message,
     first_send_action,
@@ -74,7 +75,7 @@ async def _broadcast(
     """Run process_transaction against an in-memory provider and hand back what was broadcast."""
     ton = ton or FakeTon()
     options.setdefault("seed", VALID_SEED)
-    with use_fake_ton(ton), patch("pyfragment.domains.wallet.balance.get_usdt_balance", AsyncMock(return_value=10**9)):
+    with use_fake_ton(ton):
         async with FragmentClient(api_key=VALID_API_KEY, cookies=VALID_COOKIES, **options) as client:
             sent = await process_transaction(client, transaction, payment_method=payment_method)
             account = client.ton_wallet.account_info()
@@ -219,10 +220,39 @@ async def test_telegram_wallet_refuses_to_sign_with_a_key_the_chain_does_not_hav
     ton = FakeTon(seqno=3)
     ton.data_raw = WalletTgData(public_key=anchor_key.public_key, seqno=3).serialize().to_boc().hex()
 
-    with use_fake_ton(ton), patch("pyfragment.domains.wallet.balance.get_usdt_balance", AsyncMock(return_value=0)):
+    with use_fake_ton(ton):
         async with FragmentClient(
             seed=TG_ROTATED_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES, wallet_version="TG"
         ) as client:
             with pytest.raises(ContractError, match="rotated"):
                 await process_transaction(client, stars_link())
     assert ton.sent == []
+
+
+# Every wallet kind, several payments in one message
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("options", WALLETS)
+async def test_every_wallet_carries_a_batch_in_one_signed_message(options: dict[str, Any]) -> None:
+    link = stars_link()
+    asked = link["transaction"]["messages"][0]
+    version = WalletVersion(options["wallet_version"])
+    ton = FakeTon(seqno=7)
+    if version == WalletVersion.TG:
+        key = PrivateKey(multichain_mnemonic_to_private_key(BIP39_SEED_12_WORDS.split())[1])
+        ton.data_raw = WalletTgData(public_key=key.public_key, seqno=7).serialize().to_boc().hex()
+    options.setdefault("seed", VALID_SEED)
+    batch = 3 if version == WalletVersion.V4R2 else 5
+
+    with use_fake_ton(ton):
+        async with FragmentClient(api_key=VALID_API_KEY, cookies=VALID_COOKIES, max_batch=batch, **options) as client:
+            intents = await asyncio.gather(*(process_transaction(client, stars_link()) for _ in range(batch)))
+            account = client.ton_wallet.account_info()
+
+    assert len(ton.sent) == 1
+    assert len({intent.msg_hash for intent in intents}) == 1
+    _, body = external_message_body(ton.sent[0])
+    signed, signature = split_body(body, version)
+    assert signature_matches(signed, signature, bytes.fromhex(account["publicKey"]))
+    assert count_internal_messages(signed, Address(asked["address"]), int(asked["amount"])) == batch
