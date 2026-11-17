@@ -31,8 +31,11 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 - Purchases are serialized only while a message is signed and sent, no longer while waiting for Fragment's
   confirmation.
-- The amount and count bounds are one table, `constants.LIMITS`, keyed by `enums.Limit`; it replaces the
-  `STARS_PURCHASE_MIN/MAX`, `STARS_GIVEAWAY_*`, `STARS_WINNERS_*`, `PREMIUM_WINNERS_*` and `GRAM_TOPUP_*` constants.
+- The amount and count bounds are `Range` constants in `constants.limits` (`STARS_PURCHASE`, `STARS_GIVEAWAY`,
+  `STARS_WINNERS`, `PREMIUM_WINNERS`, `GRAM_TOPUP`); each replaces its `*_MIN`/`*_MAX` pair.
+- `pyfragment/constants.py` is now the `pyfragment.constants` package (`fragment`, `chain`, `limits`); the defaults
+  of `timeout` (`30.0`), `confirm_timeout` (`60.0`) and `max_batch` (`1`) are plain literals in `FragmentClient`, so
+  `DEFAULT_TIMEOUT`, `CONFIRM_STATE_TIMEOUT`, `DEFAULT_MAX_BATCH` and `USDT_CURRENCY` are gone.
 - `FragmentClient` lives in the `pyfragment.client` package (the import is unchanged); `MnemonicType` is tonutils'
   own enum; `client.seed` is the phrase as given, tonutils ignores case and extra whitespace itself.
 

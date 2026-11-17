@@ -31,7 +31,7 @@ All of them must pass before opening a PR (CI runs the same commands).
 ```
 pyfragment/
   client/             — FragmentClient (client.py): BaseClient (base.py: setup, lifecycle, raw call) plus one mixin of public methods per group (purchases, marketplace, numbers, account)
-  constants.py        — fixed values: URLs, limits, timeouts, addresses
+  constants/          — fixed values by layer: fragment (pages, headers, cookie keys, retries, polling), chain (units, addresses, TTLs, TON Connect), limits (amount bounds)
   enums.py            — PaymentMethod, WalletVersion, MnemonicType, ApiProvider, ApiMethod, ApiError, marketplace enums
   exceptions.py       — exception hierarchy and canonical messages
   schemas.py          — typed views of Fragment's response bodies
@@ -58,7 +58,7 @@ examples/             — runnable usage examples (excluded from CI)
 
 - All public async methods live on `FragmentClient` (mixins in `client/`) and call a domain function with the client.
 - Where things go: public result dataclasses in each domain's `models.py`; typed views of Fragment's responses in
-  `schemas.py`; enums (and sets of their members) in `enums.py`; fixed values in `constants.py`; helpers in `utils/`; message
+  `schemas.py`; enums (and sets of their members) in `enums.py`; fixed values in `constants/`; helpers in `utils/`; message
   templates on the exception classes.
 - Domain functions receive the client (`BaseClient`), never raw HTTP clients.
 - Patch targets in tests use the module where the name is **defined**, e.g. `pyfragment.domains.wallet.wallet.make_ton_client` or `pyfragment.domains.payments.flow.process_transaction`.
