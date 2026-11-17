@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from enum import StrEnum
 
+from ton_core import MnemonicType as MnemonicType  # the derivation scheme is tonutils' own enum
+
 
 class PaymentMethod(StrEnum):
     """How a purchase is paid. Fragment also offers non-TON chains, which this library can't sign for."""
@@ -18,11 +20,14 @@ class WalletVersion(StrEnum):
     TG = "TG"  # Telegram Wallet (self-custodial): a 12-word phrase, or 24 words after a key rotation
 
 
-class MnemonicType(StrEnum):
-    """How a seed phrase derives the wallet key."""
+class Limit(StrEnum):
+    """Bounds of an amount or a count Fragment accepts; the values are in ``constants.LIMITS``."""
 
-    TON = "ton"  # TON's own scheme: Tonkeeper, MyTonWallet, Tonhub and other TON-only wallets
-    MULTICHAIN = "multichain"  # BIP-39 phrase, key at m/44'/607'/0': Telegram Wallet and multichain wallets
+    STARS_PURCHASE = "stars_purchase"
+    STARS_GIVEAWAY = "stars_giveaway"
+    STARS_WINNERS = "stars_winners"
+    PREMIUM_WINNERS = "premium_winners"
+    GRAM_TOPUP = "gram_topup"
 
 
 class ApiProvider(StrEnum):

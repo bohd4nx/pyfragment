@@ -2,17 +2,20 @@ from __future__ import annotations
 
 import html
 from dataclasses import dataclass, field
-from decimal import Decimal
 from typing import Any
 
 from pyfragment.enums import ApiError, StateMode
-from pyfragment.utils.money import parse_amount
+from pyfragment.exceptions import FragmentAPIError
 
 
 def error_text(response: dict[str, Any]) -> str | None:
-    """The ``error`` message of a response, or ``None`` when the call succeeded."""
     error = response.get("error")
     return str(error) if error else None
+
+
+def raise_for_error(response: dict[str, Any]) -> None:
+    if error := error_text(response):
+        raise FragmentAPIError(error)
 
 
 def has_error(response: dict[str, Any], error: ApiError) -> bool:
@@ -47,14 +50,13 @@ class RecipientSearch:
 
 @dataclass(frozen=True)
 class InvoiceRequest:
-    """Result of an ``init*Request`` call: the invoice id and the amount Fragment expects to be paid."""
+    """Result of an ``init*Request`` call: the invoice id."""
 
     req_id: str | None
-    amount: Decimal | None  # in the payment currency: GRAM (ex TON) or USDT
 
     @classmethod
     def from_response(cls, response: dict[str, Any]) -> InvoiceRequest:
-        return cls(req_id=response.get("req_id") or None, amount=parse_amount(response.get("amount")))
+        return cls(req_id=response.get("req_id") or None)
 
 
 @dataclass(frozen=True)

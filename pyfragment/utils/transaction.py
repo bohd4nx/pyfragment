@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Iterable
 from typing import Any
 
 from ton_core import Address
@@ -37,16 +38,20 @@ def parse_destination(message: dict[str, Any]) -> Address:
         raise TransactionError(TransactionError.INVALID_PAYLOAD) from exc
 
 
-def expiry(transaction_data: dict[str, Any]) -> int:
-    """When the signed transfer expires: in ``MESSAGE_TTL`` seconds, or earlier if Fragment's own deadline is earlier.
+def deadline(transaction_data: dict[str, Any]) -> int | None:
+    """Fragment's own ``validUntil`` for the invoice, or ``None`` when it states none.
 
-    Paying after Fragment's ``validUntil`` would pay an invoice it may no longer honor, so that is refused outright.
+    Paying after it would pay an invoice Fragment may no longer honor, so an invoice that is already past it is refused.
     """
-    now = int(time.time())
     raw = transaction_data["transaction"].get("validUntil")
     if raw is None:
-        return now + MESSAGE_TTL
+        return None
     valid_until = unsigned_int(raw)
-    if valid_until <= now:
-        raise TransactionError(TransactionError.EXPIRED.format(valid_until=valid_until), retryable=True)
-    return min(now + MESSAGE_TTL, valid_until)
+    if valid_until <= time.time():
+        raise TransactionError.expired(valid_until)
+    return valid_until
+
+
+def signing_expiry(deadlines: Iterable[int | None], now: float) -> int:
+    """When a transfer signed ``now`` stops being valid: ``MESSAGE_TTL`` seconds on, or at the earliest deadline."""
+    return min([int(now) + MESSAGE_TTL, *(d for d in deadlines if d is not None)])

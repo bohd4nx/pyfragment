@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import base64
-
 from ton_core import Cell, OpCode
 
 from pyfragment.exceptions import ParseError
@@ -10,13 +8,12 @@ TEXT_COMMENT_OPCODE = 0
 
 
 def decode_boc(payload: object) -> Cell | None:
-    """Fragment's base64 (or base64url) BOC payload as a cell, or ``None`` when there is none."""
-    text = str(payload or "").strip()
+    """Fragment's base64url BOC payload (unpadded) as a cell, or ``None`` when there is none."""
+    text = str(payload or "").strip().replace("-", "+").replace("_", "/")
     if not text:
         return None
-    text += "=" * (-len(text) % 4)
     try:
-        return Cell.one_from_boc(base64.b64decode(text, altchars=b"-_", validate=True))
+        return Cell.one_from_boc(text + "=" * (-len(text) % 4))
     except Exception as exc:
         raise ParseError(ParseError.UNPARSEABLE.format(context="payload decode", exc=exc)) from exc
 

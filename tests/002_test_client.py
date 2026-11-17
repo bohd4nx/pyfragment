@@ -1,12 +1,11 @@
 """Validate FragmentClient setup, cookie parsing, and wallet version checks."""
 
 import json
-from decimal import Decimal
 
 import pytest
 
 from pyfragment import ConfigurationError, CookieError, FragmentClient
-from pyfragment.constants import BASE_HEADERS, GRAM_DECIMALS
+from pyfragment.constants import BASE_HEADERS
 from pyfragment.enums import ApiProvider, MnemonicType, WalletVersion
 from tests.shared import (
     BIP39_SEED,
@@ -126,10 +125,11 @@ def test_valid_mnemonic_lengths(seed: str, length: int) -> None:
     assert len(client.seed.split()) == length
 
 
-def test_seed_is_normalized() -> None:
+def test_case_and_whitespace_of_the_seed_do_not_change_the_wallet() -> None:
     messy = "  " + VALID_SEED.upper().replace(" ", "\n ", 3) + "\t"
-    client = FragmentClient(seed=messy, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
-    assert client.seed == VALID_SEED
+    clean = FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
+    other = FragmentClient(seed=messy, api_key=VALID_API_KEY, cookies=VALID_COOKIES)
+    assert other.ton_wallet.address == clean.ton_wallet.address
 
 
 # API key validation tests
@@ -261,19 +261,6 @@ def test_multichain_phrase_works_with_every_wallet_contract(version: str) -> Non
 
 
 # Money and timing options
-
-
-@pytest.mark.parametrize(
-    ("gas_reserve", "nano"), [("0.33", 330_000_000), (0.1, 100_000_000), (Decimal("0"), 0), (1, 10**GRAM_DECIMALS)]
-)
-def test_gas_reserve_is_exact(gas_reserve: object, nano: int) -> None:
-    assert _client(gas_reserve=gas_reserve).gas_reserve_nano == nano
-
-
-@pytest.mark.parametrize("gas_reserve", ["-0.1", "abc", "1,5", float("nan"), True])
-def test_invalid_gas_reserve_raises(gas_reserve: object) -> None:
-    with pytest.raises(ConfigurationError, match="gas_reserve"):
-        _client(gas_reserve=gas_reserve)
 
 
 @pytest.mark.parametrize("confirm_timeout", [-1, float("inf"), "60", None])

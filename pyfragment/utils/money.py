@@ -1,16 +1,6 @@
 from __future__ import annotations
 
-from decimal import ROUND_CEILING, Decimal, InvalidOperation
-
-
-def to_units(amount: Decimal, decimals: int) -> int:
-    """Smallest units of ``amount``, rounded up: an amount that has to be paid is never underestimated."""
-    return int((amount.scaleb(decimals)).to_integral_value(rounding=ROUND_CEILING))
-
-
-def from_units(units: int, decimals: int) -> Decimal:
-    """Exact ``Decimal`` value of ``units`` smallest units."""
-    return Decimal(units).scaleb(-decimals).quantize(Decimal(1).scaleb(-decimals))
+from decimal import Decimal, InvalidOperation
 
 
 def parse_amount(raw: object) -> Decimal | None:

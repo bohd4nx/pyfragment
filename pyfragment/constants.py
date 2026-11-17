@@ -1,10 +1,17 @@
 from __future__ import annotations
 
-from decimal import Decimal
-from typing import Any
+from typing import Any, NamedTuple
 
-FRAGMENT_DOMAIN: str = "fragment.com"
-FRAGMENT_BASE_URL: str = f"https://{FRAGMENT_DOMAIN}"
+from pyfragment.enums import Limit
+
+
+class Range(NamedTuple):
+    label: str
+    min: int
+    max: int
+
+
+FRAGMENT_BASE_URL: str = "https://fragment.com"
 FRAGMENT_API_URL: str = f"{FRAGMENT_BASE_URL}/api"
 
 STARS_PAGE: str = f"{FRAGMENT_BASE_URL}/stars/buy"
@@ -13,6 +20,9 @@ PREMIUM_PAGE: str = f"{FRAGMENT_BASE_URL}/premium/gift"
 PREMIUM_GIVEAWAY_PAGE: str = f"{FRAGMENT_BASE_URL}/premium/giveaway"
 ADS_TOPUP_PAGE: str = f"{FRAGMENT_BASE_URL}/ads/topup"
 PROFILE_PAGE: str = f"{FRAGMENT_BASE_URL}/my/profile"
+MY_USERNAMES_PAGE: str = f"{FRAGMENT_BASE_URL}/my/usernames"
+MY_NUMBERS_PAGE: str = f"{FRAGMENT_BASE_URL}/my/numbers"
+MY_GIFTS_PAGE: str = f"{FRAGMENT_BASE_URL}/my/gifts"
 NUMBERS_PAGE: str = f"{FRAGMENT_BASE_URL}/numbers"
 GIFTS_PAGE: str = f"{FRAGMENT_BASE_URL}/gifts"
 
@@ -27,6 +37,10 @@ CONFIRM_STATE_POLL_INTERVAL: float = 2.0
 
 # How long a signed transfer stays valid: after that the wallet rejects it, so it can never land late
 MESSAGE_TTL: int = 60
+# How often a transfer looks for the previous one to land before taking the next seqno (about a quarter of a block)
+SEQNO_POLL_INTERVAL: float = 1.0
+# Transfers sent in one external message unless FragmentClient(max_batch=...) says otherwise
+DEFAULT_MAX_BATCH: int = 1
 # Fragment cookie keys required for authenticated API calls
 REQUIRED_COOKIE_KEYS: tuple[str, ...] = ("stel_ssid", "stel_dt", "stel_token")
 
@@ -52,7 +66,6 @@ BASE_HEADERS: dict[str, str | None] = {
 # Smallest units: 1 GRAM (ex TON) = 10^9 nanograms, 1 USDT = 10^6 units
 GRAM_DECIMALS: int = 9
 USDT_DECIMALS: int = 6
-GRAM_CURRENCY: str = "GRAM (ex TON)"
 USDT_CURRENCY: str = "USDT"
 
 # TVM exit code of a get-method called on a contract that isn't deployed (toncenter reports it as an error)
@@ -77,30 +90,14 @@ DEVICE_INFO: dict[str, Any] = {
     ],
 }
 
-# Stars: direct purchase per transaction
-STARS_PURCHASE_MIN: int = 50
-STARS_PURCHASE_MAX: int = 10_000_000
-
-# Stars: giveaway amount per winner
-STARS_GIVEAWAY_MIN: int = 500
-STARS_GIVEAWAY_MAX: int = 1_000_000
-
-# Stars giveaway winner count
-STARS_WINNERS_MIN: int = 1
-STARS_WINNERS_MAX: int = 5
-
-# Premium giveaway winner count
-PREMIUM_WINNERS_MIN: int = 1
-PREMIUM_WINNERS_MAX: int = 24_000
-
-# GRAM (ex TON) topup / Ads recharge amount
-GRAM_TOPUP_MIN: int = 1
-GRAM_TOPUP_MAX: int = 1_000_000_000
-
-# GRAM (ex TON) kept on top of a payment by default for storage, gas and forwarding fees; FragmentClient(gas_reserve=...)
-DEFAULT_GAS_RESERVE: Decimal = Decimal("0.05")
-# USDT a USDT payment is assumed to need when Fragment's invoice doesn't state its amount
-MIN_USDT_BALANCE: Decimal = Decimal("0.70")
+# Inclusive bounds of the amounts and counts Fragment accepts
+LIMITS: dict[Limit, Range] = {
+    Limit.STARS_PURCHASE: Range("Stars amount", 50, 10_000_000),
+    Limit.STARS_GIVEAWAY: Range("Stars per winner", 500, 1_000_000),
+    Limit.STARS_WINNERS: Range("winners count", 1, 5),
+    Limit.PREMIUM_WINNERS: Range("winners count", 1, 24_000),
+    Limit.GRAM_TOPUP: Range("GRAM (ex TON) amount", 1, 1_000_000_000),
+}
 
 # Premium subscription durations (months)
 PREMIUM_MONTHS_VALID: frozenset[int] = frozenset({3, 6, 12})

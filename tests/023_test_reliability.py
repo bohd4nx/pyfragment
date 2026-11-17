@@ -17,12 +17,11 @@ from pyfragment import (
     FragmentAPIError,
     FragmentClient,
     HTTPStatusError,
-    InsufficientBalanceError,
     NetworkError,
     SessionExpiredError,
     UserNotFoundError,
 )
-from pyfragment.constants import GRAM_CURRENCY, STARS_PAGE
+from pyfragment.constants import STARS_PAGE
 from pyfragment.enums import ApiMethod
 from pyfragment.exceptions import ProviderError, TransactionError
 from pyfragment.transport import FragmentTransport, fragment_request, get_fragment_hash
@@ -206,7 +205,7 @@ async def test_check_premium_recipient_not_found(client: FragmentClient) -> None
 
 
 def test_chain_errors_are_not_fragment_api_errors() -> None:
-    for error_cls in (InsufficientBalanceError, ProviderError, TransactionError):
+    for error_cls in (ProviderError, TransactionError):
         assert issubclass(error_cls, ChainError) and not issubclass(error_cls, FragmentAPIError)
 
 
@@ -219,13 +218,13 @@ async def test_expected_failures_are_not_logged_as_errors(client: FragmentClient
     with patch.object(client, "call", AsyncMock(return_value={"found": {}})), pytest.raises(UserNotFoundError):
         await client.purchase_stars("@ghost", amount=500)
 
-    low_balance = AsyncMock(side_effect=InsufficientBalanceError(0, 1, GRAM_CURRENCY))  # type: ignore[arg-type]
+    send_failure = AsyncMock(side_effect=ProviderError("provider down"))
     call_mock = AsyncMock(side_effect=[{"found": {"recipient": FAKE_RECIPIENT}}, {}, {"req_id": "r"}, FAKE_TRANSACTION])
     with (
         patch.object(client, "call", call_mock),
         patch.object(client.ton_wallet, "account_info", return_value=FAKE_ACCOUNT),
-        patch.object(_flow_mod, "process_transaction", low_balance),
-        pytest.raises(InsufficientBalanceError),
+        patch.object(_flow_mod, "process_transaction", send_failure),
+        pytest.raises(ProviderError),
     ):
         await client.purchase_stars("@user", amount=500)
 

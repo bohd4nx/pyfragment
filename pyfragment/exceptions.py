@@ -5,22 +5,11 @@
 
 from __future__ import annotations
 
-from decimal import Decimal
 from http import HTTPStatus
 
-from pyfragment.constants import (
-    GRAM_TOPUP_MAX,
-    GRAM_TOPUP_MIN,
-    PREMIUM_MONTHS_VALID,
-    PREMIUM_WINNERS_MAX,
-    PREMIUM_WINNERS_MIN,
-    STARS_GIVEAWAY_MAX,
-    STARS_GIVEAWAY_MIN,
-    STARS_PURCHASE_MAX,
-    STARS_PURCHASE_MIN,
-    STARS_WINNERS_MAX,
-    STARS_WINNERS_MIN,
-)
+from tonutils.exceptions import ProviderResponseError
+
+from pyfragment.constants import PREMIUM_MONTHS_VALID, PROFILE_PAGE
 
 
 class FragmentError(Exception):
@@ -43,29 +32,17 @@ class ConfigurationError(ClientError):
     """Raised when required client parameters are missing or invalid."""
 
     MISSING_VARS = "Missing required parameter(s): {keys}."
-    UNSUPPORTED_VERSION = "Unsupported wallet version '{version}'. Supported values: {supported}."
-    UNSUPPORTED_MNEMONIC_TYPE = "Unsupported mnemonic type '{mnemonic_type}'. Supported values: {supported}."
+    UNSUPPORTED_VERSION = "Unsupported wallet version '{value}'. Supported values: {supported}."
+    UNSUPPORTED_MNEMONIC_TYPE = "Unsupported mnemonic type '{value}'. Supported values: {supported}."
     INVALID_SEED = "Invalid seed phrase: {exc}"
-    INVALID_GAS_RESERVE = "Invalid gas_reserve '{value}': must be a non-negative amount of GRAM (ex TON)."
     INVALID_CONFIRM_TIMEOUT = "Invalid confirm_timeout '{value}': must be a non-negative number of seconds."
-    UNSUPPORTED_PROVIDER = "Unsupported API provider '{provider}'. Supported values: {supported}."
+    INVALID_MAX_BATCH = "Invalid max_batch '{value}': must be a positive whole number."
+    UNSUPPORTED_PROVIDER = "Unsupported API provider '{value}'. Supported values: {supported}."
     INVALID_MONTHS = f"Invalid Premium duration: choose {', '.join(str(m) for m in sorted(PREMIUM_MONTHS_VALID))} months."
-    INVALID_STARS_AMOUNT = (
-        f"Invalid Stars amount: must be an integer between {STARS_PURCHASE_MIN:,} and {STARS_PURCHASE_MAX:,}."
-    )
-    INVALID_GRAM_AMOUNT = f"Invalid GRAM (ex TON) amount: must be an integer between {GRAM_TOPUP_MIN:,} and {GRAM_TOPUP_MAX:,}."
-    INVALID_WINNERS_STARS = (
-        f"Invalid winners count: must be an integer between {STARS_WINNERS_MIN:,} and {STARS_WINNERS_MAX:,}."
-    )
-    INVALID_WINNERS_PREMIUM = (
-        f"Invalid winners count: must be an integer between {PREMIUM_WINNERS_MIN:,} and {PREMIUM_WINNERS_MAX:,}."
-    )
-    INVALID_STARS_PER_WINNER = (
-        f"Invalid Stars per winner: must be an integer between {STARS_GIVEAWAY_MIN:,} and {STARS_GIVEAWAY_MAX:,}."
-    )
-    INVALID_SORT = "Invalid sort order '{sort}'. Supported values: {supported}."
-    INVALID_FILTER = "Invalid filter '{filter}'. Supported values: {supported}."
-    INVALID_GIFT_ATTRIBUTE = "Invalid gift attribute '{attribute}'. Supported values: {supported}."
+    OUT_OF_RANGE = "Invalid {label}: must be an integer between {min:,} and {max:,}."
+    INVALID_SORT = "Invalid sort order '{value}'. Supported values: {supported}."
+    INVALID_FILTER = "Invalid filter '{value}'. Supported values: {supported}."
+    INVALID_GIFT_ATTRIBUTE = "Invalid gift attribute '{value}'. Supported values: {supported}."
     INVALID_PAYMENT_METHOD = "Invalid payment method '{method}'. Supported values: {supported}."
 
 
@@ -187,7 +164,7 @@ class VerificationError(FragmentAPIError):
 
     KYC_REQUIRED = (
         "Fragment requires verification before this action can be completed. "
-        "Check https://fragment.com/my/profile: either identity verification (KYC) is pending, "
+        f"Check {PROFILE_PAGE}: either identity verification (KYC) is pending, "
         "or the wallet used here is not linked to your Fragment account "
         "(the connected wallet address must match the one the library signs with)."
     )
@@ -197,29 +174,18 @@ class ChainError(FragmentError):
     """Raised for failures on the GRAM (ex TON) side: the wallet, its balance, the blockchain API provider."""
 
 
-class InsufficientBalanceError(ChainError):
-    """The wallet can't cover the payment plus the gas reserve. Nothing was sent."""
-
-    LOW_BALANCE = "Insufficient {currency} balance: {balance} {currency} available, {required} {currency} required."
-
-    def __init__(self, balance: Decimal, required: Decimal, currency: str) -> None:
-        self.balance = balance
-        self.required = required
-        self.currency = currency
-        super().__init__(
-            self.LOW_BALANCE.format(balance=format(balance, "f"), required=format(required, "f"), currency=currency)
-        )
-
-    def __reduce__(self) -> tuple[type, tuple[Decimal, Decimal, str]]:
-        return (self.__class__, (self.balance, self.required, self.currency))
-
-
 class ProviderError(ChainError):
     """The blockchain API provider (tonapi or toncenter) failed or is unreachable. Nothing was sent."""
 
     BALANCE_CHECK_FAILED = "Failed to fetch the {currency} balance: {exc}"
     WALLET_STATE_FAILED = "Failed to fetch the wallet state: {exc}"
     WALLET_INFO_FAILED = "Failed to retrieve wallet info from the GRAM (ex TON) network: {exc}"
+
+    @classmethod
+    def from_exception(cls, template: str, exc: BaseException, **fields: object) -> ProviderError:
+        """The error for a failed provider call, carrying the HTTP status when the provider answered with one."""
+        status = exc.code if isinstance(exc, ProviderResponseError) else None
+        return cls(template.format(exc=exc, **fields), status)
 
     def __init__(self, message: str, status: int | None = None) -> None:
         self.status = status
@@ -233,6 +199,10 @@ class TransactionError(ChainError):
     INVALID_PAYLOAD = "Fragment returned an invalid transaction payload: 'transaction.messages' is missing or empty."
     MULTIPLE_MESSAGES = "Fragment asked for a transaction of {count} messages; pyfragment only signs single-message transfers."
     EXPIRED = "Fragment's transaction expired at {valid_until} (unix time) before it could be signed."
+
+    @classmethod
+    def expired(cls, valid_until: int) -> TransactionError:
+        return cls(cls.EXPIRED.format(valid_until=valid_until), retryable=True)
 
 
 class UnexpectedError(FragmentError):
@@ -258,7 +228,6 @@ __all__ = [
     "ParseError",
     "VerificationError",
     "ChainError",
-    "InsufficientBalanceError",
     "ProviderError",
     "TransactionError",
     "UnexpectedError",

@@ -15,20 +15,15 @@ from pyfragment.constants import (
     ADS_TOPUP_PAGE,
     BASE_HEADERS,
     GIFTS_PAGE,
+    LIMITS,
     NUMBERS_PAGE,
     PREMIUM_GIVEAWAY_PAGE,
     PREMIUM_MONTHS_VALID,
     PREMIUM_PAGE,
-    PREMIUM_WINNERS_MAX,
-    PREMIUM_WINNERS_MIN,
     STARS_GIVEAWAY_PAGE,
     STARS_PAGE,
-    STARS_PURCHASE_MAX,
-    STARS_PURCHASE_MIN,
-    STARS_WINNERS_MAX,
-    STARS_WINNERS_MIN,
 )
-from pyfragment.enums import ApiError, ApiMethod, AuctionFilter, AuctionSort, GiftAttribute, PaymentMethod
+from pyfragment.enums import ApiError, ApiMethod, AuctionFilter, AuctionSort, GiftAttribute, Limit, PaymentMethod
 from pyfragment.schemas import has_error
 from pyfragment.transport import FragmentTransport, get_fragment_hash
 
@@ -60,15 +55,24 @@ async def test_api_hash_is_discoverable(session: AsyncSession, page_url: str) ->
 
 
 async def test_stars_purchase_limits(session: AsyncSession) -> None:
-    assert _quantity_range(await _page(session, STARS_PAGE)) == (STARS_PURCHASE_MIN, STARS_PURCHASE_MAX)
+    assert _quantity_range(await _page(session, STARS_PAGE)) == (
+        LIMITS[Limit.STARS_PURCHASE].min,
+        LIMITS[Limit.STARS_PURCHASE].max,
+    )
 
 
 async def test_stars_giveaway_winner_limits(session: AsyncSession) -> None:
-    assert _quantity_range(await _page(session, STARS_GIVEAWAY_PAGE)) == (STARS_WINNERS_MIN, STARS_WINNERS_MAX)
+    assert _quantity_range(await _page(session, STARS_GIVEAWAY_PAGE)) == (
+        LIMITS[Limit.STARS_WINNERS].min,
+        LIMITS[Limit.STARS_WINNERS].max,
+    )
 
 
 async def test_premium_giveaway_winner_limits(session: AsyncSession) -> None:
-    assert _quantity_range(await _page(session, PREMIUM_GIVEAWAY_PAGE)) == (PREMIUM_WINNERS_MIN, PREMIUM_WINNERS_MAX)
+    assert _quantity_range(await _page(session, PREMIUM_GIVEAWAY_PAGE)) == (
+        LIMITS[Limit.PREMIUM_WINNERS].min,
+        LIMITS[Limit.PREMIUM_WINNERS].max,
+    )
 
 
 async def test_premium_durations(session: AsyncSession) -> None:

@@ -3,19 +3,22 @@ from __future__ import annotations
 import json
 import math
 from collections.abc import Mapping, Sequence
-from decimal import Decimal, InvalidOperation
-from typing import Any
+from enum import Enum
+from typing import Any, TypeVar
 
-from ton_core import MnemonicType as TonMnemonicType
-
-from pyfragment.constants import (
-    GRAM_DECIMALS,
-    REQUIRED_COOKIE_KEYS,
-)
+from pyfragment.constants import LIMITS, PREMIUM_MONTHS_VALID, REQUIRED_COOKIE_KEYS
 from pyfragment.domains.wallet.wallet import WALLET_CLASSES
-from pyfragment.enums import ApiProvider, AuctionFilter, AuctionSort, GiftAttribute, MnemonicType, PaymentMethod, WalletVersion
+from pyfragment.enums import (
+    ApiProvider,
+    AuctionFilter,
+    AuctionSort,
+    GiftAttribute,
+    Limit,
+    MnemonicType,
+    PaymentMethod,
+    WalletVersion,
+)
 from pyfragment.exceptions import ConfigurationError, CookieError
-from pyfragment.utils.money import to_units
 
 
 def parse_cookies(cookies: dict[str, Any] | str) -> dict[str, Any]:
@@ -35,66 +38,58 @@ def validate_cookie_keys(cookies: dict[str, Any]) -> None:
         raise CookieError(CookieError.MISSING_KEYS.format(keys=", ".join(missing)))
 
 
-def normalize_provider(api_provider: str) -> ApiProvider:
+E = TypeVar("E", bound=Enum)
+
+
+def parse_enum(enum: type[E], raw: str, error: str) -> E:
+    """The member of ``enum`` whose value is ``raw``, ignoring case and surrounding spaces."""
+    members = {str(member.value).lower(): member for member in enum}
     try:
-        return ApiProvider(api_provider.strip().lower())
-    except ValueError:
-        raise ConfigurationError(
-            ConfigurationError.UNSUPPORTED_PROVIDER.format(
-                provider=api_provider,
-                supported=", ".join(sorted(p.value for p in ApiProvider)),
-            )
-        ) from None
+        return members[raw.strip().lower()]
+    except KeyError:
+        supported = ", ".join(sorted(str(member.value) for member in enum))
+        raise ConfigurationError(error.format(value=raw, supported=supported)) from None
+
+
+def normalize_provider(api_provider: str) -> ApiProvider:
+    return parse_enum(ApiProvider, api_provider, ConfigurationError.UNSUPPORTED_PROVIDER)
 
 
 def normalize_wallet_version(wallet_version: str) -> WalletVersion:
-    version = wallet_version.strip()
-    for member in WalletVersion:
-        if member.value.lower() == version.lower():
-            return member
-    raise ConfigurationError(
-        ConfigurationError.UNSUPPORTED_VERSION.format(
-            version=version,
-            supported=", ".join(sorted(m.value for m in WalletVersion)),
-        )
-    )
+    return parse_enum(WalletVersion, wallet_version, ConfigurationError.UNSUPPORTED_VERSION)
+
+
+def normalize_mnemonic_type(mnemonic_type: str | None, wallet_version: WalletVersion) -> MnemonicType:
+    """The phrase scheme to derive the key with: TON by default, multichain for a Telegram Wallet."""
+    if mnemonic_type is None:
+        return MnemonicType.MULTICHAIN if wallet_version == WalletVersion.TG else MnemonicType.TON
+    return parse_enum(MnemonicType, mnemonic_type, ConfigurationError.UNSUPPORTED_MNEMONIC_TYPE)
 
 
 def normalize_sort(sort: str | None) -> AuctionSort | None:
-    if sort is None:
-        return None
-    try:
-        return AuctionSort(sort.strip().lower())
-    except ValueError:
-        raise ConfigurationError(
-            ConfigurationError.INVALID_SORT.format(sort=sort, supported=", ".join(m.value for m in AuctionSort))
-        ) from None
+    return None if sort is None else parse_enum(AuctionSort, sort, ConfigurationError.INVALID_SORT)
 
 
 def normalize_filter(filter: str | None) -> AuctionFilter | None:
-    if filter is None:
-        return None
-    try:
-        return AuctionFilter(filter.strip().lower())
-    except ValueError:
-        raise ConfigurationError(
-            ConfigurationError.INVALID_FILTER.format(filter=filter, supported=", ".join(repr(m.value) for m in AuctionFilter))
-        ) from None
+    return None if filter is None else parse_enum(AuctionFilter, filter, ConfigurationError.INVALID_FILTER)
 
 
 def normalize_gift_attributes(attr: Mapping[str, Sequence[str]] | None) -> dict[GiftAttribute, list[str]]:
-    normalized: dict[GiftAttribute, list[str]] = {}
-    for name, values in (attr or {}).items():
-        try:
-            trait = GiftAttribute(name.strip().title())
-        except ValueError:
-            raise ConfigurationError(
-                ConfigurationError.INVALID_GIFT_ATTRIBUTE.format(
-                    attribute=name, supported=", ".join(m.value for m in GiftAttribute)
-                )
-            ) from None
-        normalized[trait] = list(values)
-    return normalized
+    return {
+        parse_enum(GiftAttribute, name, ConfigurationError.INVALID_GIFT_ATTRIBUTE): list(values)
+        for name, values in (attr or {}).items()
+    }
+
+
+def check_limit(limit: Limit, value: object) -> None:
+    bounds = LIMITS[limit]
+    if not is_int_in_range(value, bounds.min, bounds.max):
+        raise ConfigurationError(ConfigurationError.OUT_OF_RANGE.format(label=bounds.label, min=bounds.min, max=bounds.max))
+
+
+def check_months(months: object) -> None:
+    if months not in PREMIUM_MONTHS_VALID:
+        raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
 
 
 def is_int_in_range(value: object, low: int, high: int) -> bool:
@@ -108,20 +103,6 @@ def validate_credentials(seed: str, api_key: str) -> None:
         raise ConfigurationError(ConfigurationError.MISSING_VARS.format(keys=", ".join(missing)))
 
 
-def normalize_mnemonic_type(mnemonic_type: str | None, wallet_version: WalletVersion) -> MnemonicType:
-    """The phrase scheme to derive the key with: TON by default, multichain for a Telegram Wallet."""
-    if mnemonic_type is None:
-        return MnemonicType.MULTICHAIN if wallet_version == WalletVersion.TG else MnemonicType.TON
-    try:
-        return MnemonicType(mnemonic_type.strip().lower())
-    except ValueError:
-        raise ConfigurationError(
-            ConfigurationError.UNSUPPORTED_MNEMONIC_TYPE.format(
-                mnemonic_type=mnemonic_type, supported=", ".join(m.value for m in MnemonicType)
-            )
-        ) from None
-
-
 def validate_seed(seed: str, wallet_version: WalletVersion, mnemonic_type: MnemonicType) -> None:
     """Check the phrase's length, words and checksum against the scheme it will be derived with.
 
@@ -129,28 +110,9 @@ def validate_seed(seed: str, wallet_version: WalletVersion, mnemonic_type: Mnemo
     or the wrong scheme silently gives a different wallet, which would only show up as an empty balance.
     """
     try:
-        WALLET_CLASSES[wallet_version].validate_mnemonic(seed, TonMnemonicType(mnemonic_type.value))
+        WALLET_CLASSES[wallet_version].validate_mnemonic(seed, mnemonic_type)
     except ValueError as exc:
         raise ConfigurationError(ConfigurationError.INVALID_SEED.format(exc=exc)) from None
-
-
-def normalize_seed(seed: str) -> str:
-    """Lower-case the phrase and collapse whitespace: tonutils derives a different wallet from ``Word`` than from ``word``."""
-    return " ".join(seed.lower().split())
-
-
-def normalize_gas_reserve(gas_reserve: Decimal | float | str) -> int:
-    """The gas reserve in nanograms. Floats are read through ``str``, so ``0.1`` means exactly 0.1 GRAM (ex TON)."""
-    invalid = ConfigurationError(ConfigurationError.INVALID_GAS_RESERVE.format(value=gas_reserve))
-    if isinstance(gas_reserve, bool):
-        raise invalid
-    try:
-        amount = Decimal(str(gas_reserve))
-    except InvalidOperation:
-        raise invalid from None
-    if not amount.is_finite() or amount < 0:
-        raise invalid
-    return to_units(amount, GRAM_DECIMALS)
 
 
 def normalize_confirm_timeout(confirm_timeout: float) -> float:
@@ -158,6 +120,12 @@ def normalize_confirm_timeout(confirm_timeout: float) -> float:
     if not is_number or not math.isfinite(confirm_timeout) or confirm_timeout < 0:
         raise ConfigurationError(ConfigurationError.INVALID_CONFIRM_TIMEOUT.format(value=confirm_timeout))
     return float(confirm_timeout)
+
+
+def normalize_max_batch(max_batch: int) -> int:
+    if not isinstance(max_batch, int) or isinstance(max_batch, bool) or max_batch < 1:
+        raise ConfigurationError(ConfigurationError.INVALID_MAX_BATCH.format(value=max_batch))
+    return max_batch
 
 
 def validate_payment_method(payment_method: PaymentMethod) -> None:

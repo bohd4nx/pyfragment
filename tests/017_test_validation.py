@@ -14,8 +14,8 @@ from pyfragment import (
     UnexpectedError,
     UserNotFoundError,
 )
-from pyfragment.constants import STARS_WINNERS_MAX
-from pyfragment.enums import AuctionFilter, AuctionSort, GiftAttribute, MarketplaceType
+from pyfragment.constants import LIMITS
+from pyfragment.enums import AuctionFilter, AuctionSort, GiftAttribute, Limit, MarketplaceType
 from pyfragment.utils.validation import is_int_in_range
 
 # is_int_in_range
@@ -47,7 +47,7 @@ async def test_recharge_ads_rejects_bool(client: FragmentClient) -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("winners", [0, STARS_WINNERS_MAX + 1, 15, True])
+@pytest.mark.parametrize("winners", [0, LIMITS[Limit.STARS_WINNERS].max + 1, 15, True])
 async def test_giveaway_stars_rejects_invalid_winners(client: FragmentClient, winners: int) -> None:
     with pytest.raises(ConfigurationError, match="winners"):
         await client.giveaway_stars("@channel", winners, 500)
