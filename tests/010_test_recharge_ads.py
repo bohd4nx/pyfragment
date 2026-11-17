@@ -6,7 +6,8 @@ import pytest
 
 import pyfragment.domains.payments.flow as _flow_mod
 from pyfragment import AdsRechargeResult, ConfigurationError, FragmentClient
-from pyfragment.constants import GRAM_TOPUP_MAX, GRAM_TOPUP_MIN
+from pyfragment.constants import LIMITS
+from pyfragment.enums import Limit
 from tests.shared import (
     FAKE_ACCOUNT,
     FAKE_ADS_ACCOUNT,
@@ -24,13 +25,13 @@ from tests.shared import (
 @pytest.mark.asyncio
 async def test_recharge_ads_amount_zero(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.recharge_ads(FAKE_ADS_ACCOUNT, amount=GRAM_TOPUP_MIN - 1)
+        await client.recharge_ads(FAKE_ADS_ACCOUNT, amount=LIMITS[Limit.GRAM_TOPUP].min - 1)
 
 
 @pytest.mark.asyncio
 async def test_recharge_ads_amount_too_high(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.recharge_ads(FAKE_ADS_ACCOUNT, amount=GRAM_TOPUP_MAX + 1)
+        await client.recharge_ads(FAKE_ADS_ACCOUNT, amount=LIMITS[Limit.GRAM_TOPUP].max + 1)
 
 
 @pytest.mark.asyncio
@@ -83,7 +84,7 @@ async def test_recharge_ads_confirmed_reflects_fragment_state(client: FragmentCl
         ),
         patch.object(client.ton_wallet, "account_info", return_value=FAKE_ACCOUNT),
         patch.object(_flow_mod, "process_transaction", AsyncMock(return_value=FAKE_SENT)),
-        patch.object(_flow_mod, "confirm_purchase", AsyncMock(return_value={"ok": True, "need_update": False, "mode": "done"})),
+        patch.object(_flow_mod, "confirm_purchase", AsyncMock(return_value=True)),
     ):
         result = await client.recharge_ads(FAKE_ADS_ACCOUNT, amount=10)
 

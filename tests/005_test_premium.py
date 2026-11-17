@@ -13,8 +13,8 @@ from pyfragment import (
     PremiumResult,
     UserNotFoundError,
 )
-from pyfragment.constants import PREMIUM_MONTHS_VALID, PREMIUM_WINNERS_MAX, PREMIUM_WINNERS_MIN
-from pyfragment.enums import ApiMethod, PaymentMethod
+from pyfragment.constants import LIMITS, PREMIUM_MONTHS_VALID
+from pyfragment.enums import ApiMethod, Limit, PaymentMethod
 from pyfragment.exceptions import AlreadySubscribedError
 from tests.shared import (
     FAKE_ACCOUNT,
@@ -155,13 +155,13 @@ async def test_purchase_premium_user_not_found(client: FragmentClient) -> None:
 @pytest.mark.asyncio
 async def test_giveaway_premium_winners_too_low(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.giveaway_premium("@channel", winners=PREMIUM_WINNERS_MIN - 1, months=3)
+        await client.giveaway_premium("@channel", winners=LIMITS[Limit.PREMIUM_WINNERS].min - 1, months=3)
 
 
 @pytest.mark.asyncio
 async def test_giveaway_premium_winners_too_high(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.giveaway_premium("@channel", winners=PREMIUM_WINNERS_MAX + 1, months=3)
+        await client.giveaway_premium("@channel", winners=LIMITS[Limit.PREMIUM_WINNERS].max + 1, months=3)
 
 
 @pytest.mark.asyncio

@@ -5,22 +5,17 @@ from dataclasses import asdict
 from typing import TYPE_CHECKING
 
 from pyfragment.constants import (
-    STARS_GIVEAWAY_MAX,
-    STARS_GIVEAWAY_MIN,
     STARS_GIVEAWAY_PAGE,
-    STARS_WINNERS_MAX,
-    STARS_WINNERS_MIN,
 )
 from pyfragment.domains.base import operation
 from pyfragment.domains.giveaways.models import StarsGiveawayResult
-from pyfragment.domains.payments import PurchaseFlow, run_purchase, validate_payment_method
+from pyfragment.domains.payments import PurchaseFlow, run_purchase
 from pyfragment.domains.recipients import find_channel
-from pyfragment.enums import ApiMethod, PaymentMethod
-from pyfragment.exceptions import ConfigurationError
-from pyfragment.utils.validation import is_int_in_range
+from pyfragment.enums import ApiMethod, Limit, PaymentMethod
+from pyfragment.utils.validation import check_limit, validate_payment_method
 
 if TYPE_CHECKING:
-    from pyfragment.client import FragmentClient
+    from pyfragment.client.base import BaseClient
 
 
 logger = logging.getLogger(__name__)
@@ -36,16 +31,14 @@ STARS_GIVEAWAY_FLOW = PurchaseFlow(
 
 
 async def giveaway_stars(
-    client: FragmentClient,
+    client: BaseClient,
     channel: str,
     winners: int,
     amount: int,
     payment_method: PaymentMethod = PaymentMethod.GRAM,
 ) -> StarsGiveawayResult:
-    if not is_int_in_range(winners, STARS_WINNERS_MIN, STARS_WINNERS_MAX):
-        raise ConfigurationError(ConfigurationError.INVALID_WINNERS_STARS)
-    if not is_int_in_range(amount, STARS_GIVEAWAY_MIN, STARS_GIVEAWAY_MAX):
-        raise ConfigurationError(ConfigurationError.INVALID_STARS_PER_WINNER)
+    check_limit(Limit.STARS_WINNERS, winners)
+    check_limit(Limit.STARS_GIVEAWAY, amount)
     validate_payment_method(payment_method)
 
     with operation(

@@ -36,7 +36,6 @@ class FragmentTransport:
         return self._session
 
     async def fetch_page(self, url: str) -> str:
-        """Fetch an authenticated Fragment HTML page (e.g. ``/my/usernames``)."""
         session = self._get_session()
         response = await send(session.get(url, headers={"referer": parent_url(url)}), url)
         if response.status_code != HTTPStatus.OK:

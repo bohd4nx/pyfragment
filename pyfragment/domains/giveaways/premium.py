@@ -6,20 +6,16 @@ from typing import TYPE_CHECKING
 
 from pyfragment.constants import (
     PREMIUM_GIVEAWAY_PAGE,
-    PREMIUM_MONTHS_VALID,
-    PREMIUM_WINNERS_MAX,
-    PREMIUM_WINNERS_MIN,
 )
 from pyfragment.domains.base import operation
 from pyfragment.domains.giveaways.models import PremiumGiveawayResult
-from pyfragment.domains.payments import PurchaseFlow, run_purchase, validate_payment_method
+from pyfragment.domains.payments import PurchaseFlow, run_purchase
 from pyfragment.domains.recipients import find_channel
-from pyfragment.enums import ApiMethod, PaymentMethod
-from pyfragment.exceptions import ConfigurationError
-from pyfragment.utils.validation import is_int_in_range
+from pyfragment.enums import ApiMethod, Limit, PaymentMethod
+from pyfragment.utils.validation import check_limit, check_months, validate_payment_method
 
 if TYPE_CHECKING:
-    from pyfragment.client import FragmentClient
+    from pyfragment.client.base import BaseClient
 
 
 logger = logging.getLogger(__name__)
@@ -35,16 +31,14 @@ PREMIUM_GIVEAWAY_FLOW = PurchaseFlow(
 
 
 async def giveaway_premium(
-    client: FragmentClient,
+    client: BaseClient,
     channel: str,
     winners: int,
     months: int = 3,
     payment_method: PaymentMethod = PaymentMethod.GRAM,
 ) -> PremiumGiveawayResult:
-    if not is_int_in_range(winners, PREMIUM_WINNERS_MIN, PREMIUM_WINNERS_MAX):
-        raise ConfigurationError(ConfigurationError.INVALID_WINNERS_PREMIUM)
-    if months not in PREMIUM_MONTHS_VALID:
-        raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
+    check_limit(Limit.PREMIUM_WINNERS, winners)
+    check_months(months)
     validate_payment_method(payment_method)
 
     with operation(

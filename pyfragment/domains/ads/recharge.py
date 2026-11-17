@@ -4,16 +4,15 @@ import logging
 from dataclasses import asdict
 from typing import TYPE_CHECKING
 
-from pyfragment.constants import ADS_TOPUP_PAGE, GRAM_TOPUP_MAX, GRAM_TOPUP_MIN
+from pyfragment.constants import ADS_TOPUP_PAGE
 from pyfragment.domains.ads.models import AdsRechargeResult
 from pyfragment.domains.base import operation
 from pyfragment.domains.payments import PurchaseFlow, run_purchase
-from pyfragment.enums import ApiMethod
-from pyfragment.exceptions import ConfigurationError
-from pyfragment.utils.validation import is_int_in_range
+from pyfragment.enums import ApiMethod, Limit
+from pyfragment.utils.validation import check_limit
 
 if TYPE_CHECKING:
-    from pyfragment.client import FragmentClient
+    from pyfragment.client.base import BaseClient
 
 
 logger = logging.getLogger(__name__)
@@ -28,9 +27,8 @@ RECHARGE_FLOW = PurchaseFlow(
 )
 
 
-async def recharge_ads(client: FragmentClient, account: str, amount: int) -> AdsRechargeResult:
-    if not is_int_in_range(amount, GRAM_TOPUP_MIN, GRAM_TOPUP_MAX):
-        raise ConfigurationError(ConfigurationError.INVALID_GRAM_AMOUNT)
+async def recharge_ads(client: BaseClient, account: str, amount: int) -> AdsRechargeResult:
+    check_limit(Limit.GRAM_TOPUP, amount)
 
     with operation(logger, "recharge Ads account '%s' for %s GRAM (ex TON)", account, amount):
         await RECHARGE_FLOW.open(client)

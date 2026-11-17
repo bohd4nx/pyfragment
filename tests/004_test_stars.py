@@ -13,15 +13,8 @@ from pyfragment import (
     StarsResult,
     UserNotFoundError,
 )
-from pyfragment.constants import (
-    STARS_GIVEAWAY_MAX,
-    STARS_GIVEAWAY_MIN,
-    STARS_PURCHASE_MAX,
-    STARS_PURCHASE_MIN,
-    STARS_WINNERS_MAX,
-    STARS_WINNERS_MIN,
-)
-from pyfragment.enums import ApiMethod, PaymentMethod
+from pyfragment.constants import LIMITS
+from pyfragment.enums import ApiMethod, Limit, PaymentMethod
 from tests.shared import (
     FAKE_ACCOUNT,
     FAKE_COMMENT,
@@ -39,13 +32,13 @@ from tests.shared import (
 @pytest.mark.asyncio
 async def test_purchase_stars_amount_too_low(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.purchase_stars("@user", amount=STARS_PURCHASE_MIN - 1)
+        await client.purchase_stars("@user", amount=LIMITS[Limit.STARS_PURCHASE].min - 1)
 
 
 @pytest.mark.asyncio
 async def test_purchase_stars_amount_too_high(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.purchase_stars("@user", amount=STARS_PURCHASE_MAX + 1)
+        await client.purchase_stars("@user", amount=LIMITS[Limit.STARS_PURCHASE].max + 1)
 
 
 @pytest.mark.asyncio
@@ -111,7 +104,7 @@ async def test_purchase_stars_confirmed_reflects_fragment_state(client: Fragment
         patch.object(client, "call", call_mock),
         patch.object(client.ton_wallet, "account_info", return_value=FAKE_ACCOUNT),
         patch.object(_flow_mod, "process_transaction", AsyncMock(return_value=FAKE_SENT)),
-        patch.object(_flow_mod, "confirm_purchase", AsyncMock(return_value={"ok": True, "need_update": False, "mode": "done"})),
+        patch.object(_flow_mod, "confirm_purchase", AsyncMock(return_value=True)),
     ):
         result = await client.purchase_stars("@user", amount=500)
 
@@ -132,7 +125,7 @@ async def test_purchase_stars_not_confirmed_when_fragment_never_confirms(client:
         patch.object(client, "call", call_mock),
         patch.object(client.ton_wallet, "account_info", return_value=FAKE_ACCOUNT),
         patch.object(_flow_mod, "process_transaction", AsyncMock(return_value=FAKE_SENT)),
-        patch.object(_flow_mod, "confirm_purchase", AsyncMock(return_value=None)),
+        patch.object(_flow_mod, "confirm_purchase", AsyncMock(return_value=False)),
     ):
         result = await client.purchase_stars("@user", amount=500)
 
@@ -191,25 +184,33 @@ async def test_purchase_stars_user_not_found(client: FragmentClient) -> None:
 @pytest.mark.asyncio
 async def test_giveaway_stars_winners_too_low(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.giveaway_stars("@channel", winners=STARS_WINNERS_MIN - 1, amount=STARS_GIVEAWAY_MIN)
+        await client.giveaway_stars(
+            "@channel", winners=LIMITS[Limit.STARS_WINNERS].min - 1, amount=LIMITS[Limit.STARS_GIVEAWAY].min
+        )
 
 
 @pytest.mark.asyncio
 async def test_giveaway_stars_winners_too_high(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.giveaway_stars("@channel", winners=STARS_WINNERS_MAX + 1, amount=STARS_GIVEAWAY_MIN)
+        await client.giveaway_stars(
+            "@channel", winners=LIMITS[Limit.STARS_WINNERS].max + 1, amount=LIMITS[Limit.STARS_GIVEAWAY].min
+        )
 
 
 @pytest.mark.asyncio
 async def test_giveaway_stars_amount_too_low(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.giveaway_stars("@channel", winners=STARS_WINNERS_MIN, amount=STARS_GIVEAWAY_MIN - 1)
+        await client.giveaway_stars(
+            "@channel", winners=LIMITS[Limit.STARS_WINNERS].min, amount=LIMITS[Limit.STARS_GIVEAWAY].min - 1
+        )
 
 
 @pytest.mark.asyncio
 async def test_giveaway_stars_amount_too_high(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.giveaway_stars("@channel", winners=STARS_WINNERS_MIN, amount=STARS_GIVEAWAY_MAX + 1)
+        await client.giveaway_stars(
+            "@channel", winners=LIMITS[Limit.STARS_WINNERS].min, amount=LIMITS[Limit.STARS_GIVEAWAY].max + 1
+        )
 
 
 @pytest.mark.asyncio
@@ -286,7 +287,7 @@ async def test_giveaway_stars_confirmed_reflects_fragment_state(client: Fragment
         ),
         patch.object(client.ton_wallet, "account_info", return_value=FAKE_ACCOUNT),
         patch.object(_flow_mod, "process_transaction", AsyncMock(return_value=FAKE_SENT)),
-        patch.object(_flow_mod, "confirm_purchase", AsyncMock(return_value={"ok": True, "need_update": False, "mode": "done"})),
+        patch.object(_flow_mod, "confirm_purchase", AsyncMock(return_value=True)),
     ):
         result = await client.giveaway_stars("@channel", winners=3, amount=1000)
 

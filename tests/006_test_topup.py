@@ -6,7 +6,8 @@ import pytest
 
 import pyfragment.domains.payments.flow as _flow_mod
 from pyfragment import AdsTopupResult, ConfigurationError, FragmentClient, UserNotFoundError
-from pyfragment.constants import GRAM_TOPUP_MAX, GRAM_TOPUP_MIN
+from pyfragment.constants import LIMITS
+from pyfragment.enums import Limit
 from tests.shared import (
     FAKE_ACCOUNT,
     FAKE_COMMENT,
@@ -24,13 +25,13 @@ from tests.shared import (
 @pytest.mark.asyncio
 async def test_topup_gram_amount_zero(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.topup_gram("@user", amount=GRAM_TOPUP_MIN - 1)
+        await client.topup_gram("@user", amount=LIMITS[Limit.GRAM_TOPUP].min - 1)
 
 
 @pytest.mark.asyncio
 async def test_topup_gram_amount_too_high(client: FragmentClient) -> None:
     with pytest.raises(ConfigurationError):
-        await client.topup_gram("@user", amount=GRAM_TOPUP_MAX + 1)
+        await client.topup_gram("@user", amount=LIMITS[Limit.GRAM_TOPUP].max + 1)
 
 
 @pytest.mark.asyncio

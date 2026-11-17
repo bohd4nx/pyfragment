@@ -4,17 +4,18 @@ import logging
 from dataclasses import asdict
 from typing import TYPE_CHECKING
 
-from pyfragment.constants import PREMIUM_MONTHS_VALID, PREMIUM_PAGE
+from pyfragment.constants import PREMIUM_PAGE
 from pyfragment.domains.base import operation
-from pyfragment.domains.payments import PurchaseFlow, run_purchase, validate_payment_method
+from pyfragment.domains.payments import PurchaseFlow, run_purchase
 from pyfragment.domains.purchases.models import PremiumPackage, PremiumResult
 from pyfragment.domains.purchases.parser import parse_premium_packages
 from pyfragment.domains.recipients import Recipient, find_user
 from pyfragment.enums import ApiMethod, PaymentMethod
-from pyfragment.exceptions import ConfigurationError, FragmentAPIError
+from pyfragment.exceptions import FragmentAPIError
+from pyfragment.utils.validation import check_months, validate_payment_method
 
 if TYPE_CHECKING:
-    from pyfragment.client import FragmentClient
+    from pyfragment.client.base import BaseClient
 
 
 logger = logging.getLogger(__name__)
@@ -29,7 +30,7 @@ PREMIUM_FLOW = PurchaseFlow(
 )
 
 
-async def _find_recipient(client: FragmentClient, username: str, months: int) -> Recipient:
+async def find_recipient(client: BaseClient, username: str, months: int) -> Recipient:
     return await find_user(
         client,
         ApiMethod.SEARCH_PREMIUM_GIFT_RECIPIENT,
@@ -39,8 +40,7 @@ async def _find_recipient(client: FragmentClient, username: str, months: int) ->
     )
 
 
-async def get_premium_packages(client: FragmentClient) -> list[PremiumPackage]:
-    """Return all Premium subscription packages with current GRAM and USD prices."""
+async def get_premium_packages(client: BaseClient) -> list[PremiumPackage]:
     with operation(logger, "get Premium packages"):
         html = await client._transport.fetch_page(PREMIUM_PAGE)
         packages = parse_premium_packages(html)
@@ -49,26 +49,24 @@ async def get_premium_packages(client: FragmentClient) -> list[PremiumPackage]:
         return packages
 
 
-async def check_premium_recipient(client: FragmentClient, username: str, months: int = 3) -> Recipient:
-    if months not in PREMIUM_MONTHS_VALID:
-        raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
+async def check_premium_recipient(client: BaseClient, username: str, months: int = 3) -> Recipient:
+    check_months(months)
     with operation(logger, "check Premium recipient '%s' for %s months", username, months):
-        return await _find_recipient(client, username, months)
+        return await find_recipient(client, username, months)
 
 
 async def purchase_premium(
-    client: FragmentClient,
+    client: BaseClient,
     username: str,
     months: int,
     show_sender: bool = True,
     payment_method: PaymentMethod = PaymentMethod.GRAM,
 ) -> PremiumResult:
-    if months not in PREMIUM_MONTHS_VALID:
-        raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
+    check_months(months)
     validate_payment_method(payment_method)
 
     with operation(logger, "purchase %s months of Premium for user '%s' using '%s'", months, username, payment_method):
-        recipient = await _find_recipient(client, username, months)
+        recipient = await find_recipient(client, username, months)
         await PREMIUM_FLOW.open(client)
         payment = await run_purchase(
             client,

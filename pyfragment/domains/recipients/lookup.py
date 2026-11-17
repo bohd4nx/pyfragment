@@ -13,12 +13,10 @@ from pyfragment.exceptions import (
 from pyfragment.schemas import RecipientSearch, error_text, has_error
 
 if TYPE_CHECKING:
-    from pyfragment.client import FragmentClient
+    from pyfragment.client.base import BaseClient
 
 
-def _recipient_or_raise(
-    result: dict[str, Any], query: str, not_found_error: ApiError, not_found: FragmentAPIError
-) -> Recipient:
+def recipient_or_raise(result: dict[str, Any], query: str, not_found_error: ApiError, not_found: FragmentAPIError) -> Recipient:
     found = RecipientSearch.from_response(result)
     if found.recipient:
         return Recipient(
@@ -34,14 +32,13 @@ def _recipient_or_raise(
     raise not_found
 
 
-async def find_user(client: FragmentClient, method: ApiMethod, page_url: str, data: dict[str, Any], username: str) -> Recipient:
-    """Resolve a Telegram user to Fragment's recipient."""
+async def find_user(client: BaseClient, method: ApiMethod, page_url: str, data: dict[str, Any], username: str) -> Recipient:
     result = await client.call(method, data, page_url=page_url)
     if has_error(result, ApiError.ALREADY_SUBSCRIBED):
         raise AlreadySubscribedError(AlreadySubscribedError.PREMIUM_ACTIVE)
     if has_error(result, ApiError.NOT_A_USER):
         raise UserNotFoundError(UserNotFoundError.NOT_A_USER.format(username=username))
-    return _recipient_or_raise(
+    return recipient_or_raise(
         result,
         username,
         ApiError.NO_USERS_FOUND,
@@ -49,12 +46,9 @@ async def find_user(client: FragmentClient, method: ApiMethod, page_url: str, da
     )
 
 
-async def find_channel(
-    client: FragmentClient, method: ApiMethod, page_url: str, data: dict[str, Any], channel: str
-) -> Recipient:
-    """Resolve a Telegram channel to Fragment's recipient."""
+async def find_channel(client: BaseClient, method: ApiMethod, page_url: str, data: dict[str, Any], channel: str) -> Recipient:
     result = await client.call(method, data, page_url=page_url)
-    return _recipient_or_raise(
+    return recipient_or_raise(
         result,
         channel,
         ApiError.NO_CHANNELS_FOUND,
