@@ -42,6 +42,7 @@ if TYPE_CHECKING:
     from pyfragment.client.base import BaseClient
     from pyfragment.domains.wallet.transfers.request import TransferRequest
 
+SeqnoWallet = WalletV4R2 | WalletV5R1 | WalletTg
 SeqnoParams = WalletV4Params | WalletV5Params | WalletTgParams
 TransferParams = SeqnoParams | WalletHighloadV2Params | WalletHighloadV3Params
 
@@ -149,7 +150,7 @@ class TonWallet:
         if (await self.state()).state != ContractState.ACTIVE:
             return 0
         wallet = self.wallet()
-        assert isinstance(wallet, (WalletV4R2, WalletV5R1, WalletTg))  # only these order transfers by seqno
+        assert isinstance(wallet, SeqnoWallet)  # only these order transfers by seqno
         return int(await wallet.seqno())
 
     async def transfer_params(self, valid_until: int, seqno: int | None) -> TransferParams:
@@ -190,7 +191,7 @@ class TonWallet:
 
     async def commit_seqno(self, params: TransferParams, valid_until: int) -> None:
         """Record that a message with params.seqno was sent; prevents seqno reuse until valid_until passes."""
-        if isinstance(params, (WalletV4Params, WalletV5Params, WalletTgParams)) and params.seqno is not None:
+        if isinstance(params, SeqnoParams) and params.seqno is not None:
             await self.coordinator.save_pending(params.seqno, float(valid_until))
 
     async def aclose(self) -> None:

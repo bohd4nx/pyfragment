@@ -234,6 +234,54 @@ async def test_a_cancelled_payment_does_not_hold_up_the_others() -> None:
     assert messages.sizes == [2]
 
 
+@pytest.mark.asyncio
+async def test_a_payment_cancelled_while_waiting_for_the_previous_block_is_never_sent() -> None:
+    ton = FakeTon(seqno=5, landing_delay=0.15)
+    with use_fake_ton(ton), patch("pyfragment.domains.wallet.wallet.SEQNO_POLL_INTERVAL", 0.01):
+        async with new_client(max_batch=10) as client, recording() as messages:
+            client.ton_wallet.wallet()
+            first = asyncio.ensure_future(process_transaction(client, stars_link()))
+            await asyncio.sleep(0.04)
+            second = asyncio.ensure_future(process_transaction(client, stars_link()))
+            await asyncio.sleep(0.04)
+            second.cancel()
+            results = await asyncio.gather(first, second, return_exceptions=True)
+    assert isinstance(results[0], TransferIntent)
+    assert isinstance(results[1], asyncio.CancelledError)
+    assert messages.sizes == [1]
+    assert len(ton.sent) == 1
+
+
+@pytest.mark.asyncio
+async def test_a_pending_seqno_that_cannot_be_saved_does_not_fail_a_sent_payment() -> None:
+    class BrokenCoordinator(LocalTransferCoordinator):
+        async def save_pending(self, seqno: int, valid_until: float) -> None:
+            raise ConnectionError("redis is down")
+
+    ton = FakeTon()
+    with use_fake_ton(ton):
+        async with new_client(transfer_coordinator=BrokenCoordinator()) as client:
+            intent = await process_transaction(client, stars_link())
+    assert len(ton.sent) == 1
+    assert intent.msg_hash
+
+
+@pytest.mark.asyncio
+async def test_a_cancellation_inside_the_runner_does_not_leave_callers_hanging() -> None:
+    async def cancelled_hook(_: TransferIntent) -> None:
+        raise asyncio.CancelledError
+
+    ton = FakeTon()
+    with use_fake_ton(ton):
+        async with new_client(max_batch=4, on_transfer_prepared=cancelled_hook) as client:
+            results = await asyncio.wait_for(
+                asyncio.gather(*(process_transaction(client, stars_link()) for _ in range(2)), return_exceptions=True),
+                timeout=2,
+            )
+    assert all(isinstance(result, asyncio.CancelledError) for result in results)
+    assert ton.sent == []
+
+
 # Settling single entries
 
 

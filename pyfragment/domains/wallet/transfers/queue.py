@@ -55,6 +55,7 @@ class TransferQueue:
         while self._waiting:
             wallet = self._waiting[0].wallet
             group: list[Entry] = []
+            intents: list[TransferIntent] = []
             try:
                 async with wallet.coordinator.lock():
                     # The group is formed only after the previous message has landed, so whatever queued while
@@ -62,13 +63,16 @@ class TransferQueue:
                     seqno = await wallet.next_seqno()
                     group = self._take(wallet.batch_limit)
                     intents = await self._send(wallet, group, seqno) if group else []
-                for entry, intent in zip(group, intents, strict=True):
-                    if not entry.done.done():
-                        entry.done.set_result(intent)
-            except Exception as exc:
-                for entry in group or self._take(wallet.batch_limit):
-                    if not entry.done.done():
-                        entry.done.set_exception(exc)
+            except BaseException as exc:
+                if intents:
+                    logger.warning("Releasing the transfer lock failed after the message was sent: %s", exc)
+                else:
+                    fail(group or self._take(wallet.batch_limit), exc)
+                resolve(group, intents)
+                if not isinstance(exc, Exception):
+                    raise
+                continue
+            resolve(group, intents)
 
     def _take(self, limit: int) -> list[Entry]:
         """The next entries still worth sending: not cancelled, and with their invoice still open."""
@@ -86,8 +90,32 @@ class TransferQueue:
             if entry.request.on_prepared is not None:
                 await entry.request.on_prepared(intent)
         await broadcast(await wallet.ton(), external.as_hex)
-        await wallet.commit_seqno(params, valid_until)
+        try:
+            await wallet.commit_seqno(params, valid_until)
+        except Exception as exc:
+            # The message is out: its payments must be reported as sent, not as failed (a retry would pay twice).
+            logger.warning("Could not save the pending seqno of a sent message: %s", exc)
         return intents
+
+
+def resolve(group: list[Entry], intents: list[TransferIntent]) -> None:
+    """Hand each entry its intent; ``intents`` is empty when the message never went out."""
+    if not intents:
+        return
+    for entry, intent in zip(group, intents, strict=True):
+        if not entry.done.done():
+            entry.done.set_result(intent)
+
+
+def fail(group: list[Entry], exc: BaseException) -> None:
+    """Settle the entries with ``exc``; a cancellation of the runner cancels its callers instead of hanging them."""
+    for entry in group:
+        if entry.done.done():
+            continue
+        if isinstance(exc, Exception):
+            entry.done.set_exception(exc)
+        else:
+            entry.done.cancel()
 
 
 def drop_expired(group: list[Entry]) -> list[Entry]:

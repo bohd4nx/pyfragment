@@ -36,7 +36,7 @@ async def get_login_code(client: BaseClient, number: str) -> LoginCodeResult:
             page_url=NUMBERS_PAGE,
         )
 
-        code, active_sessions = parse_login_code(result.get("html", ""))
+        code, active_sessions = parse_login_code(result.get("html") or "")
         return LoginCodeResult(number=number, code=code, active_sessions=active_sessions)
 
 

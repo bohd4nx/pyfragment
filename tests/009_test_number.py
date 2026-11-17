@@ -22,6 +22,14 @@ async def test_get_login_code_returns_code(client: FragmentClient) -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("html", [None, False, ""])
+async def test_get_login_code_with_an_empty_html_field_means_no_code(client: FragmentClient, html: object) -> None:
+    with patch.object(client, "call", AsyncMock(return_value={"html": html})):
+        result = await client.get_login_code("1234567890")
+    assert (result.code, result.active_sessions) == (None, 0)
+
+
+@pytest.mark.asyncio
 async def test_get_login_code_no_pending_code(client: FragmentClient) -> None:
     with patch.object(client, "call", AsyncMock(return_value={"html": FAKE_HTML_NO_CODE})):
         result = await client.get_login_code("1234567890")
