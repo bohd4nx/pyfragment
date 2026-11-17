@@ -8,6 +8,7 @@ from curl_cffi.requests import AsyncSession, Response
 from pyfragment import FragmentClient, HTTPStatusError, SessionExpiredError
 from pyfragment.constants.fragment import FRAGMENT_BASE_URL, PREMIUM_PAGE, STARS_PAGE
 from pyfragment.transport import FragmentTransport, fragment_request, get_fragment_hash
+from pyfragment.transport.page import check_authenticated_page
 from tests.shared import FAKE_HASH, FAKE_RESPONSE
 
 # client.call() mocked tests
@@ -230,3 +231,29 @@ async def test_transport_reuses_one_session_and_aclose_resets_it() -> None:
     assert transport._hashes == {}
     assert transport._get_session() is not first
     await transport.aclose()
+
+
+# fetch_page
+
+
+@pytest.mark.asyncio
+async def test_fetch_page_returns_the_html_of_a_logged_in_page() -> None:
+    page = MagicMock(status_code=200, text='"logged_in":true hash=abcdef0123456789abcdef0123456789')
+    session = AsyncMock(spec=AsyncSession)
+    session.get = AsyncMock(return_value=page)
+    with patch("pyfragment.transport.session.check_authenticated_page") as check:
+        assert await _transport_with_session(session).fetch_page(STARS_PAGE) == page.text
+    check.assert_called_once_with(page.text, STARS_PAGE)
+
+
+@pytest.mark.asyncio
+async def test_fetch_page_raises_on_an_error_status() -> None:
+    session = AsyncMock(spec=AsyncSession)
+    session.get = AsyncMock(return_value=MagicMock(status_code=502, text=""))
+    with pytest.raises(HTTPStatusError):
+        await _transport_with_session(session).fetch_page(STARS_PAGE)
+
+
+def test_a_page_without_the_api_hash_is_not_an_authenticated_page() -> None:
+    with pytest.raises(SessionExpiredError, match="API hash"):
+        check_authenticated_page("<html>nothing here</html>", STARS_PAGE)

@@ -6,7 +6,8 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from pyfragment import AuctionItem, FragmentClient
-from pyfragment.domains.marketplace.parser import parse_auction_rows, parse_gift_items
+from pyfragment.domains.marketplace.parser import card_status, normalize_price, parse_auction_rows, parse_gift_items
+from pyfragment.domains.purchases.parser import parse_gram_price, parse_premium_packages, parse_stars_packages
 from pyfragment.utils.money import parse_amount
 from tests.shared import fixture_html, fixture_json
 
@@ -123,3 +124,40 @@ def test_parse_amount_reads_fragments_formatting(raw: object, expected: Decimal)
 @pytest.mark.parametrize("raw", [None, True, "", "abc", "-1", "NaN", "Infinity"])
 def test_parse_amount_rejects_what_is_not_a_non_negative_number(raw: object) -> None:
     assert parse_amount(raw) is None
+
+
+# Edge cases of the listing and price parsers
+
+
+@pytest.mark.parametrize(("raw", "expected"), [("24,740", "24740.00"), ("0.5", "0.50"), ("N/A", "N/A"), (None, None)])
+def test_normalize_price(raw: str | None, expected: str | None) -> None:
+    assert normalize_price(raw) == expected
+
+
+def test_a_gift_card_without_a_link_is_skipped_and_one_without_a_status_has_none() -> None:
+    html = (
+        '<a class="tm-grid-item"><div class="item-name">Orphan</div></a>'
+        '<a class="tm-grid-item" href="/gift/plushpepe-1"><div class="item-name">Plush Pepe</div></a>'
+    )
+    items, _ = parse_gift_items(html)
+    assert [(item["slug"], item["status"]) for item in items] == [("gift/plushpepe-1", None)]
+    assert card_status("<div>no status here</div>") is None
+
+
+@pytest.mark.parametrize(
+    ("html", "expected"),
+    [
+        ('<div class="icon-ton">1,234</div>', Decimal(1234)),
+        ('<div class="icon-ton">1<span class="mini-frac">.2309</span></div>', Decimal("1.2309")),
+        ("<div>no price</div>", None),
+    ],
+)
+def test_parse_gram_price(html: str, expected: Decimal | None) -> None:
+    assert parse_gram_price(html) == expected
+
+
+def test_packages_with_an_unreadable_usd_price_are_skipped() -> None:
+    stars = 'value="50" <div class="icon-usd">1.2.3</div> <div class="icon-ton">1</div>'
+    premium = 'name="months" value="3" <div class="icon-ton">5</div> <div class="tm-radio-desc">&#036;1.2.3</div>'
+    assert parse_stars_packages(stars) == []
+    assert parse_premium_packages(premium) == []
