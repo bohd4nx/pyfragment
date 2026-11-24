@@ -10,7 +10,8 @@ from pyfragment.exceptions import (
     FragmentAPIError,
     UserNotFoundError,
 )
-from pyfragment.schemas import RecipientSearch, error_text, has_error
+from pyfragment.schemas import RecipientSearch
+from pyfragment.utils.errors import error_text, has_error
 
 if TYPE_CHECKING:
     from pyfragment.client.base import BaseClient
@@ -48,6 +49,8 @@ async def find_user(client: BaseClient, method: ApiMethod, page_url: str, data: 
 
 async def find_channel(client: BaseClient, method: ApiMethod, page_url: str, data: dict[str, Any], channel: str) -> Recipient:
     result = await client.call(method, data, page_url=page_url)
+    if has_error(result, ApiError.NOT_A_CHANNEL):
+        raise ChannelNotFoundError(ChannelNotFoundError.NOT_A_CHANNEL.format(channel=channel))
     return recipient_or_raise(
         result,
         channel,

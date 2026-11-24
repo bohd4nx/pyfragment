@@ -12,7 +12,7 @@ from curl_cffi.requests.exceptions import RequestException
 from pyfragment.constants.fragment import FRAGMENT_API_URL, MAX_API_ATTEMPTS
 from pyfragment.enums import ApiError
 from pyfragment.exceptions import HTTPStatusError, NetworkError, ParseError, SessionExpiredError
-from pyfragment.schemas import has_error
+from pyfragment.utils.errors import has_error
 
 SESSION_REJECTED_STATUSES: frozenset[int] = frozenset({HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN})
 

@@ -8,9 +8,9 @@ from curl_cffi.requests import AsyncSession
 
 from pyfragment.enums import ApiError
 from pyfragment.exceptions import SessionExpiredError
-from pyfragment.schemas import has_error
 from pyfragment.transport.api import fragment_request, is_bad_hash, send, status_error
 from pyfragment.transport.page import check_authenticated_page, get_fragment_hash, parent_url
+from pyfragment.utils.errors import has_error
 
 logger = logging.getLogger(__name__)
 

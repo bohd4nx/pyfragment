@@ -25,8 +25,11 @@ from pyfragment.enums import (
     WalletVersion,
 )
 from pyfragment.exceptions import (
+    AboveMaximumError,
     AlreadySubscribedError,
+    AmountError,
     AnonymousNumberError,
+    BelowMinimumError,
     ChainError,
     ChannelNotFoundError,
     ClientError,
@@ -35,6 +38,8 @@ from pyfragment.exceptions import (
     FragmentAPIError,
     FragmentError,
     HTTPStatusError,
+    InvalidPackageError,
+    InvoiceExpiredError,
     NetworkError,
     ParseError,
     ProviderError,
@@ -44,6 +49,7 @@ from pyfragment.exceptions import (
     UnexpectedError,
     UserNotFoundError,
     VerificationError,
+    WalletAlreadyLinkedError,
 )
 
 logging.getLogger("pyfragment").addHandler(logging.NullHandler())
@@ -88,6 +94,12 @@ __all__ = [
     "UserNotFoundError",
     "ChannelNotFoundError",
     "AlreadySubscribedError",
+    "AmountError",
+    "BelowMinimumError",
+    "AboveMaximumError",
+    "InvalidPackageError",
+    "InvoiceExpiredError",
+    "WalletAlreadyLinkedError",
     "VerificationError",
     "ParseError",
     "AnonymousNumberError",

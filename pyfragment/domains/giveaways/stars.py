@@ -11,6 +11,7 @@ from pyfragment.domains.giveaways.models import StarsGiveawayResult
 from pyfragment.domains.payments import PurchaseFlow, run_purchase
 from pyfragment.domains.recipients import find_channel
 from pyfragment.enums import ApiMethod, PaymentMethod
+from pyfragment.utils.errors import raise_for_error
 from pyfragment.utils.validation import check_limit, check_stars_winners, validate_payment_method
 
 if TYPE_CHECKING:
@@ -52,11 +53,12 @@ async def giveaway_stars(
             client, ApiMethod.SEARCH_STARS_GIVEAWAY_RECIPIENT, STARS_GIVEAWAY_FLOW.page_url, {"query": channel}, channel
         )
         await STARS_GIVEAWAY_FLOW.open(client)
-        await client.call(
+        prices = await client.call(
             ApiMethod.UPDATE_STARS_GIVEAWAY_PRICES,
             {"quantity": winners, "stars": amount},
             page_url=STARS_GIVEAWAY_FLOW.page_url,
         )
+        raise_for_error(prices)
         payment = await run_purchase(
             client,
             STARS_GIVEAWAY_FLOW,

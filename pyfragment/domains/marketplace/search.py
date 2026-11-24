@@ -11,7 +11,7 @@ from pyfragment.domains.marketplace.models import AuctionItem, GiftsResult, Numb
 from pyfragment.domains.marketplace.parser import parse_auction_rows, parse_gift_items
 from pyfragment.enums import ApiMethod, AuctionFilter, AuctionSort, MarketplaceType
 from pyfragment.exceptions import ConfigurationError
-from pyfragment.schemas import raise_for_error
+from pyfragment.utils.errors import raise_for_error
 from pyfragment.utils.validation import normalize_gift_attributes, parse_enum
 
 if TYPE_CHECKING:

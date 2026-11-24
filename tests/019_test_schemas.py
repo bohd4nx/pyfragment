@@ -1,42 +1,10 @@
-"""Parse Fragment response bodies with the typed schemas and match known error messages."""
+"""Parse Fragment response bodies with the typed schemas."""
 
 import pytest
 
-from pyfragment.enums import ApiError, StateMode
-from pyfragment.schemas import InvoiceRequest, PageState, RecipientSearch, TransactionLink, error_text, has_error
+from pyfragment.enums import StateMode
+from pyfragment.schemas import InvoiceRequest, PageState, RecipientSearch, TransactionLink
 from tests.shared import FAKE_CONFIRM_METHOD, fixture_json
-
-# error_text / has_error
-
-
-def test_error_text_none_on_success() -> None:
-    assert error_text({"ok": True}) is None
-    assert error_text({"error": ""}) is None
-
-
-def test_error_text_returns_message() -> None:
-    assert error_text({"error": "Bad request"}) == "Bad request"
-
-
-@pytest.mark.parametrize(
-    ("message", "error"),
-    [
-        ("Please enter a username assigned to a user.", ApiError.NOT_A_USER),
-        ("This account is already subscribed to Telegram Premium.", ApiError.ALREADY_SUBSCRIBED),
-        ("Bad request", ApiError.BAD_REQUEST),
-        ("bad REQUEST", ApiError.BAD_REQUEST),
-        ("Invalid method", ApiError.INVALID_METHOD),
-        ("Access denied", ApiError.ACCESS_DENIED),
-    ],
-)
-def test_has_error_matches_known_messages_case_insensitively(message: str, error: ApiError) -> None:
-    assert has_error({"error": message}, error)
-
-
-def test_has_error_false_for_other_or_missing_errors() -> None:
-    assert not has_error({"error": "Something else"}, ApiError.BAD_REQUEST)
-    assert not has_error({}, ApiError.BAD_REQUEST)
-
 
 # RecipientSearch
 

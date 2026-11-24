@@ -6,7 +6,9 @@ from pyfragment.domains.assets.models import MyGiftsResult, MyNumbersResult, MyU
 from pyfragment.domains.assets.owned import get_my_gifts, get_my_numbers, get_my_usernames
 from pyfragment.domains.wallet.balance import get_wallet_info
 from pyfragment.domains.wallet.models import WalletInfo
-from pyfragment.schemas import raise_for_error
+from pyfragment.enums import ApiError
+from pyfragment.exceptions import WalletAlreadyLinkedError
+from pyfragment.utils.errors import has_error, raise_for_error
 
 
 class AccountMethods(BaseClient):
@@ -31,6 +33,8 @@ class AccountMethods(BaseClient):
         Uses the existing ``stel_ton_token`` cookie — no separate signing needed.
         """
         result = await self.call("linkWallet", page_url=PROFILE_PAGE)
+        if has_error(result, ApiError.WALLET_ALREADY_LINKED):
+            raise WalletAlreadyLinkedError(WalletAlreadyLinkedError.LINKED)
         raise_for_error(result)
 
     async def disconnect_wallet(self) -> None:

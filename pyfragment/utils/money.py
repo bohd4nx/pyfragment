@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from decimal import Decimal, InvalidOperation
 
 
@@ -13,3 +14,8 @@ def parse_amount(raw: object) -> Decimal | None:
     except InvalidOperation:
         return None
     return amount if amount.is_finite() and amount >= 0 else None
+
+
+def numbers_in(text: str) -> list[int]:
+    """The whole numbers of Fragment's message, thousands separators dropped: ``"up to 10,000,000"`` -> ``[10000000]``."""
+    return [int(number.replace(",", "")) for number in re.findall(r"\d[\d,]*", text)]

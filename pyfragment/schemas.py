@@ -4,24 +4,7 @@ import html
 from dataclasses import dataclass, field
 from typing import Any
 
-from pyfragment.enums import ApiError, StateMode
-from pyfragment.exceptions import FragmentAPIError
-
-
-def error_text(response: dict[str, Any]) -> str | None:
-    error = response.get("error")
-    return str(error) if error else None
-
-
-def raise_for_error(response: dict[str, Any]) -> None:
-    if error := error_text(response):
-        raise FragmentAPIError(error)
-
-
-def has_error(response: dict[str, Any], error: ApiError) -> bool:
-    """Whether the response's error text contains a known Fragment error message."""
-    text = error_text(response)
-    return text is not None and error.casefold() in text.casefold()
+from pyfragment.enums import StateMode
 
 
 @dataclass(frozen=True)

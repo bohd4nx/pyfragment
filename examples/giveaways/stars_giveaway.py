@@ -1,18 +1,20 @@
 """
 Example: run a Telegram Stars giveaway for a channel.
 
-winners must be an integer between 1 and 5.
-amount (stars per winner) must be an integer between 500 and 1 000 000.
+amount is the Stars package the winners share: one of Fragment's packages, 500 to 1 000 000.
+winners must be a whole number from 1 to amount // 100.
 Channel can be "@channel", "channel", or "https://t.me/channel".
 """
 
 import asyncio
 
 from pyfragment import (
+    AboveMaximumError,
     ChannelNotFoundError,
     ConfigurationError,
     FragmentClient,
     FragmentError,
+    InvalidPackageError,
     SessionExpiredError,
     TransactionError,
     VerificationError,
@@ -30,8 +32,8 @@ COOKIES = {
 }
 
 CHANNEL = "https://t.me/channel"
-WINNERS = 3  # 1–5
-AMOUNT = 1000  # 500–1 000 000 stars per winner
+WINNERS = 3  # 1 to AMOUNT // 100
+AMOUNT = 1000  # Stars package shared by the winners: 500, 1000, 1500, 2500, 5000 ... 1 000 000
 PAYMENT_METHOD = PaymentMethod.USDT_GRAM  # PaymentMethod.GRAM or PaymentMethod.USDT_GRAM
 
 
@@ -52,6 +54,12 @@ async def main() -> None:
             )
         except ChannelNotFoundError:
             print(f"Channel {CHANNEL} was not found on fragment.com — check the username and try again.")
+            return
+        except InvalidPackageError:
+            print(f"Fragment has no {AMOUNT} Stars package — pick one of the packages on fragment.com/stars/giveaway.")
+            return
+        except AboveMaximumError as e:
+            print(f"Too many winners for this package: Fragment allows at most {e.maximum}.")
             return
         except ConfigurationError as e:
             print(f"Invalid argument: {e}")

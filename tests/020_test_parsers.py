@@ -8,7 +8,7 @@ import pytest
 from pyfragment import AuctionItem, FragmentClient
 from pyfragment.domains.marketplace.parser import card_status, normalize_price, parse_auction_rows, parse_gift_items
 from pyfragment.domains.purchases.parser import parse_gram_price, parse_premium_packages, parse_stars_packages
-from pyfragment.utils.money import parse_amount
+from pyfragment.utils.money import numbers_in, parse_amount
 from tests.shared import fixture_html, fixture_json
 
 # (slug, name, status, price, date)
@@ -161,3 +161,16 @@ def test_packages_with_an_unreadable_usd_price_are_skipped() -> None:
     premium = 'name="months" value="3" <div class="icon-ton">5</div> <div class="tm-radio-desc">&#036;1.2.3</div>'
     assert parse_stars_packages(stars) == []
     assert parse_premium_packages(premium) == []
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("You can buy up to 10,000,000 stars", [10_000_000]),
+        ("Enter amount from 50 to 10000000", [50, 10_000_000]),
+        ("You can choose up to 5 winners for the selected package", [5]),
+        ("No numbers here", []),
+    ],
+)
+def test_numbers_in_reads_whole_numbers_with_thousands_separators(text: str, expected: list[int]) -> None:
+    assert numbers_in(text) == expected

@@ -9,9 +9,11 @@ Username can be "@username", "username", or "https://t.me/username".
 import asyncio
 
 from pyfragment import (
+    BelowMinimumError,
     ConfigurationError,
     FragmentClient,
     FragmentError,
+    InvoiceExpiredError,
     SessionExpiredError,
     TransactionError,
     UserNotFoundError,
@@ -49,6 +51,12 @@ async def main() -> None:
                 show_sender=True,
                 payment_method=PAYMENT_METHOD,
             )
+        except BelowMinimumError as e:
+            print(f"Fragment sells {USERNAME} at least {e.minimum} Stars, not {AMOUNT}.")
+            return
+        except InvoiceExpiredError:
+            print("The invoice expired before it was paid — nothing was charged, run the purchase again.")
+            return
         except UserNotFoundError:
             print(f"User {USERNAME} was not found on fragment.com — check the username and try again.")
             return

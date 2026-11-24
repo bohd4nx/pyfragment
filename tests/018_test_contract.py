@@ -29,8 +29,8 @@ from pyfragment.constants.limits import (
     STARS_WINNERS,
 )
 from pyfragment.enums import ApiError, ApiMethod, AuctionFilter, AuctionSort, GiftAttribute, PaymentMethod
-from pyfragment.schemas import has_error
 from pyfragment.transport import FragmentTransport, get_fragment_hash
+from pyfragment.utils.errors import has_error
 
 pytestmark = pytest.mark.skipif(os.environ.get("FRAGMENT_LIVE") != "1", reason="FRAGMENT_LIVE=1 not set")
 
@@ -129,9 +129,44 @@ async def test_gift_attribute_names(session: AsyncSession) -> None:
             {"query": "zzzzzzzznochannel"},
             ApiError.NO_CHANNELS_FOUND,
         ),
+        (ApiMethod.SEARCH_STARS_GIVEAWAY_RECIPIENT, STARS_GIVEAWAY_PAGE, {"query": "BotFather"}, ApiError.NOT_A_CHANNEL),
     ],
 )
 async def test_recipient_not_found_messages(method: ApiMethod, page_url: str, data: dict[str, object], error: ApiError) -> None:
+    transport = FragmentTransport({}, 30.0, dict(BASE_HEADERS))
+    try:
+        assert has_error(await transport.call(method, data, page_url), error)
+    finally:
+        await transport.aclose()
+
+
+@pytest.mark.parametrize(
+    ("method", "page_url", "data", "error"),
+    [
+        (ApiMethod.UPDATE_STARS_PRICES, STARS_PAGE, {"quantity": 49}, ApiError.BELOW_MINIMUM),
+        (ApiMethod.UPDATE_STARS_PRICES, STARS_PAGE, {"quantity": 10_000_001}, ApiError.ABOVE_MAXIMUM_BUY),
+        (ApiMethod.UPDATE_STARS_PRICES, STARS_PAGE, {"quantity": -5}, ApiError.AMOUNT_RANGE),
+        (
+            ApiMethod.UPDATE_STARS_GIVEAWAY_PRICES,
+            STARS_GIVEAWAY_PAGE,
+            {"quantity": 6, "stars": 500},
+            ApiError.ABOVE_MAXIMUM_CHOOSE,
+        ),
+        (
+            ApiMethod.UPDATE_STARS_GIVEAWAY_PRICES,
+            STARS_GIVEAWAY_PAGE,
+            {"quantity": 1, "stars": 499},
+            ApiError.INVALID_PACKAGE,
+        ),
+        (
+            ApiMethod.UPDATE_PREMIUM_GIVEAWAY_PRICES,
+            PREMIUM_GIVEAWAY_PAGE,
+            {"quantity": PREMIUM_WINNERS.max + 1},
+            ApiError.ABOVE_MAXIMUM_CHOOSE,
+        ),
+    ],
+)
+async def test_amount_messages(method: ApiMethod, page_url: str, data: dict[str, object], error: ApiError) -> None:
     transport = FragmentTransport({}, 30.0, dict(BASE_HEADERS))
     try:
         assert has_error(await transport.call(method, data, page_url), error)

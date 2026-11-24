@@ -11,6 +11,7 @@ from tonutils.exceptions import ProviderResponseError
 
 from pyfragment.constants.fragment import PROFILE_PAGE
 from pyfragment.constants.limits import PREMIUM_MONTHS_VALID
+from pyfragment.utils.money import numbers_in
 
 
 class FragmentError(Exception):
@@ -39,11 +40,11 @@ class ConfigurationError(ClientError):
     INVALID_CONFIRM_TIMEOUT = "Invalid confirm_timeout '{value}': must be a non-negative number of seconds."
     INVALID_MAX_BATCH = "Invalid max_batch '{value}': must be a positive whole number."
     UNSUPPORTED_PROVIDER = "Unsupported API provider '{value}'. Supported values: {supported}."
-    INVALID_MONTHS = f"Invalid Premium duration: choose {', '.join(str(m) for m in sorted(PREMIUM_MONTHS_VALID))} months."
     TOO_MANY_WINNERS = (
         "Too many winners: a {amount:,} Stars package is split between at most {max:,} winners "
         "(at least {per_winner:,} Stars each)."
     )
+    INVALID_MONTHS = f"Invalid Premium duration: choose {', '.join(str(m) for m in sorted(PREMIUM_MONTHS_VALID))} months."
     OUT_OF_RANGE = "Invalid {label}: must be an integer between {min:,} and {max:,}."
     INVALID_SORT = "Invalid sort order '{value}'. Supported values: {supported}."
     INVALID_FILTER = "Invalid filter '{value}'. Supported values: {supported}."
@@ -142,12 +143,70 @@ class ChannelNotFoundError(RecipientError):
     NOT_FOUND = (
         "Telegram channel '{channel}' was not found on Fragment. Double-check the channel username and make sure it exists."
     )
+    NOT_A_CHANNEL = (
+        "'{channel}' does not belong to a channel: it is a user, a bot or doesn't exist. "
+        "Make sure the username is assigned to a Telegram channel."
+    )
 
 
 class AlreadySubscribedError(RecipientError):
     """Raised when trying to gift Premium to a user who already has an active subscription."""
 
     PREMIUM_ACTIVE = "This account is already subscribed to Telegram Premium."
+
+
+class AmountError(FragmentAPIError):
+    """Fragment refuses an amount, or a count, that is out of the bounds it sells at (they can depend on the recipient)."""
+
+    minimum: int | None = None
+    """The smallest amount Fragment accepts, when its message states one."""
+    maximum: int | None = None
+    """The largest amount Fragment accepts, when its message states one."""
+
+    def __init__(self, message: str, minimum: int | None = None, maximum: int | None = None) -> None:
+        super().__init__(message)
+        self.minimum = minimum
+        self.maximum = maximum
+
+    @classmethod
+    def from_text(cls, text: str) -> AmountError:
+        """Fragment's "from A to B" message, which names both bounds."""
+        bounds = numbers_in(text)[:2]
+        return cls(text, *bounds) if len(bounds) == 2 else cls(text)
+
+
+class BelowMinimumError(AmountError):
+    """The amount is under the minimum Fragment sells (e.g. "You can buy a minimum of 35,000 stars")."""
+
+    @classmethod
+    def from_text(cls, text: str) -> BelowMinimumError:
+        return cls(text, minimum=next(iter(numbers_in(text)), None))
+
+
+class AboveMaximumError(AmountError):
+    """The amount is over the maximum Fragment sells (e.g. "You can choose up to 5 winners for the selected package")."""
+
+    @classmethod
+    def from_text(cls, text: str) -> AboveMaximumError:
+        return cls(text, maximum=next(iter(numbers_in(text)), None))
+
+
+class InvalidPackageError(FragmentAPIError):
+    """Fragment only sells fixed packages and the one asked for is not among them."""
+
+
+class InvoiceExpiredError(FragmentAPIError):
+    """Fragment no longer knows the invoice (it expired before the transaction was requested). Nothing was paid."""
+
+    retryable = True
+
+    EXPIRED = "Fragment no longer has the invoice for '{context}': it expired before it was paid. Start the purchase again."
+
+
+class WalletAlreadyLinkedError(FragmentAPIError):
+    """The wallet is already linked to a Fragment account."""
+
+    LINKED = "This wallet is already linked to a Fragment account."
 
 
 class AnonymousNumberError(FragmentAPIError):
@@ -229,6 +288,12 @@ __all__ = [
     "UserNotFoundError",
     "ChannelNotFoundError",
     "AlreadySubscribedError",
+    "AmountError",
+    "BelowMinimumError",
+    "AboveMaximumError",
+    "InvalidPackageError",
+    "InvoiceExpiredError",
+    "WalletAlreadyLinkedError",
     "AnonymousNumberError",
     "ParseError",
     "VerificationError",

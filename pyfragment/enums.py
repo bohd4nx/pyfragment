@@ -83,6 +83,14 @@ class ApiError(StrEnum):
     NO_USERS_FOUND = "No Telegram users found"
     NO_CHANNELS_FOUND = "No Telegram channels found"
     ALREADY_SUBSCRIBED = "already subscribed to telegram premium"
+    NOT_A_CHANNEL = "assigned to a channel"  # "Please enter a username assigned to a channel."
+    BELOW_MINIMUM = "you can buy a minimum of"  # "You can buy a minimum of 35,000 stars"
+    ABOVE_MAXIMUM_BUY = "you can buy up to"  # "You can buy up to 10,000,000 stars"
+    ABOVE_MAXIMUM_CHOOSE = "you can choose up to"  # "You can choose up to 5 winners for the selected package"
+    AMOUNT_RANGE = "enter amount from"  # "Enter amount from 50 to 10000000"
+    INVALID_PACKAGE = "select one of the star packages"  # "Please select one of the star packages."
+    INVOICE_EXPIRED = "session expired"  # get*Link for an invoice Fragment no longer knows
+    WALLET_ALREADY_LINKED = "already linked"  # "This wallet is already linked to an account."
 
 
 class StateMode(StrEnum):

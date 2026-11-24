@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import html
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -10,7 +9,7 @@ from pyfragment.domains.anonymous_numbers.parser import parse_login_code
 from pyfragment.domains.base import operation
 from pyfragment.enums import ApiMethod
 from pyfragment.exceptions import AnonymousNumberError
-from pyfragment.schemas import error_text
+from pyfragment.utils.errors import error_text
 
 if TYPE_CHECKING:
     from pyfragment.client.base import BaseClient
@@ -25,7 +24,7 @@ def strip_plus(number: str) -> str:
 
 def raise_unless_ok(result: dict[str, Any], template: str, number: str) -> None:
     if error := error_text(result):
-        raise AnonymousNumberError(template.format(number=number, error=html.unescape(error)))
+        raise AnonymousNumberError(template.format(number=number, error=error))
 
 
 async def get_login_code(client: BaseClient, number: str) -> LoginCodeResult:

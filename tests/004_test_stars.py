@@ -6,6 +6,7 @@ import pytest
 
 import pyfragment.domains.payments.flow as _flow_mod
 from pyfragment import (
+    BelowMinimumError,
     ChannelNotFoundError,
     ConfigurationError,
     FragmentClient,
@@ -88,6 +89,33 @@ async def test_purchase_stars_success(client: FragmentClient) -> None:
     assert (result.comment, result.boc) == (FAKE_COMMENT, FAKE_TX_BOC)
     assert result.username == "@user"
     assert result.amount == 500
+
+
+@pytest.mark.asyncio
+async def test_purchase_stars_below_recipient_minimum(client: FragmentClient) -> None:
+    call_mock = AsyncMock(
+        side_effect=[
+            {"found": {"recipient": FAKE_RECIPIENT}},
+            {},  # updateStarsBuyState
+            {"error": "You can buy a minimum of 35,000 stars"},
+        ]
+    )
+    with patch.object(client, "call", call_mock), pytest.raises(BelowMinimumError) as exc_info:
+        await client.purchase_stars("@user", amount=50)
+
+    assert exc_info.value.minimum == 35_000
+    assert not exc_info.value.retryable
+
+
+@pytest.mark.asyncio
+async def test_get_stars_price_below_recipient_minimum(client: FragmentClient) -> None:
+    with (
+        patch.object(client, "call", AsyncMock(return_value={"error": "You can buy a minimum of 35,000 stars"})),
+        pytest.raises(BelowMinimumError) as exc_info,
+    ):
+        await client.get_stars_price(50)
+
+    assert exc_info.value.minimum == 35_000
 
 
 @pytest.mark.asyncio

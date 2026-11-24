@@ -14,7 +14,7 @@ from pyfragment.domains.purchases.parser import parse_gram_price, parse_stars_pa
 from pyfragment.domains.recipients import Recipient, find_user
 from pyfragment.enums import ApiMethod, PaymentMethod
 from pyfragment.exceptions import FragmentAPIError
-from pyfragment.schemas import raise_for_error
+from pyfragment.utils.errors import raise_for_error
 from pyfragment.utils.validation import check_limit, validate_payment_method
 
 if TYPE_CHECKING:

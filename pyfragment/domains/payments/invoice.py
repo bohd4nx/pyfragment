@@ -6,8 +6,9 @@ from typing import TYPE_CHECKING, Any
 
 from pyfragment.constants.chain import DEVICE_INFO
 from pyfragment.enums import ApiError
-from pyfragment.exceptions import AlreadySubscribedError, FragmentAPIError, SessionExpiredError, VerificationError
-from pyfragment.schemas import InvoiceRequest, TransactionLink, error_text, has_error
+from pyfragment.exceptions import AlreadySubscribedError, InvoiceExpiredError, SessionExpiredError, VerificationError
+from pyfragment.schemas import InvoiceRequest, TransactionLink
+from pyfragment.utils.errors import has_error, raise_for_error
 
 if TYPE_CHECKING:
     from pyfragment.client.base import BaseClient
@@ -29,8 +30,7 @@ async def create_invoice(client: BaseClient, flow: PurchaseFlow, init_data: dict
         raise SessionExpiredError(SessionExpiredError.NEED_TON.format(context=flow.label))
     req_id = InvoiceRequest.from_response(result).req_id
     if not req_id:
-        if error := error_text(result):
-            raise FragmentAPIError(error)
+        raise_for_error(result)
         raise SessionExpiredError(SessionExpiredError.NO_REQUEST_ID.format(context=flow.label))
     return req_id
 
@@ -52,4 +52,7 @@ async def request_transaction(
             link.confirm_method,
         )
         raise VerificationError(VerificationError.KYC_REQUIRED)
+    if has_error(transaction, ApiError.INVOICE_EXPIRED):
+        raise InvoiceExpiredError(InvoiceExpiredError.EXPIRED.format(context=flow.label))
+    raise_for_error(transaction)
     return transaction
