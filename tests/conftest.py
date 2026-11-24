@@ -1,35 +1,32 @@
-"""Shared pytest fixtures for Fragment client tests."""
+"""Fixtures shared by the whole suite."""
 
-import json
-import os
-from collections.abc import AsyncIterator
-from typing import cast
+from collections.abc import AsyncIterator, Iterator
 
 import pytest
 
-import pyfragment.domains.assets.owned  # noqa: F401
-import pyfragment.domains.giveaways.premium  # noqa: F401
-import pyfragment.domains.giveaways.stars  # noqa: F401
-import pyfragment.domains.purchases.premium  # noqa: F401
-import pyfragment.domains.purchases.stars  # noqa: F401
-import pyfragment.domains.wallet.balance  # noqa: F401
-import pyfragment.domains.wallet.transfers  # noqa: F401
 from pyfragment import FragmentClient
-from tests.shared import VALID_API_KEY, VALID_COOKIES, VALID_SEED
+from tests.support.data import API_KEY, COOKIES, SEED
+from tests.support.fake_fragment import FakeFragment
+from tests.support.fake_ton import FakeTon, use_fake_ton
 
 
 @pytest.fixture
-def cookies() -> dict[str, str]:
-    raw = os.environ.get("COOKIES_JSON")
-    if not raw:
-        pytest.skip("COOKIES_JSON env var not set")
-    try:
-        return cast(dict[str, str], json.loads(raw))
-    except Exception as exc:
-        pytest.skip(f"Cookies unavailable — {exc}")
+def fake_ton() -> Iterator[FakeTon]:
+    """A funded, deployed wallet on an in-memory chain: every client created while it is active talks to it."""
+    with use_fake_ton(FakeTon()) as ton:
+        yield ton
 
 
 @pytest.fixture
 async def client() -> AsyncIterator[FragmentClient]:
-    async with FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=VALID_COOKIES) as fragment_client:
+    async with FragmentClient(seed=SEED, api_key=API_KEY, cookies=COOKIES) as fragment_client:
         yield fragment_client
+
+
+@pytest.fixture
+def fragment(client: FragmentClient, monkeypatch: pytest.MonkeyPatch) -> FakeFragment:
+    """``client`` with its Fragment transport replaced by a script the test fills in."""
+    fake = FakeFragment()
+    monkeypatch.setattr(client._transport, "call", fake.call)
+    monkeypatch.setattr(client._transport, "fetch_page", fake.fetch_page)
+    return fake

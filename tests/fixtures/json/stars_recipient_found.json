@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "found": {
+    "myself": false,
+    "recipient": "RECIPIENT_TOKEN",
+    "photo": "<img src=\"https://cdn.example/photo.jpg\" />",
+    "name": "Example"
+  }
+}
