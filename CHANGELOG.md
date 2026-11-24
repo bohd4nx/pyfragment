@@ -20,9 +20,25 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
   default, `LocalTransferCoordinator`, covers one process.
 - A payment is logged when it goes out after its caller was cancelled, and a transfer that waits over 15 seconds for the
   previous one to land says so. A group whose callers are all cancelled before the send is not sent.
+- `get_stars_history()` and `get_premium_history()`: the account's purchases as `StarsHistoryEntry` /
+  `PremiumHistoryEntry` (`username`, `name`, `stars` or `months`, `gram`, `date`), newest first or `newest_first=False`.
+  A recipient Fragment shows by name only (a deleted or hidden account) has `username=None`. Fragment lists at most
+  1000 entries per order.
+- Typed errors for what Fragment refuses, so callers need not read its message text: `BelowMinimumError` ("You can buy
+  a minimum of 35,000 stars", a per-recipient floor above the usual 50), `AboveMaximumError` (Stars, winners or
+  subscriptions over the limit) and `AmountError` for the range message, all with `minimum` / `maximum`;
+  `InvalidPackageError`; `InvoiceExpiredError` (retryable); `WalletAlreadyLinkedError`. A user, bot or unknown name
+  given to a giveaway is a `ChannelNotFoundError` (it was a bare `FragmentAPIError`).
 
 ### Fixed
 
+- Stars giveaways allowed 1 to 5 winners, but the package is split between the winners and Fragment accepts up to
+  `amount // 100` of them (10 winners for 1000 Stars, 10 000 for 1 000 000). Larger giveaways were rejected locally,
+  and the docs said each winner gets the whole `amount`. `STARS_WINNERS` is now 1 to 10 000 and a package's own limit
+  is checked before any call (`ConfigurationError`); `STARS_GIVEAWAY` is the package size.
+- Giveaways ignored Fragment's answer to the price call (a package it doesn't sell, too many winners), and a purchase
+  whose `get*Link` answered with an error reached the signer as an "invalid payload". Both now raise Fragment's error.
+- Error texts such as "You&#39;re not an owner of this number" are unescaped for every call, not only for numbers.
 - Stars/Premium purchases and giveaways no longer send `account`/`device` with `get*Link`: Fragment's frontend dropped
   them (the wallet comes from the session).
 - A session without a bound TON wallet (`need_ton`) now raises `SessionExpiredError` naming `stel_ton_token` instead
@@ -35,6 +51,13 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
   its payments fail as retryable and nothing is sent.
 - Overlapping purchases from one wallet lost transfers: a node rejects a seqno that is ahead of the chain. A message
   now waits until the previous one has landed.
+
+### Removed
+
+- `recharge_ads()` and `topup_gram()` (with `AdsRechargeResult`, `AdsTopupResult`, `GRAM_TOPUP` and the matching
+  `ApiMethod` members): fragment.com no longer offers them, its Ads page only links to ads.telegram.org and
+  `/ads/topup` redirects to `/ads`. The topup methods answer "Access denied" to a working session. The
+  `versioned_state` and `wallet_in_link` switches of `PurchaseFlow`, which only these flows used, are gone too.
 
 ### Changed
 

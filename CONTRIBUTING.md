@@ -35,12 +35,12 @@ pyfragment/
   enums.py            — PaymentMethod, WalletVersion, MnemonicType, ApiProvider, ApiMethod, ApiError, marketplace enums
   exceptions.py       — exception hierarchy and canonical messages
   schemas.py          — typed views of Fragment's response bodies
-  utils/              — input validation (validation.py), exact money arithmetic (money.py), TON cell helpers (ton.py), transaction payload parsing (transaction.py)
+  utils/              — input validation (validation.py), reading Fragment's error text into exceptions (errors.py), exact money arithmetic and Fragment's number formatting (money.py), TON cell helpers (ton.py), transaction payload parsing (transaction.py)
   transport/          — HTTP layer: page (API hash), api (requests, 429 retry), session (reusable transport)
   domains/            — one package per feature domain
-    ads/              — recharge_ads, topup_gram
     anonymous_numbers/— get_login_code, toggle_login_codes, terminate_sessions
     giveaways/        — stars.py (giveaway_stars), premium.py (giveaway_premium)
+    history/          — get_stars_history, get_premium_history (+ HTML row parser)
     marketplace/      — search_usernames, search_numbers, search_gifts (+ HTML parsers)
     payments/         — the shared purchase flow: run_purchase, PurchaseFlow, PaymentResult, confirmation
     purchases/        — stars.py (purchase_stars, check_stars_recipient), premium.py (purchase_premium, check_premium_recipient)

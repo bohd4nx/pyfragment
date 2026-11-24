@@ -22,9 +22,11 @@ Async Python client for **[Fragment.com](https://fragment.com)** — buy Telegra
 - **Stars** — buy Stars for any Telegram user, run Stars giveaways for channels
 - **Premium** — gift Telegram Premium subscriptions (3 / 6 / 12 months), run Premium giveaways
 - **Marketplace** — search usernames, anonymous numbers and gifts; check live prices
-- **Wallet** — check GRAM and USDT balances, top up GRAM for a user or recharge an Ads account
+- **Wallet** — check GRAM and USDT balances
+- **Account** — list the usernames, numbers and gifts you own and your Stars and Premium purchase history
 - **Anonymous numbers** — fetch login codes, toggle code reception, terminate active sessions
 - **Payments** — GRAM (ex TON) and USDT-on-TON; every transfer signed once with your wallet key
+- **Typed errors** — every refusal Fragment makes (unknown user, amount below a recipient's minimum, expired invoice) is its own exception
 - **Batching** — payments of one wallet queue up and can go out in one message (`max_batch`), on every supported wallet
 
 ## Installation
