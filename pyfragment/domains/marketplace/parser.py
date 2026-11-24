@@ -4,7 +4,7 @@ import re
 
 from pyfragment.domains.marketplace.models import AuctionItem
 
-# Row listings (usernames, numbers): one <tr class="tm-row-selectable"> per item.
+# Row listings (usernames, numbers, gifts in list view): one <tr class="tm-row-selectable"> per item.
 _ROW_RE = re.compile(r'<tr\b[^>]*class="[^"]*tm-row-selectable[^"]*"[^>]*>(.*?)</tr>', re.DOTALL)
 _ROW_HREF_RE = re.compile(r'href="/((?:username|number|gift)/[^"?]+)')
 _ROW_NAME_RE = re.compile(r'class="[^"]*\btm-value\b[^"]*"[^>]*>\s*([^<]+?)\s*<')

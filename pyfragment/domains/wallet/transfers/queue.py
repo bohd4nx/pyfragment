@@ -32,7 +32,7 @@ class Entry:
     request: TransferRequest
     wallet: TonWallet
     done: asyncio.Future[TransferIntent]
-    # The caller's context, so its on_transfer_prepared hook sees the caller's request-scoped contextvars.
+    # So the caller's on_transfer_prepared hook sees its contextvars.
     context: contextvars.Context = field(default_factory=contextvars.copy_context)
 
 
@@ -62,7 +62,7 @@ class TransferQueue:
             while self._prune():
                 await self._serve(self._waiting[0].wallet)
         except BaseException as exc:
-            # The runner itself is going down, so nobody is left to serve the rest: none of them may keep waiting.
+            # The runner is going down: nobody is left to serve the rest.
             fail(self._waiting, exc)
             self._waiting.clear()
             raise
@@ -81,18 +81,18 @@ class TransferQueue:
         attempted = False
         try:
             async with wallet.coordinator.lock(wallet.address):
-                # Formed only now, so whatever queued while waiting for the block goes out together.
+                # Formed after the wait, so everything queued meanwhile goes together.
                 seqno = await wallet.next_seqno()
                 group = self._take(wallet.batch_limit)
                 attempted = True
                 if group:
-                    # The payments' own client signs and sends: the first submitter's may be closed by now.
+                    # The payments' own client signs: the first submitter's may be closed.
                     group, intents = await self._send(group[0].wallet, group, seqno)
         except Exception as exc:
             if intents:
                 logger.warning("Failed to release the transfer lock after sending: %s", exc)
             else:
-                # Only what was attempted fails: a lock that fails to release must not take the next group down.
+                # A lock that fails to release must not take the next group down.
                 fail(group if attempted else self._take(wallet.batch_limit), exc)
         except BaseException as exc:
             if not intents:
@@ -119,9 +119,9 @@ class TransferQueue:
             if rejected:
                 group = drop_expired([entry for entry in group if entry not in rejected])
             elif all(entry.done.cancelled() for entry in group):
-                return [], []  # nobody is left to learn the outcome, and nothing has gone out yet
+                return [], []  # nobody waits for the outcome and nothing went out
             elif signed.valid_until <= time.time():
-                # Slow hooks used up the message's validity: the wallet would reject it.
+                # Slow hooks used up the validity: the wallet would reject it.
                 fail(group, TransactionError.expired(signed.valid_until))
                 return [], []
             else:
@@ -222,7 +222,7 @@ async def broadcast(ton: ClientProtocol, boc_hex: str) -> None:
         logger.warning("Failed to send transfer: %s", exc)
 
 
-# One queue per wallet and event loop: purchases of different clients on the same wallet end up in the same groups.
+# One queue per wallet and event loop, so clients sharing a wallet share groups.
 _queues: WeakKeyDictionary[asyncio.AbstractEventLoop, dict[str, TransferQueue]] = WeakKeyDictionary()
 
 

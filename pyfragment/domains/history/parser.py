@@ -21,7 +21,7 @@ _DURATION_RE = re.compile(r"(\d+) (month|year)s?")
 
 @dataclass(frozen=True)
 class HistoryRow:
-    username: str | None  # None for a recipient Fragment shows by name only (a deleted or hidden account)
+    username: str | None  # None when Fragment shows only a name (deleted or hidden account)
     name: str
     quantity: str  # the "Stars" or "Duration" cell, as rendered
     gram: Decimal

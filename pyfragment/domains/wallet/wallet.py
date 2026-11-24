@@ -57,7 +57,7 @@ WALLET_CLASSES: dict[WalletVersion, type[BaseWallet[Any, Any, Any]]] = {
     WalletVersion.TG: WalletTg,
 }
 
-# Transfer parameters of the wallets that order transfers by seqno; highload wallets tell them apart by query id.
+# Wallets that order transfers by seqno; highload wallets use a query id instead.
 SEQNO_PARAMS: dict[WalletVersion, type[SeqnoParams]] = {
     WalletVersion.V4R2: WalletV4Params,
     WalletVersion.V5R1: WalletV5Params,
@@ -164,7 +164,7 @@ class TonWallet:
         if self.version == WalletVersion.HighloadV2:
             return WalletHighloadV2Params(message_ttl=max(1, valid_until - now))
         if self.version == WalletVersion.HighloadV3R1:
-            # A highload v3 message is accepted while created_at > now - timeout (and created_at <= now).
+            # Accepted while now - timeout < created_at <= now.
             return WalletHighloadV3Params(created_at=min(now, valid_until - self.wallet().config.timeout))
         return SEQNO_PARAMS[self.version](seqno=seqno, valid_until=valid_until)
 

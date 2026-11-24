@@ -27,7 +27,7 @@ def recipient_or_raise(result: dict[str, Any], query: str, not_found_error: ApiE
             photo=found.photo,
             myself=found.myself,
         )
-    # An error other than "nothing found" (rate limit, expired session, ...) must not pose as a missing recipient.
+    # Any other error (rate limit, expired session) must not pose as a missing recipient.
     if (error := error_text(result)) and not has_error(result, not_found_error):
         raise FragmentAPIError(error)
     raise not_found

@@ -29,11 +29,11 @@ class TransferIntent:
     purchase on-chain (e.g. by ``msg_hash``) if the process dies before the purchase result is returned.
     """
 
-    msg_hash: str  # normalized hash of the signed external message: the purchase's transaction_id
+    msg_hash: str  # hash of the signed message, the purchase's transaction_id
     boc: str  # the signed external message, base64
-    destination: str  # the address the wallet pays (Fragment's, or the USDT jetton wallet for USDT payments)
+    destination: str  # Fragment's address, or the USDT jetton wallet
     amount_nano: int  # GRAM (ex TON) attached to the transfer, in nanograms
     comment: str | None  # Fragment's payment reference, e.g. "50 Telegram Stars \n\nRef#kpJ55h3BW"
     payment_method: PaymentMethod
     req_id: str | None  # Fragment's invoice id
-    valid_until: int  # unix time after which the wallet rejects the transfer: it can never land later
+    valid_until: int  # unix time after which the wallet rejects the transfer

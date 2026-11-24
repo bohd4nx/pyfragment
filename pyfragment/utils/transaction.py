@@ -17,7 +17,7 @@ def extract_message(transaction_data: dict[str, Any]) -> dict[str, Any]:
     if not messages or not isinstance(messages, list):
         raise TransactionError(TransactionError.INVALID_PAYLOAD)
     if len(messages) != 1:
-        # Signing only the first one would pay part of the invoice and check the balance for that part only.
+        # Signing only the first would pay part of the invoice.
         raise TransactionError(TransactionError.MULTIPLE_MESSAGES.format(count=len(messages)))
     message: dict[str, Any] = messages[0]
     return message

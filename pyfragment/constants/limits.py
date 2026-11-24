@@ -12,8 +12,7 @@ class Range(NamedTuple):
 
 
 STARS_PURCHASE = Range("Stars amount", 50, 10_000_000)
-# The package is shared by the winners and each gets at least STARS_GIVEAWAY_MIN_PER_WINNER, so a package of
-# N Stars allows N // STARS_GIVEAWAY_MIN_PER_WINNER winners (STARS_WINNERS.max is that for the largest package).
+# A package is split between the winners, each getting at least STARS_GIVEAWAY_MIN_PER_WINNER.
 STARS_GIVEAWAY = Range("Stars package", 500, 1_000_000)
 STARS_GIVEAWAY_MIN_PER_WINNER = 100
 STARS_WINNERS = Range("winners count", 1, 10_000)

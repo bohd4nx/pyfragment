@@ -26,8 +26,7 @@ def body_comment(body: Cell | None) -> str | None:
         reader = body.begin_parse()
         op = reader.load_uint(32)
         if op == OpCode.JETTON_TRANSFER:
-            # TEP-74: query_id, amount, destination, response_destination, custom_payload, forward_ton_amount,
-            # then forward_payload as Either Cell ^Cell (inline in the rest of this cell, or in a reference).
+            # TEP-74 transfer body: query_id, amount, destination, response, custom payload, forward amount, forward payload.
             reader.load_uint(64)
             reader.load_coins()
             reader.load_address()
