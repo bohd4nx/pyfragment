@@ -24,8 +24,6 @@ pytest
 
 All of them must pass before opening a PR (CI runs the same commands).
 
-`tests/018_test_contract.py` checks the live fragment.com and is skipped by default; run it with `FRAGMENT_LIVE=1 pytest tests/018_test_contract.py`.
-
 ## Project structure
 
 ```
@@ -39,6 +37,7 @@ pyfragment/
   transport/          — HTTP layer: page (API hash), api (requests, 429 retry), session (reusable transport)
   domains/            — one package per feature domain
     anonymous_numbers/— get_login_code, toggle_login_codes, terminate_sessions
+    assets/           — get_my_usernames, get_my_numbers, get_my_gifts (paged through getAssetsList)
     giveaways/        — stars.py (giveaway_stars), premium.py (giveaway_premium)
     history/          — get_stars_history, get_premium_history (+ HTML row parser)
     marketplace/      — search_usernames, search_numbers, search_gifts (+ HTML parsers)
@@ -49,8 +48,10 @@ pyfragment/
       transfers/      — signing and sending: request (Fragment payment to TransferRequest), queue (groups payments into one
                         message), coordinator (lock and seqno shared between processes)
     base.py           — operation(), the error guard around a domain function
-tests/                — unit tests (pytest); tests/fixtures holds real fragment.com markup and chain data;
-                        tests/fake_ton.py is an in-memory blockchain API for signing with real wallets
+tests/                — pytest suite mirroring the package (tests/domains/purchases/test_stars.py tests the purchases/stars.py module)
+  support/            — fake_fragment.py (a scripted Fragment API), fake_ton.py (an in-memory blockchain API that signs with real
+                        wallets), signing.py (reads a signed message back), data.py (throwaway credentials), fixtures.py (loaders)
+  fixtures/           — real fragment.com responses and chain data (html/, json/, chain/); see its README
 examples/             — runnable usage examples (excluded from CI)
 ```
 
@@ -60,6 +61,7 @@ examples/             — runnable usage examples (excluded from CI)
 - Where things go: public result dataclasses in each domain's `models.py`; typed views of Fragment's responses in
   `schemas.py`; enums (and sets of their members) in `enums.py`; fixed values in `constants/`; helpers in `utils/`; message
   templates on the exception classes.
+- A purchase page is one `PurchaseFlow` constant (page, search, prices, state, init and link methods); a marketplace section is one `Listing`. Domain code calls through them instead of repeating methods and pages.
 - Domain functions receive the client (`BaseClient`), never raw HTTP clients.
 - Patch targets in tests use the module where the name is **defined**, e.g. `pyfragment.domains.wallet.wallet.make_ton_client` or `pyfragment.domains.payments.flow.process_transaction`.
 - Fragment method names and error texts are enums (`ApiMethod`, `ApiError`); response bodies are read through `pyfragment.schemas`. A new Fragment call means a new `ApiMethod` member; tests use the enums, not string literals.
@@ -69,6 +71,7 @@ examples/             — runnable usage examples (excluded from CI)
 - Money: amounts are exact integer units (`utils/money.py`), never floats. A transfer is signed and sent once, there is no balance pre-check, and Fragment's confirmation API is the source of truth for whether it landed.
 - tonutils swallows provider failures in some calls (`wallet.refresh()` turns a bad API key into an empty wallet): use the strict helpers on `domains/wallet/wallet.py`'s `TonWallet`.
 - Parser changes are checked against real markup: add or refresh a trimmed response under `tests/fixtures/` (see its README).
+- Tests mirror the package: `tests/<package path>/test_<module>.py`, one class per unit, names that say the behaviour. Script Fragment's answers with the `fragment` fixture and use `fake_ton` for the chain; nothing in the suite touches the network.
 - Versioning follows [CalVer](https://calver.org/): `YYYY.MINOR.MICRO`. Bump in `pyproject.toml`; tag as `vYYYY.MINOR.MICRO`.
 
 ## Pull requests

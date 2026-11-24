@@ -10,45 +10,18 @@ readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11"
 authors = [{ name = "bohd4nx", email = "bohd4nx@gmail.com" }]
-keywords = [
-    "fragment",
-    "fragment.com",
-    "telegram",
-    "telegram-stars",
-    "telegram-premium",
-    "giveaway",
-    "ton",
-    "gram",
-    "toncoin",
-    "ton-blockchain",
-    "usdt",
-    "tonapi",
-    "toncenter",
-    "anonymous-numbers",
-    "usernames",
-    "gifts",
-    "marketplace",
-    "crypto",
-    "asyncio",
-]
+keywords = ["fragment", "telegram", "telegram-stars", "telegram-premium", "giveaway", "ton", "usdt", "usernames", "gifts", "asyncio"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
-    "Natural Language :: English",
-    "Operating System :: OS Independent",
-    "Environment :: Web Environment",
     "Framework :: AsyncIO",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
-    "Programming Language :: Python :: 3.15",
-    "Programming Language :: Python :: Implementation :: CPython",
-    "Topic :: Communications :: Chat",
-    "Topic :: Internet :: WWW/HTTP",
-    "Topic :: Office/Business :: Financial",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
@@ -69,29 +42,25 @@ packages = ["pyfragment"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-python_files = ["[0-9][0-9][0-9]_test_*.py"]
+python_files = ["test_*.py"]
+pythonpath = ["."]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-addopts = "-v --tb=short"
+addopts = "-v --tb=short --import-mode=importlib"
 
 [tool.ruff]
 line-length = 128
 target-version = "py311"
-# Newer ruff releases format Python code fences inside Markdown by default; we don't want
-# CHANGELOG.md/README.md code samples reformatted as a side effect of bumping the linter.
 extend-exclude = ["*.md"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP"]
 ignore = ["E501"]
 
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = ["E402"]
-
 [tool.mypy]
 python_version = "3.11"
 strict = true
-exclude = ["^examples/", "^logs/", "^tests/", "^sandbox/", "^scripts/"]
+exclude = ["^examples/", "^tests/", "^sandbox/"]
 
 [[tool.mypy.overrides]]
 module = "redis.*"  # only the shared_wallet example uses it

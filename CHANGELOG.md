@@ -25,6 +25,11 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ### Fixed
 
+- `get_login_code()` returned an empty result for an error answer instead of raising `AnonymousNumberError`.
+- A fractional Premium duration (`6.0`) passed the check and was sent as a float; durations must be whole numbers.
+- `get_my_usernames()`, `get_my_numbers()` and `get_my_gifts()` always came back empty: Fragment's account pages
+  `/my/usernames|numbers|gifts` no longer carry the listing, the assets page loads it through `getAssetsList`. They
+  page through that call now (`AssetType` is exported).
 - `search_gifts(view=...)`: the docs said it takes an attribute tab, but Fragment only knows `grid` and `list`, and
   anything else silently gave the grid. It is now a `GiftView` (unknown values raise `ConfigurationError`), and the list
   view, which came back empty, is parsed.
