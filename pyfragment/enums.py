@@ -84,6 +84,7 @@ class ApiError(StrEnum):
     NO_CHANNELS_FOUND = "No Telegram channels found"
     ALREADY_SUBSCRIBED = "already subscribed to telegram premium"
     NOT_A_CHANNEL = "assigned to a channel"  # "Please enter a username assigned to a channel."
+    SERVER_ERROR = "server error"  # an intermittent HTTP 200 answer, any call may get it
     BELOW_MINIMUM = "you can buy a minimum of"  # "You can buy a minimum of 35,000 stars"
     ABOVE_MAXIMUM_BUY = "you can buy up to"  # "You can buy up to 10,000,000 stars"
     ABOVE_MAXIMUM_CHOOSE = "you can choose up to"  # "You can choose up to 5 winners for the selected package"

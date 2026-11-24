@@ -74,6 +74,12 @@ class NetworkError(FragmentAPIError):
     UNREACHABLE = "Could not reach Fragment at {url}: {exc}"
 
 
+class ServerError(FragmentAPIError):
+    """Fragment answered "Server error" in the body of an HTTP 200, which it does now and then. Repeat the call."""
+
+    retryable = True
+
+
 class HTTPStatusError(FragmentAPIError):
     """Fragment answered with an unexpected HTTP status."""
 
@@ -283,6 +289,7 @@ __all__ = [
     "FragmentAPIError",
     "NetworkError",
     "HTTPStatusError",
+    "ServerError",
     "SessionExpiredError",
     "RecipientError",
     "UserNotFoundError",

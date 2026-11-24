@@ -11,11 +11,13 @@ from pyfragment.exceptions import (
     BelowMinimumError,
     FragmentAPIError,
     InvalidPackageError,
+    ServerError,
 )
 
 # Messages that mean the same wherever Fragment sends them. Those that depend on the call
 # (an expired invoice, an already linked wallet) are told apart where the call is made.
 TYPED_ERRORS: dict[ApiError, Callable[[str], FragmentAPIError]] = {
+    ApiError.SERVER_ERROR: ServerError,
     ApiError.BELOW_MINIMUM: BelowMinimumError.from_text,
     ApiError.ABOVE_MAXIMUM_BUY: AboveMaximumError.from_text,
     ApiError.ABOVE_MAXIMUM_CHOOSE: AboveMaximumError.from_text,

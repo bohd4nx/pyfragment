@@ -8,9 +8,10 @@ from pyfragment import (
     BelowMinimumError,
     FragmentAPIError,
     InvalidPackageError,
+    ServerError,
 )
 from pyfragment.enums import ApiError
-from pyfragment.utils.errors import api_error, error_text, has_error, raise_for_error
+from pyfragment.utils.errors import TYPED_ERRORS, api_error, error_text, has_error, raise_for_error
 
 # error_text / has_error
 
@@ -107,6 +108,12 @@ def test_error_text_unescapes_what_fragment_escapes() -> None:
     assert error_text({"error": "You&#39;re not an owner of this number"}) == "You're not an owner of this number"
 
 
+def test_server_error_is_retryable() -> None:
+    error = api_error({"error": "Server error"})
+    assert type(error) is ServerError
+    assert error.retryable
+
+
 def test_typed_errors_are_not_retryable() -> None:
     for message in ("You can buy a minimum of 35,000 stars", "You can buy up to 5 stars", "Enter amount from 1 to 2"):
         error = api_error({"error": message})
@@ -117,3 +124,29 @@ def test_typed_errors_are_not_retryable() -> None:
 def test_raise_for_error_raises_the_typed_error() -> None:
     with pytest.raises(BelowMinimumError):
         raise_for_error({"error": "You can buy a minimum of 35,000 stars"})
+
+
+# Every exception is public and every Fragment message has a place
+
+
+def test_every_exception_is_exported_from_the_package() -> None:
+    import inspect
+
+    import pyfragment
+    from pyfragment import exceptions
+
+    defined = {
+        name
+        for name, cls in inspect.getmembers(exceptions, inspect.isclass)
+        if issubclass(cls, exceptions.FragmentError) and cls.__module__ == exceptions.__name__
+    }
+    assert defined == set(exceptions.__all__)
+    assert set(exceptions.__all__) <= set(pyfragment.__all__)
+
+
+@pytest.mark.parametrize("error", [e for e in ApiError if e in TYPED_ERRORS])
+def test_every_typed_message_builds_its_exception(error: ApiError) -> None:
+    built = api_error({"error": f"prefix {error.value} 12,345 suffix"})
+    assert built is not None
+    assert isinstance(built, FragmentAPIError)
+    assert type(built) is not FragmentAPIError
