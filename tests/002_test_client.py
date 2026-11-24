@@ -158,6 +158,18 @@ def test_missing_cookie_key_raises() -> None:
         FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies={"stel_ssid": "x"})
 
 
+@pytest.mark.parametrize("missing", ["stel_token", "stel_ton_token"])
+def test_each_required_cookie_is_required(missing: str) -> None:
+    cookies = {k: v for k, v in VALID_COOKIES.items() if k != missing}
+    with pytest.raises(CookieError, match=missing):
+        FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=cookies)
+
+
+def test_stel_ssid_and_stel_dt_are_optional() -> None:
+    cookies = {"stel_token": "x", "stel_ton_token": "x"}
+    assert FragmentClient(seed=VALID_SEED, api_key=VALID_API_KEY, cookies=cookies).cookies == cookies
+
+
 def test_empty_cookie_value_raises() -> None:
     bad = {**VALID_COOKIES, "stel_token": ""}
     with pytest.raises(CookieError):

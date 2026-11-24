@@ -97,7 +97,7 @@ class SessionExpiredError(FragmentAPIError):
     REJECTED = "Fragment rejected the session (HTTP {status} from {url}). Log in to fragment.com and refresh your cookies."
     ACCESS_DENIED = (
         "Fragment denied access to '{context}'. "
-        "Either your session has expired (refresh stel_ssid / stel_token) "
+        "Either your session has expired (refresh stel_token) "
         "or your TON wallet is not connected on Fragment (refresh stel_ton_token)."
     )
     NEED_TON = (
@@ -113,7 +113,7 @@ class SessionExpiredError(FragmentAPIError):
     )
     NOT_LOGGED_IN = (
         "Fragment returned a logged-out page for {url}. "
-        "Refresh your stel_ssid / stel_token cookies and log in to fragment.com again."
+        "Refresh your stel_token / stel_ton_token cookies and log in to fragment.com again."
     )
     STALE_HASH = (
         "Fragment rejected a freshly fetched API hash from {url}: your session may have expired. "

@@ -15,7 +15,8 @@ class FragmentClient(PurchaseMethods, MarketplaceMethods, NumberMethods, Account
     Args:
         seed: Mnemonic phrase of the GRAM (ex TON) wallet.
         api_key: API key for the chosen provider — tonconsole.com (default) or t.me/toncenter.
-        cookies: Fragment session cookies as a dict or JSON string.
+        cookies: Fragment session cookies as a dict or JSON string. ``stel_token`` and ``stel_ton_token`` are required;
+            ``stel_ssid`` and ``stel_dt`` are optional.
         wallet_version: Wallet contract — ``"V5R1"`` (default), ``"V4R2"``, ``"HighloadV2"``,
             ``"HighloadV3R1"``, or ``"TG"`` for a Telegram Wallet (12 words, or 24 after a key rotation).
         mnemonic_type: How the phrase derives the key — ``"ton"`` (default: Tonkeeper, MyTonWallet and
@@ -58,7 +59,7 @@ class FragmentClient(PurchaseMethods, MarketplaceMethods, NumberMethods, Account
         async with FragmentClient(
             seed="word1 word2 ...",
             api_key="AAABBB...",
-            cookies={"stel_ssid": "...", "stel_dt": "...", ...},
+            cookies={"stel_token": "...", "stel_ton_token": "..."},
         ) as client:
             print(await client.get_wallet())
             result = await client.purchase_premium("@username", months=6)

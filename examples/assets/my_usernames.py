@@ -1,7 +1,7 @@
 """
 Example: list all Telegram usernames in your Fragment account.
 
-Requires a valid Fragment session (stel_ssid, stel_token, stel_dt cookies).
+Requires a valid Fragment session (the stel_token and stel_ton_token cookies).
 """
 
 import asyncio
@@ -13,8 +13,6 @@ SEED = "word1 word2 ... word24"
 API_KEY = "YOUR_API_KEY"  # tonconsole.com (tonapi, default) or t.me/toncenter
 
 COOKIES = {
-    "stel_ssid": "YOUR_STEL_SSID",
-    "stel_dt": "YOUR_STEL_DT",
     "stel_token": "YOUR_STEL_TOKEN",
     "stel_ton_token": "YOUR_STEL_TON_TOKEN",
 }

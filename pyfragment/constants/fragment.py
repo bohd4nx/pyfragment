@@ -22,8 +22,9 @@ MAX_API_ATTEMPTS: int = 3
 # How often to poll Fragment for its own on-chain purchase confirmation
 CONFIRM_STATE_POLL_INTERVAL: float = 2.0
 
-# Fragment cookie keys required for authenticated API calls
-REQUIRED_COOKIE_KEYS: tuple[str, ...] = ("stel_ssid", "stel_dt", "stel_token")
+# Without either one every page answers as logged out (and a request lacking stel_token ends the session).
+# stel_ssid and stel_dt change nothing, they are sent when given.
+REQUIRED_COOKIE_KEYS: tuple[str, ...] = ("stel_token", "stel_ton_token")
 
 # Headers for Fragment's JSON API calls (POST /api?hash=...). curl_cffi's impersonate="chrome"
 # already supplies a browser-consistent User-Agent, Sec-Ch-Ua*, Accept-Language, and
