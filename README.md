@@ -9,7 +9,7 @@
 [![Tests](https://img.shields.io/github/actions/workflow/status/bohd4nx/pyfragment/ci.yml?style=flat&label=Tests&logo=github)](https://github.com/bohd4nx/pyfragment/actions)
 [![License](https://img.shields.io/github/license/bohd4nx/pyfragment?style=flat&color=blue&label=License)](LICENSE)
 
-Async Python client for **[Fragment.com](https://fragment.com)** — buy Telegram Stars, gift Premium, run giveaways, search the marketplace, and manage anonymous numbers, all from code.
+Async Python client for **[Fragment.com](https://fragment.com)** — buy Telegram Stars and Premium, run giveaways, search usernames, numbers and gifts, read your purchase history and manage anonymous numbers.
 
 **[Documentation](https://bohd4nx.gitbook.io/pyfragment/)** · **[Examples](https://github.com/bohd4nx/pyfragment/tree/master/examples)**
 
@@ -55,7 +55,7 @@ async def main() -> None:
     async with FragmentClient(
         seed="word1 word2 ... word24",
         api_key="YOUR_API_KEY",
-        cookies={"stel_ssid": "...", "stel_dt": "...", "stel_token": "...", "stel_ton_token": "..."},
+        cookies={"stel_token": "...", "stel_ton_token": "..."},
     ) as client:
         wallet = await client.get_wallet()
         print("GRAM: %s | USDT: %s" % (wallet.gram_balance, wallet.usdt_balance))

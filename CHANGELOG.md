@@ -11,73 +11,56 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.MINOR.MI
 
 ### Added
 
-- **Batched payments: `FragmentClient(max_batch=...)`.** Payments of a wallet queue up, and with `max_batch` above `1`
-  whatever is queued goes out in one external message: one seqno, one send, a lower total fee. Every kind of purchase
-  queues the same way and kinds can be mixed. The wallet caps the message (W5 and Telegram Wallet 255, V4R2 4,
-  HighloadV2 254, HighloadV3R1 64516). Payments of one message share `msg_hash` and `boc`. Defaults to `1`.
-- `FragmentClient(transfer_coordinator=...)`: a lock plus the seqno of the last sent message, per wallet address, that
-  processes buying from one wallet can share (e.g. through Redis); one coordinator serves any number of wallets. The
-  default, `LocalTransferCoordinator`, covers one process.
-- A payment is logged when it goes out after its caller was cancelled, and a transfer that waits over 15 seconds for the
-  previous one to land says so. A group whose callers are all cancelled before the send is not sent.
-- `get_stars_history()` and `get_premium_history()`: the account's purchases as `StarsHistoryEntry` /
-  `PremiumHistoryEntry` (`username`, `name`, `stars` or `months`, `gram`, `date`), newest first or `newest_first=False`.
-  A recipient Fragment shows by name only (a deleted or hidden account) has `username=None`. Fragment lists at most
-  1000 entries per order.
-- Typed errors for what Fragment refuses, so callers need not read its message text: `BelowMinimumError` ("You can buy
-  a minimum of 35,000 stars", a per-recipient floor above the usual 50), `AboveMaximumError` (Stars, winners or
-  subscriptions over the limit) and `AmountError` for the range message, all with `minimum` / `maximum`;
-  `InvalidPackageError`; `InvoiceExpiredError` (retryable); `WalletAlreadyLinkedError`. A user, bot or unknown name
-  given to a giveaway is a `ChannelNotFoundError` (it was a bare `FragmentAPIError`).
+- `max_batch`: payments of one wallet queue up and, with `max_batch` above `1`, go out in a single message (one seqno,
+  one fee). All kinds of purchases can share a message. Defaults to `1`.
+- `transfer_coordinator`: a lock and the pending seqno per wallet that several processes can share, e.g. through Redis.
+  `LocalTransferCoordinator` is the default.
+- `get_stars_history()` and `get_premium_history()` return your past purchases. Recipients Fragment shows only by name
+  (deleted or hidden accounts) have `username=None`. Fragment lists at most 1000 per order, so use both orders to go
+  further back.
+- Typed errors, so you don't have to read Fragment's messages: `BelowMinimumError` (the minimum can be per recipient,
+  e.g. 35,000 Stars), `AboveMaximumError`, `AmountError`, `InvalidPackageError`, `InvoiceExpiredError`,
+  `WalletAlreadyLinkedError` and `ServerError`. `InvoiceExpiredError` and `ServerError` are retryable, nothing was paid.
+  Giving a giveaway a user or bot instead of a channel is a `ChannelNotFoundError`.
 
 ### Fixed
 
-- Stars giveaways allowed 1 to 5 winners, but the package is split between the winners and Fragment accepts up to
-  `amount // 100` of them (10 winners for 1000 Stars, 10 000 for 1 000 000). Larger giveaways were rejected locally,
-  and the docs said each winner gets the whole `amount`. `STARS_WINNERS` is now 1 to 10 000 and a package's own limit
-  is checked before any call (`ConfigurationError`); `STARS_GIVEAWAY` is the package size.
-- Giveaways ignored Fragment's answer to the price call (a package it doesn't sell, too many winners), and a purchase
-  whose `get*Link` answered with an error reached the signer as an "invalid payload". Both now raise Fragment's error.
-- Error texts such as "You&#39;re not an owner of this number" are unescaped for every call, not only for numbers.
-- Stars/Premium purchases and giveaways no longer send `account`/`device` with `get*Link`: Fragment's frontend dropped
-  them (the wallet comes from the session).
-- A session without a bound TON wallet (`need_ton`) now raises `SessionExpiredError` naming `stel_ton_token` instead
-  of a vague missing-request-id error.
-- Batching formed a group before waiting for the previous message's block, so every group cost a block of its own
-  during a burst. The group is now formed after that wait and takes everything that queued meanwhile; a lone payment
-  still goes out at once, and the seqno is read once per message instead of twice.
-- A failing `on_transfer_prepared` hook fails only its own payment: the message is signed again without it and the hooks
-  of the others are called again with the new intent. If the hooks take so long that the message is no longer valid,
-  its payments fail as retryable and nothing is sent.
-- Overlapping purchases from one wallet lost transfers: a node rejects a seqno that is ahead of the chain. A message
-  now waits until the previous one has landed.
-
-### Removed
-
-- `recharge_ads()` and `topup_gram()` (with `AdsRechargeResult`, `AdsTopupResult`, `GRAM_TOPUP` and the matching
-  `ApiMethod` members): fragment.com no longer offers them, its Ads page only links to ads.telegram.org and
-  `/ads/topup` redirects to `/ads`. The topup methods answer "Access denied" to a working session. The
-  `versioned_state` and `wallet_in_link` switches of `PurchaseFlow`, which only these flows used, are gone too.
+- `search_gifts(view=...)`: the docs said it takes an attribute tab, but Fragment only knows `grid` and `list`, and
+  anything else silently gave the grid. It is now a `GiftView` (unknown values raise `ConfigurationError`), and the list
+  view, which came back empty, is parsed.
+- Stars giveaways took 1 to 5 winners. The package is shared by the winners, so Fragment allows up to `amount // 100`
+  (10 for 1000 Stars, 10 000 for 1 000 000), and the docs wrongly said every winner gets the whole `amount`. The check is
+  now per package.
+- A giveaway ignored Fragment's answer to its price call, and an error from `get*Link` reached the signer as an
+  "invalid payload". Both raise Fragment's error now.
+- Fragment HTML-escapes its error texts (`You&#39;re not an owner...`); they are unescaped for every call.
+- Stars and Premium no longer send `account` and `device` with `get*Link`, Fragment's frontend dropped them.
+- A session with no TON wallet (`need_ton`) raises `SessionExpiredError` naming `stel_ton_token` instead of a
+  missing request id.
+- Batches are formed after waiting for the previous block, so a burst no longer costs a block per group.
+- A failing `on_transfer_prepared` hook fails only its own payment, and if hooks outlast the signed message its
+  payments fail as retryable and nothing is sent.
+- Overlapping purchases from one wallet lost transfers, because a node rejects a seqno that is ahead of the chain.
+  A message now waits for the previous one to land.
 
 ### Changed
 
-- Purchases are serialized only while a message is signed and sent, no longer while waiting for Fragment's
-  confirmation.
-- The amount and count bounds are `Range` constants in `constants.limits` (`STARS_PURCHASE`, `STARS_GIVEAWAY`,
-  `STARS_WINNERS`, `PREMIUM_WINNERS`, `GRAM_TOPUP`); each replaces its `*_MIN`/`*_MAX` pair.
-- `pyfragment/constants.py` is now the `pyfragment.constants` package (`fragment`, `chain`, `limits`); the defaults
-  of `timeout` (`30.0`), `confirm_timeout` (`60.0`) and `max_batch` (`1`) are plain literals in `FragmentClient`, so
-  `DEFAULT_TIMEOUT`, `CONFIRM_STATE_TIMEOUT`, `DEFAULT_MAX_BATCH` and `USDT_CURRENCY` are gone.
-- `FragmentClient` lives in the `pyfragment.client` package (the import is unchanged); `MnemonicType` is tonutils'
-  own enum; `client.seed` is the phrase as given, tonutils ignores case and extra whitespace itself.
+- A client needs the `stel_token` and `stel_ton_token` cookies. `stel_ssid` and `stel_dt` are optional: nothing
+  changes without them.
+- Purchases are serialized only while signing and sending, not while waiting for Fragment's confirmation.
+- Amount bounds are `Range` constants in `constants.limits`. `pyfragment.constants` is a package, and the default
+  `timeout`, `confirm_timeout` and `max_batch` are literals in `FragmentClient`, so `DEFAULT_TIMEOUT`,
+  `CONFIRM_STATE_TIMEOUT`, `DEFAULT_MAX_BATCH` and `USDT_CURRENCY` are gone.
+- `FragmentClient` lives in the `pyfragment.client` package (same import), `MnemonicType` is tonutils' own enum and
+  `client.seed` is the phrase as you gave it.
 
 ### Removed
 
+- `recharge_ads()` and `topup_gram()`: fragment.com no longer offers them, `/ads/topup` redirects to `/ads`.
 - The grouped attributes `client.purchases`, `.giveaways`, `.ads`, `.anonymous_numbers`, `.marketplace`, `.wallet` and
-  `.assets`: call the methods on the client itself.
-- The balance pre-check: `InsufficientBalanceError` and the `gas_reserve` parameter. An underfunded transfer fails
-  on-chain and Fragment never confirms it (`confirmed=False`), which looks like a slow confirmation; use `get_wallet()` to look
-  at the balance beforehand, and look the transfer up by `transaction_id` before retrying.
+  `.assets`: call the methods on the client.
+- The balance pre-check (`InsufficientBalanceError`, `gas_reserve`). An underfunded transfer fails on-chain and shows up
+  as `confirmed=False`; check `get_wallet()` beforehand and look the transfer up by `transaction_id` before retrying.
 
 ---
 
