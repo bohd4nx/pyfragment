@@ -6,7 +6,7 @@ from pyfragment.domains.marketplace.models import AuctionItem
 
 # Row listings (usernames, numbers): one <tr class="tm-row-selectable"> per item.
 _ROW_RE = re.compile(r'<tr\b[^>]*class="[^"]*tm-row-selectable[^"]*"[^>]*>(.*?)</tr>', re.DOTALL)
-_ROW_HREF_RE = re.compile(r'href="/((?:username|number)/[^"]+)"')
+_ROW_HREF_RE = re.compile(r'href="/((?:username|number|gift)/[^"?]+)')
 _ROW_NAME_RE = re.compile(r'class="[^"]*\btm-value\b[^"]*"[^>]*>\s*([^<]+?)\s*<')
 _ROW_PRICE_RE = re.compile(r'class="[^"]*\btm-value\b[^"]*\bicon-ton\b[^"]*"[^>]*>\s*([0-9][^<]*?)\s*<')
 _ROW_STATUS_RE = re.compile(r'class="[^"]*\btm-value\b[^"]*\btm-status-\w+[^"]*"[^>]*>\s*([^<]+?)\s*<')
@@ -89,5 +89,9 @@ def parse_gift_items(html: str) -> tuple[list[AuctionItem], int | None]:
                 date=first(_TIME_RE, card),
             )
         )
+    if not items:
+        # The list view renders gifts as table rows, like usernames and numbers.
+        items, next_offset = parse_auction_rows(html)
+        return items, int(next_offset) if next_offset else None
     next_offset = first(_NEXT_OFFSET_RE, html)
     return items, int(next_offset) if next_offset else None

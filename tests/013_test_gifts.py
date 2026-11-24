@@ -123,11 +123,11 @@ async def test_search_gifts_paginated_response_shape(client: FragmentClient) -> 
 async def test_search_gifts_with_view(client: FragmentClient) -> None:
     mock_call = AsyncMock(return_value={"ok": True, "html": FAKE_GIFTS_HTML})
     with patch.object(client, "call", mock_call):
-        result = await client.search_gifts(collection="artisanbrick", view="Model")
+        result = await client.search_gifts(collection="artisanbrick", view="list")
 
     assert isinstance(result, GiftsResult)
     call_data = mock_call.call_args[0][1]
-    assert call_data["view"] == "Model"
+    assert call_data["view"] == "list"
     assert call_data["collection"] == "artisanbrick"
 
 

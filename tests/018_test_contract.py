@@ -28,7 +28,7 @@ from pyfragment.constants.limits import (
     STARS_PURCHASE,
     STARS_WINNERS,
 )
-from pyfragment.enums import ApiError, ApiMethod, AuctionFilter, AuctionSort, GiftAttribute, PaymentMethod
+from pyfragment.enums import ApiError, ApiMethod, AuctionFilter, AuctionSort, GiftAttribute, GiftView, PaymentMethod
 from pyfragment.transport import FragmentTransport, get_fragment_hash
 from pyfragment.utils.errors import has_error
 
@@ -111,6 +111,12 @@ async def test_api_error_messages() -> None:
         )
     finally:
         await transport.aclose()
+
+
+async def test_gift_views(session: AsyncSession) -> None:
+    html = await _page(session, f"{GIFTS_PAGE}/bowtie")
+    # The grid is the page without a view parameter, the toggle links to the others.
+    assert set(re.findall(r"[?&]view=([a-z]+)", html)) == {m.value for m in GiftView if m is not GiftView.GRID}
 
 
 async def test_gift_attribute_names(session: AsyncSession) -> None:

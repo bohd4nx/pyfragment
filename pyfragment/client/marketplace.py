@@ -5,7 +5,7 @@ from collections.abc import Mapping, Sequence
 from pyfragment.client.base import BaseClient
 from pyfragment.domains.marketplace.models import GiftsResult, NumbersResult, UsernamesResult
 from pyfragment.domains.marketplace.search import search_gifts, search_numbers, search_usernames
-from pyfragment.enums import AuctionFilter, AuctionSort
+from pyfragment.enums import AuctionFilter, AuctionSort, GiftView
 
 
 class MarketplaceMethods(BaseClient):
@@ -59,7 +59,7 @@ class MarketplaceMethods(BaseClient):
         collection: str | None = None,
         sort: AuctionSort | str | None = None,
         filter: AuctionFilter | str | None = None,
-        view: str | None = None,
+        view: GiftView | str | None = None,
         attr: Mapping[str, Sequence[str]] | None = None,
         offset: int | None = None,
     ) -> GiftsResult:
@@ -72,7 +72,7 @@ class MarketplaceMethods(BaseClient):
                 ``"price_asc"``, ``"listed"``, or ``"ending"``.
             filter: An :class:`AuctionFilter` or its value: ``""`` (available, default), ``"auction"``,
                 ``"sale"``, or ``"sold"``.
-            view: Active attribute tab name (e.g. ``"Model"``).
+            view: A :class:`GiftView` or its value: ``"grid"`` (cards, default) or ``"list"`` (table rows).
             attr: Trait filters keyed by :class:`GiftAttribute` name (``Model``, ``Backdrop`` or ``Symbol``,
                 any casing) — e.g. ``{"Model": ["Foosball"], "Backdrop": ["Celtic Blue"]}``.
             offset: Pass :attr:`GiftsResult.next_offset` to fetch the next page.

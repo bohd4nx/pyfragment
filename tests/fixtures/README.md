@@ -10,6 +10,7 @@ representative items. Only listing rows were removed; the surrounding markup is 
 | `numbers_one_per_status.html` | Numbers listing: one row per status (for sale, sold, plain auction) |
 | `numbers_search_result.html` | A whole number text-search response, including the "Show more" footer |
 | `gifts_one_per_status.html` | Gifts grid: one card per status (available, for sale, not for sale, on auction, sold) |
+| `gifts_list_view.html` | Gifts in `view=list`: table rows (sold, on auction, for sale, no status) and the "Show more" footer |
 | `gifts_next_page_response.json` | A paginated gifts response, `{"part": true, "body": ..., "foot": ...}` |
 
 Refresh them from live responses when Fragment changes its markup, then update the expected values in

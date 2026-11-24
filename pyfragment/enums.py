@@ -129,6 +129,13 @@ class AuctionFilter(StrEnum):
     SOLD = "sold"
 
 
+class GiftView(StrEnum):
+    """Layout of a gifts listing. Fragment silently ignores unknown values and shows the grid."""
+
+    GRID = "grid"  # the default: cards
+    LIST = "list"  # table rows
+
+
 class GiftAttribute(StrEnum):
     """Traits a collection of gifts can be filtered by. Fragment silently ignores unknown (or differently cased) names."""
 

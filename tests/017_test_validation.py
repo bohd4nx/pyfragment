@@ -15,8 +15,9 @@ from pyfragment import (
     UserNotFoundError,
 )
 from pyfragment.constants.limits import STARS_WINNERS, Range
-from pyfragment.enums import AuctionFilter, AuctionSort, GiftAttribute, MarketplaceType
+from pyfragment.enums import AuctionFilter, AuctionSort, GiftAttribute, GiftView, MarketplaceType
 from pyfragment.utils.validation import check_limit, check_stars_winners
+from tests.shared import fixture_html
 
 # check_limit
 
@@ -153,6 +154,44 @@ async def test_search_gifts_sends_canonical_attribute_names(client: FragmentClie
     assert sent["attr[Backdrop]"] == '["Onyx Black", "Mint Green"]'
     assert sent["collection"] == "bowtie"
     assert not any(key.lower() == "attr[model]" and key != "attr[Model]" for key in sent)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("view", ["list", "LIST", GiftView.LIST])
+async def test_search_gifts_sends_the_view(client: FragmentClient, view: str) -> None:
+    call_mock = AsyncMock(return_value={"html": ""})
+    with patch.object(client, "call", call_mock):
+        await client.search_gifts(view=view)
+
+    assert call_mock.await_args.args[1]["view"] == "list"
+
+
+@pytest.mark.asyncio
+async def test_search_gifts_without_a_view_sends_none(client: FragmentClient) -> None:
+    call_mock = AsyncMock(return_value={"html": ""})
+    with patch.object(client, "call", call_mock):
+        await client.search_gifts()
+
+    assert "view" not in call_mock.await_args.args[1]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("view", ["Model", "table", ""])
+async def test_search_gifts_rejects_an_unknown_view(client: FragmentClient, view: str) -> None:
+    call_mock = AsyncMock()
+    with patch.object(client, "call", call_mock), pytest.raises(ConfigurationError, match="Supported values: grid, list"):
+        await client.search_gifts(view=view)
+    call_mock.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_search_gifts_list_view_returns_items(client: FragmentClient) -> None:
+    html = fixture_html("gifts_list_view.html")
+    with patch.object(client, "call", AsyncMock(return_value={"html": html})):
+        result = await client.search_gifts(collection="plushpepe", view=GiftView.LIST)
+
+    assert [item["slug"] for item in result.items][:2] == ["gift/plushpepe-1821", "gift/libertyfigure-100"]
+    assert result.next_offset == 60
 
 
 # Recipient search: real Fragment error texts map to specific exceptions, unknown errors surface as-is

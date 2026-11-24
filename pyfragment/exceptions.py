@@ -48,6 +48,7 @@ class ConfigurationError(ClientError):
     OUT_OF_RANGE = "Invalid {label}: must be an integer between {min:,} and {max:,}."
     INVALID_SORT = "Invalid sort order '{value}'. Supported values: {supported}."
     INVALID_FILTER = "Invalid filter '{value}'. Supported values: {supported}."
+    INVALID_GIFT_VIEW = "Invalid gifts view '{value}'. Supported values: {supported}."
     INVALID_GIFT_ATTRIBUTE = "Invalid gift attribute '{value}'. Supported values: {supported}."
     INVALID_PAYMENT_METHOD = "Invalid payment method '{method}'. Supported values: {supported}."
 

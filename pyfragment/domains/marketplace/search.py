@@ -9,7 +9,7 @@ from pyfragment.constants.fragment import FRAGMENT_BASE_URL, GIFTS_PAGE, NUMBERS
 from pyfragment.domains.base import operation
 from pyfragment.domains.marketplace.models import AuctionItem, GiftsResult, NumbersResult, UsernamesResult
 from pyfragment.domains.marketplace.parser import parse_auction_rows, parse_gift_items
-from pyfragment.enums import ApiMethod, AuctionFilter, AuctionSort, MarketplaceType
+from pyfragment.enums import ApiMethod, AuctionFilter, AuctionSort, GiftView, MarketplaceType
 from pyfragment.exceptions import ConfigurationError
 from pyfragment.utils.errors import raise_for_error
 from pyfragment.utils.validation import normalize_gift_attributes, parse_enum
@@ -87,10 +87,12 @@ async def search_gifts(
     collection: str | None = None,
     sort: AuctionSort | str | None = None,
     filter: AuctionFilter | str | None = None,
-    view: str | None = None,
+    view: GiftView | str | None = None,
     attr: Mapping[str, Sequence[str]] | None = None,
     offset: int | None = None,
 ) -> GiftsResult:
+    if view is not None:
+        view = parse_enum(GiftView, view, ConfigurationError.INVALID_GIFT_VIEW)
     data = listing_query(MarketplaceType.GIFTS, query, sort, filter, collection=collection, view=view, offset_id=offset)
     for trait, values in normalize_gift_attributes(attr).items():
         data[f"attr[{trait}]"] = json.dumps(values)

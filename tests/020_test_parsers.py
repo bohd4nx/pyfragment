@@ -98,6 +98,24 @@ def test_parse_gifts_drops_the_link_query_string_from_the_slug() -> None:
     assert all("?" not in i["slug"] for i in items)
 
 
+def test_parse_gifts_list_view_rows() -> None:
+    items, next_offset = parse_gift_items(fixture_html("gifts_list_view.html"))
+
+    assert next_offset == 60
+    assert _rows(items) == [
+        ("gift/plushpepe-1821", "Plush Pepe #1821", "Sold", "88888.00", "2026-02-05T14:41:27+00:00"),
+        ("gift/libertyfigure-100", "Liberty Figure #100", "On auction", "256.00", "2027-08-28T00:56:36+00:00"),
+        ("gift/plushpepe-1977", "Plush Pepe #1977", "For sale", "7500.00", "2027-11-18T12:15:27+00:00"),
+        ("gift/plushpepe-376", "Plush Pepe #376", None, "100000.00", "2027-05-13T20:47:10+00:00"),
+    ]
+
+
+def test_parse_gifts_list_view_drops_the_link_query_string_from_the_slug() -> None:
+    items, _ = parse_gift_items(fixture_html("gifts_list_view.html"))
+
+    assert all("?" not in i["slug"] for i in items)
+
+
 def test_parse_gifts_empty_html() -> None:
     assert parse_gift_items("") == ([], None)
 
