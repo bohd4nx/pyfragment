@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Any, TypeVar
 
 from pyfragment.constants.fragment import REQUIRED_COOKIE_KEYS
-from pyfragment.constants.limits import PREMIUM_MONTHS_VALID, Range
+from pyfragment.constants.limits import PREMIUM_MONTHS_VALID, STARS_GIVEAWAY_MIN_PER_WINNER, Range
 from pyfragment.domains.wallet.wallet import WALLET_CLASSES
 from pyfragment.enums import (
     GiftAttribute,
@@ -65,6 +65,15 @@ def check_limit(bounds: Range, value: object) -> None:
     # bool is a subclass of int, but `True` is never a meaningful amount or count.
     if not isinstance(value, int) or isinstance(value, bool) or not bounds.min <= value <= bounds.max:
         raise ConfigurationError(ConfigurationError.OUT_OF_RANGE.format(label=bounds.label, min=bounds.min, max=bounds.max))
+
+
+def check_stars_winners(winners: int, amount: int) -> None:
+    """A Stars giveaway package is split between its winners, each getting at least a fixed share."""
+    most = amount // STARS_GIVEAWAY_MIN_PER_WINNER
+    if winners > most:
+        raise ConfigurationError(
+            ConfigurationError.TOO_MANY_WINNERS.format(amount=amount, max=most, per_winner=STARS_GIVEAWAY_MIN_PER_WINNER)
+        )
 
 
 def check_months(months: object) -> None:

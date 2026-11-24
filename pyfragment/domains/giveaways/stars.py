@@ -11,7 +11,7 @@ from pyfragment.domains.giveaways.models import StarsGiveawayResult
 from pyfragment.domains.payments import PurchaseFlow, run_purchase
 from pyfragment.domains.recipients import find_channel
 from pyfragment.enums import ApiMethod, PaymentMethod
-from pyfragment.utils.validation import check_limit, validate_payment_method
+from pyfragment.utils.validation import check_limit, check_stars_winners, validate_payment_method
 
 if TYPE_CHECKING:
     from pyfragment.client.base import BaseClient
@@ -37,6 +37,7 @@ async def giveaway_stars(
 ) -> StarsGiveawayResult:
     check_limit(STARS_WINNERS, winners)
     check_limit(STARS_GIVEAWAY, amount)
+    check_stars_winners(winners, amount)
     validate_payment_method(payment_method)
 
     with operation(

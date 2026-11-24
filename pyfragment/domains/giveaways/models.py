@@ -9,12 +9,12 @@ from pyfragment.domains.payments.models import PaymentResult
 class StarsGiveawayResult(PaymentResult):
     channel: str
     winners: int
-    amount: int  # stars per winner
+    amount: int  # Stars package, shared by the winners
 
     def __repr__(self) -> str:
         return (
             f"StarsGiveawayResult(channel='{self.channel}', winners={self.winners}, "
-            f"amount={self.amount} stars per winner, tx='{self.transaction_id}', confirmed={self.confirmed})"
+            f"amount={self.amount} stars, tx='{self.transaction_id}', confirmed={self.confirmed})"
         )
 
 

@@ -16,7 +16,7 @@ from pyfragment import (
 )
 from pyfragment.constants.limits import STARS_WINNERS, Range
 from pyfragment.enums import AuctionFilter, AuctionSort, GiftAttribute, MarketplaceType
-from pyfragment.utils.validation import check_limit
+from pyfragment.utils.validation import check_limit, check_stars_winners
 
 # check_limit
 
@@ -35,20 +35,35 @@ def test_check_limit_accepts_only_whole_numbers_in_range(value: object, expected
 # bool must not slip through as 1
 
 
-# Stars giveaway: Fragment allows 1-5 winners
+# Stars giveaway: the package is shared by the winners, each getting at least 100 Stars
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("winners", [0, STARS_WINNERS.max + 1, 15, True])
+@pytest.mark.parametrize("winners", [0, STARS_WINNERS.max + 1, True])
 async def test_giveaway_stars_rejects_invalid_winners(client: FragmentClient, winners: int) -> None:
     with pytest.raises(ConfigurationError, match="winners"):
         await client.giveaway_stars("@channel", winners, 500)
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(("winners", "amount"), [(6, 500), (11, 1_000), (101, 10_000)])
+async def test_giveaway_stars_rejects_more_winners_than_the_package_allows(
+    client: FragmentClient, winners: int, amount: int
+) -> None:
+    with patch.object(client, "call", AsyncMock()) as call_mock, pytest.raises(ConfigurationError, match="Too many winners"):
+        await client.giveaway_stars("@channel", winners, amount)
+    call_mock.assert_not_awaited()
+
+
+@pytest.mark.parametrize(("winners", "amount"), [(5, 500), (10, 1_000), (10_000, 1_000_000)])
+def test_check_stars_winners_accepts_the_most_a_package_allows(winners: int, amount: int) -> None:
+    check_stars_winners(winners, amount)
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("amount", [499, 1_000_001, True])
 async def test_giveaway_stars_rejects_invalid_amount(client: FragmentClient, amount: int) -> None:
-    with pytest.raises(ConfigurationError, match="Stars per winner"):
+    with pytest.raises(ConfigurationError, match="Stars package"):
         await client.giveaway_stars("@channel", 1, amount)
 
 

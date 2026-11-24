@@ -40,6 +40,10 @@ class ConfigurationError(ClientError):
     INVALID_MAX_BATCH = "Invalid max_batch '{value}': must be a positive whole number."
     UNSUPPORTED_PROVIDER = "Unsupported API provider '{value}'. Supported values: {supported}."
     INVALID_MONTHS = f"Invalid Premium duration: choose {', '.join(str(m) for m in sorted(PREMIUM_MONTHS_VALID))} months."
+    TOO_MANY_WINNERS = (
+        "Too many winners: a {amount:,} Stars package is split between at most {max:,} winners "
+        "(at least {per_winner:,} Stars each)."
+    )
     OUT_OF_RANGE = "Invalid {label}: must be an integer between {min:,} and {max:,}."
     INVALID_SORT = "Invalid sort order '{value}'. Supported values: {supported}."
     INVALID_FILTER = "Invalid filter '{value}'. Supported values: {supported}."

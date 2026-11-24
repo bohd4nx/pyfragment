@@ -20,7 +20,14 @@ from pyfragment.constants.fragment import (
     STARS_GIVEAWAY_PAGE,
     STARS_PAGE,
 )
-from pyfragment.constants.limits import PREMIUM_MONTHS_VALID, PREMIUM_WINNERS, STARS_PURCHASE, STARS_WINNERS
+from pyfragment.constants.limits import (
+    PREMIUM_MONTHS_VALID,
+    PREMIUM_WINNERS,
+    STARS_GIVEAWAY,
+    STARS_GIVEAWAY_MIN_PER_WINNER,
+    STARS_PURCHASE,
+    STARS_WINNERS,
+)
 from pyfragment.enums import ApiError, ApiMethod, AuctionFilter, AuctionSort, GiftAttribute, PaymentMethod
 from pyfragment.schemas import has_error
 from pyfragment.transport import FragmentTransport, get_fragment_hash
@@ -60,9 +67,10 @@ async def test_stars_purchase_limits(session: AsyncSession) -> None:
 
 
 async def test_stars_giveaway_winner_limits(session: AsyncSession) -> None:
+    # The page opens on its smallest package, which fixes the winners it shows.
     assert _quantity_range(await _page(session, STARS_GIVEAWAY_PAGE)) == (
         STARS_WINNERS.min,
-        STARS_WINNERS.max,
+        STARS_GIVEAWAY.min // STARS_GIVEAWAY_MIN_PER_WINNER,
     )
 
 

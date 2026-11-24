@@ -117,8 +117,9 @@ class PurchaseMethods(BaseClient):
 
         Args:
             channel: Channel identifier — ``@channel``, ``channel``, or ``https://t.me/channel``.
-            winners: Number of winners — integer from ``1`` to ``5``.
-            amount: Stars each winner receives — integer from ``500`` to ``1 000 000``.
+            winners: Number of winners — at least ``1`` and at most ``amount // 100``: the package is split between them.
+            amount: Stars package to give away, shared by the winners — one of Fragment's packages from
+                ``500`` to ``1 000 000`` (see ``InvalidPackageError``).
             payment_method: Payment currency — defaults to ``PaymentMethod.GRAM``.
 
         Returns:
