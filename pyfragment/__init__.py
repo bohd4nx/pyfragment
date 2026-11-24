@@ -5,6 +5,7 @@ from pyfragment.client import FragmentClient
 from pyfragment.domains.anonymous_numbers.models import LoginCodeResult, TerminateSessionsResult
 from pyfragment.domains.assets.models import MyGiftsResult, MyNumbersResult, MyUsernamesResult
 from pyfragment.domains.giveaways.models import PremiumGiveawayResult, StarsGiveawayResult
+from pyfragment.domains.history import PremiumHistoryEntry, StarsHistoryEntry
 from pyfragment.domains.marketplace.models import AuctionItem, GiftsResult, NumbersResult, UsernamesResult
 from pyfragment.domains.payments.models import PaymentResult
 from pyfragment.domains.purchases.models import PremiumPackage, PremiumResult, StarsPackage, StarsResult
@@ -67,6 +68,8 @@ __all__ = [
     "PremiumPackage",
     "PremiumResult",
     "PremiumGiveawayResult",
+    "StarsHistoryEntry",
+    "PremiumHistoryEntry",
     "WalletInfo",
     "TransferIntent",
     "TransferCoordinator",

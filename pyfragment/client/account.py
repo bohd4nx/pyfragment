@@ -4,6 +4,7 @@ from pyfragment.client.base import BaseClient
 from pyfragment.constants.fragment import PROFILE_PAGE
 from pyfragment.domains.assets.models import MyGiftsResult, MyNumbersResult, MyUsernamesResult
 from pyfragment.domains.assets.owned import get_my_gifts, get_my_numbers, get_my_usernames
+from pyfragment.domains.history import PremiumHistoryEntry, StarsHistoryEntry, get_premium_history, get_stars_history
 from pyfragment.domains.wallet.balance import get_wallet_info
 from pyfragment.domains.wallet.models import WalletInfo
 from pyfragment.enums import ApiError
@@ -65,3 +66,27 @@ class AccountMethods(BaseClient):
             :class:`MyGiftsResult` with an ``items`` list of :class:`AuctionItem`.
         """
         return await get_my_gifts(self)
+
+    async def get_stars_history(self, newest_first: bool = True) -> list[StarsHistoryEntry]:
+        """List the Stars the account has bought, as fragment.com/stars/history shows them.
+
+        Fragment lists at most 1000 purchases per order: call with both orders to reach further back.
+
+        Args:
+            newest_first: Newest purchase first (default), or oldest first.
+
+        Returns:
+            List of :class:`StarsHistoryEntry` with ``username`` (``None`` for a recipient shown by name only), ``name``, ``stars``, ``gram`` and ``date``.
+        """
+        return await get_stars_history(self, newest_first)
+
+    async def get_premium_history(self, newest_first: bool = True) -> list[PremiumHistoryEntry]:
+        """List the Premium gifts the account has bought, as fragment.com/premium/history shows them.
+
+        Args:
+            newest_first: Newest gift first (default), or oldest first.
+
+        Returns:
+            List of :class:`PremiumHistoryEntry` with ``username`` (``None`` for a recipient shown by name only), ``name``, ``months``, ``gram`` and ``date``.
+        """
+        return await get_premium_history(self, newest_first)
