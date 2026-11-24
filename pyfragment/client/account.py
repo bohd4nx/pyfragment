@@ -7,7 +7,7 @@ from pyfragment.domains.assets.owned import get_my_gifts, get_my_numbers, get_my
 from pyfragment.domains.history import PremiumHistoryEntry, StarsHistoryEntry, get_premium_history, get_stars_history
 from pyfragment.domains.wallet.balance import get_wallet_info
 from pyfragment.domains.wallet.models import WalletInfo
-from pyfragment.enums import ApiError
+from pyfragment.enums import ApiError, ApiMethod
 from pyfragment.exceptions import WalletAlreadyLinkedError
 from pyfragment.utils.errors import has_error, raise_for_error
 
@@ -24,7 +24,7 @@ class AccountMethods(BaseClient):
 
     async def logout(self) -> None:
         """End the Fragment session (invalidates session cookies server-side)."""
-        result = await self.call("logOut")
+        result = await self.call(ApiMethod.LOG_OUT)
         raise_for_error(result)
 
     async def link_wallet(self) -> None:
@@ -33,14 +33,14 @@ class AccountMethods(BaseClient):
         Required once after connecting a wallet via TON Connect before purchases can be made.
         Uses the existing ``stel_ton_token`` cookie — no separate signing needed.
         """
-        result = await self.call("linkWallet", page_url=PROFILE_PAGE)
+        result = await self.call(ApiMethod.LINK_WALLET, page_url=PROFILE_PAGE)
         if has_error(result, ApiError.WALLET_ALREADY_LINKED):
             raise WalletAlreadyLinkedError(WalletAlreadyLinkedError.LINKED)
         raise_for_error(result)
 
     async def disconnect_wallet(self) -> None:
         """Disconnect the linked TON wallet from Fragment."""
-        result = await self.call("tonLogOut")
+        result = await self.call(ApiMethod.TON_LOG_OUT)
         raise_for_error(result)
 
     async def get_my_usernames(self) -> MyUsernamesResult:

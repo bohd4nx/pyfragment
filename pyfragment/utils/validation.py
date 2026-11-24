@@ -77,7 +77,7 @@ def check_stars_winners(winners: int, amount: int) -> None:
 
 
 def check_months(months: object) -> None:
-    if months not in PREMIUM_MONTHS_VALID:
+    if not isinstance(months, int) or isinstance(months, bool) or months not in PREMIUM_MONTHS_VALID:
         raise ConfigurationError(ConfigurationError.INVALID_MONTHS)
 
 

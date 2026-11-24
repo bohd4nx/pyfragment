@@ -35,6 +35,7 @@ async def get_login_code(client: BaseClient, number: str) -> LoginCodeResult:
             page_url=NUMBERS_PAGE,
         )
 
+        raise_unless_ok(result, AnonymousNumberError.LOGIN_CODE_FAILED, number)
         code, active_sessions = parse_login_code(result.get("html") or "")
         return LoginCodeResult(number=number, code=code, active_sessions=active_sessions)
 

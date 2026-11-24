@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from enum import StrEnum
+from enum import IntEnum, StrEnum
 
 from ton_core import MnemonicType
 
@@ -60,8 +60,14 @@ class ApiMethod(StrEnum):
     INIT_GIVEAWAY_PREMIUM_REQUEST = "initGiveawayPremiumRequest"
     GET_GIVEAWAY_PREMIUM_LINK = "getGiveawayPremiumLink"
 
+    # Account
+    LOG_OUT = "logOut"
+    LINK_WALLET = "linkWallet"
+    TON_LOG_OUT = "tonLogOut"
+
     # Marketplace
     SEARCH_AUCTIONS = "searchAuctions"
+    GET_ASSETS_LIST = "getAssetsList"
 
     # Anonymous numbers
     UPDATE_LOGIN_CODES = "updateLoginCodes"
@@ -110,6 +116,14 @@ class MarketplaceType(StrEnum):
     GIFTS = "gifts"
 
 
+class AssetType(IntEnum):
+    """``type`` of a ``getAssetsList`` request: what the account's assets page lists."""
+
+    USERNAMES = 1
+    NUMBERS = 3
+    GIFTS = 5
+
+
 class AuctionSort(StrEnum):
     """Sort orders of the Fragment marketplace. Fragment silently ignores unknown values."""
 
@@ -149,6 +163,7 @@ __all__ = [
     "ApiError",
     "ApiMethod",
     "ApiProvider",
+    "AssetType",
     "AuctionFilter",
     "AuctionSort",
     "GiftAttribute",

@@ -220,6 +220,7 @@ class AnonymousNumberError(FragmentAPIError):
     """Raised for Fragment anonymous number API failures."""
 
     NOT_OWNED = "Number '{number}' is not associated with your Fragment account or has no active sessions to terminate."
+    LOGIN_CODE_FAILED = "Failed to get the login code for '{number}': {error}"
     TERMINATE_FAILED = "Failed to terminate sessions for '{number}': {error}"
     TOGGLE_FAILED = "Failed to toggle login codes for '{number}': {error}"
 
@@ -228,6 +229,7 @@ class ParseError(FragmentAPIError):
     """Raised when a Fragment API response or payload cannot be parsed."""
 
     UNPARSEABLE = "Failed to parse the Fragment API response for '{context}': {exc}"
+    NOTHING_FOUND = "Fragment returned no {what}."
 
 
 class VerificationError(FragmentAPIError):

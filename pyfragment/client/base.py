@@ -94,3 +94,7 @@ class BaseClient:
             Raw parsed JSON response as a dict.
         """
         return await self._transport.call(method, data, page_url)
+
+    async def fetch_page(self, url: str) -> str:
+        """Load a logged-in Fragment page and return its HTML; a logged-out answer raises ``SessionExpiredError``."""
+        return await self._transport.fetch_page(url)
