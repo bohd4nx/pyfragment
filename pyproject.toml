@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "pyfragment"
 version = "2026.5.0"
-description = "Buy Telegram Stars, Premium and usernames on Fragment.com — async Python client"
+description = "Async Python client for Fragment.com: buy Telegram Stars and Premium, run giveaways, search usernames, numbers and gifts."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11"
@@ -16,12 +16,17 @@ keywords = [
     "telegram",
     "telegram-stars",
     "telegram-premium",
+    "giveaway",
     "ton",
+    "gram",
     "toncoin",
     "ton-blockchain",
+    "usdt",
     "tonapi",
+    "toncenter",
     "anonymous-numbers",
     "usernames",
+    "gifts",
     "marketplace",
     "crypto",
     "asyncio",
@@ -30,14 +35,20 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
     "Operating System :: OS Independent",
+    "Environment :: Web Environment",
+    "Framework :: AsyncIO",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3.15",
-    "Framework :: AsyncIO",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Communications :: Chat",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Office/Business :: Financial",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
