@@ -36,6 +36,7 @@ class FragmentTransport:
         return self._session
 
     async def fetch_page(self, url: str) -> str:
+        logger.debug("Fetching page (url=%s)", url)
         session = self._get_session()
         response = await send(session.get(url, headers={"referer": parent_url(url)}), url)
         if response.status_code != HTTPStatus.OK:
@@ -73,6 +74,7 @@ class FragmentTransport:
                 return response
             # The cached hash went stale: drop it and retry once with a fresh one.
             retried_stale = True
+            logger.debug("Cached API hash rejected, fetching a fresh one (page_url=%s)", page_url)
             del self._hashes[page_url]
 
         fragment_hash = await get_fragment_hash(session, page_url)

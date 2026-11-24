@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import random
 from collections.abc import Awaitable
 from http import HTTPStatus
@@ -13,6 +14,8 @@ from pyfragment.constants.fragment import FRAGMENT_API_URL, MAX_API_ATTEMPTS
 from pyfragment.enums import ApiError
 from pyfragment.exceptions import HTTPStatusError, NetworkError, ParseError, SessionExpiredError
 from pyfragment.utils.errors import has_error
+
+logger = logging.getLogger(__name__)
 
 SESSION_REJECTED_STATUSES: frozenset[int] = frozenset({HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN})
 
@@ -56,7 +59,9 @@ async def fragment_request(
             session.post(f"{FRAGMENT_API_URL}?hash={fragment_hash}", headers=headers, data=data), FRAGMENT_API_URL
         )
         if resp.status_code == HTTPStatus.TOO_MANY_REQUESTS and attempt < MAX_API_ATTEMPTS:
-            await asyncio.sleep(attempt + random.uniform(0, 0.5))
+            delay = attempt + random.uniform(0, 0.5)
+            logger.debug("Rate limited (attempt=%d/%d), retrying in %.1fs", attempt, MAX_API_ATTEMPTS, delay)
+            await asyncio.sleep(delay)
             continue
         break
     if resp.status_code != HTTPStatus.OK:

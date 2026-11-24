@@ -1,15 +1,20 @@
 from __future__ import annotations
 
+import logging
+
 from pyfragment.client.base import BaseClient
 from pyfragment.constants.fragment import PROFILE_PAGE
 from pyfragment.domains.assets.models import MyGiftsResult, MyNumbersResult, MyUsernamesResult
 from pyfragment.domains.assets.owned import get_my_gifts, get_my_numbers, get_my_usernames
+from pyfragment.domains.base import operation
 from pyfragment.domains.history import PremiumHistoryEntry, StarsHistoryEntry, get_premium_history, get_stars_history
 from pyfragment.domains.wallet.balance import get_wallet_info
 from pyfragment.domains.wallet.models import WalletInfo
 from pyfragment.enums import ApiError, ApiMethod
 from pyfragment.exceptions import WalletAlreadyLinkedError
 from pyfragment.utils.errors import has_error, raise_for_error
+
+logger = logging.getLogger(__name__)
 
 
 class AccountMethods(BaseClient):
@@ -20,12 +25,14 @@ class AccountMethods(BaseClient):
             :class:`WalletInfo` with ``address``, ``state``, and exact ``Decimal`` balances ``gram_balance``
             and ``usdt_balance`` (``None`` if the USDT lookup failed).
         """
-        return await get_wallet_info(self)
+        with operation(logger, "get wallet info"):
+            return await get_wallet_info(self)
 
     async def logout(self) -> None:
         """End the Fragment session (invalidates session cookies server-side)."""
-        result = await self.call(ApiMethod.LOG_OUT)
-        raise_for_error(result)
+        with operation(logger, "log out"):
+            result = await self.call(ApiMethod.LOG_OUT)
+            raise_for_error(result)
 
     async def link_wallet(self) -> None:
         """Link the connected TON wallet to the Fragment account.
@@ -33,15 +40,17 @@ class AccountMethods(BaseClient):
         Required once after connecting a wallet via TON Connect before purchases can be made.
         Uses the existing ``stel_ton_token`` cookie — no separate signing needed.
         """
-        result = await self.call(ApiMethod.LINK_WALLET, page_url=PROFILE_PAGE)
-        if has_error(result, ApiError.WALLET_ALREADY_LINKED):
-            raise WalletAlreadyLinkedError(WalletAlreadyLinkedError.LINKED)
-        raise_for_error(result)
+        with operation(logger, "link wallet"):
+            result = await self.call(ApiMethod.LINK_WALLET, page_url=PROFILE_PAGE)
+            if has_error(result, ApiError.WALLET_ALREADY_LINKED):
+                raise WalletAlreadyLinkedError(WalletAlreadyLinkedError.LINKED)
+            raise_for_error(result)
 
     async def disconnect_wallet(self) -> None:
         """Disconnect the linked TON wallet from Fragment."""
-        result = await self.call(ApiMethod.TON_LOG_OUT)
-        raise_for_error(result)
+        with operation(logger, "disconnect wallet"):
+            result = await self.call(ApiMethod.TON_LOG_OUT)
+            raise_for_error(result)
 
     async def get_my_usernames(self) -> MyUsernamesResult:
         """List Telegram usernames owned by the authenticated account.

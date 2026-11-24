@@ -1,5 +1,6 @@
 """Account methods of the client: logout, wallet linking, disconnecting and reading the wallet."""
 
+import logging
 from decimal import Decimal
 
 import pytest
@@ -57,6 +58,19 @@ class TestLinkWallet:
 
     def test_it_is_a_fragment_api_error(self) -> None:
         assert issubclass(WalletAlreadyLinkedError, FragmentAPIError)
+
+
+class TestFailureLogging:
+    async def test_a_failed_account_call_is_logged_with_what_it_was_doing(
+        self, client: FragmentClient, fragment: FakeFragment, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        caplog.set_level(logging.DEBUG, logger="pyfragment")
+        fragment.reply("linkWallet", {"error": f"This wallet is {ApiError.WALLET_ALREADY_LINKED} to an account."})
+
+        with pytest.raises(WalletAlreadyLinkedError):
+            await client.link_wallet()
+
+        assert "Failed to link wallet" in caplog.text
 
 
 class TestGetWallet:

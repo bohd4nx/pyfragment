@@ -1,5 +1,6 @@
 """fragment_request: one POST to /api, retrying only HTTP 429, and the mapping of statuses and bodies to errors."""
 
+import logging
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -43,6 +44,13 @@ class TestRateLimit:
         assert await fragment_request(fake, HASH, {}, PAYLOAD) == {"req_id": "r"}
         assert fake.post.await_count == 3
         assert sleeps.await_count == 2
+
+    async def test_a_retry_is_logged(self, sleeps: AsyncMock, caplog: pytest.LogCaptureFixture) -> None:
+        caplog.set_level(logging.DEBUG, logger="pyfragment")
+
+        await fragment_request(session(post=[reply(429), reply(200)]), HASH, {}, PAYLOAD)
+
+        assert "Rate limited (attempt=1/" in caplog.text
 
     async def test_backoff_grows_with_the_attempt_and_is_jittered(self, sleeps: AsyncMock) -> None:
         fake = session(post=[reply(429), reply(429), reply(200)])
