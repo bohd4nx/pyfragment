@@ -34,7 +34,7 @@ class RedisCoordinator:
         raw = await redis.get(f"pending:{address}")
         if raw is None:
             return None
-        seqno, valid_until = raw.decode().split(":")
+        seqno, valid_until = (raw.decode() if isinstance(raw, bytes) else raw).split(":")
         return int(seqno), float(valid_until)
 
     async def save_pending(self, address: str, seqno: int, valid_until: float) -> None:

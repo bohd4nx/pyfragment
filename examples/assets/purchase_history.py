@@ -38,12 +38,12 @@ async def main() -> None:
             return
 
     print(f"Stars purchases ({len(stars)}), {sum(e.stars for e in stars):,} Stars in total:")
-    for entry in stars[:5]:
-        print(f"  {entry.date:%Y-%m-%d %H:%M}  {entry.name:<20} {entry.stars:>7,} Stars — {entry.gram} GRAM")
+    for purchase in stars[:5]:
+        print(f"  {purchase.date:%Y-%m-%d %H:%M}  {purchase.name:<20} {purchase.stars:>7,} Stars — {purchase.gram} GRAM")
 
     print(f"Premium gifts ({len(premium)}):")
-    for entry in premium[:5]:
-        print(f"  {entry.date:%Y-%m-%d %H:%M}  {entry.name:<20} {entry.months:>2} months — {entry.gram} GRAM")
+    for gift in premium[:5]:
+        print(f"  {gift.date:%Y-%m-%d %H:%M}  {gift.name:<20} {gift.months:>2} months — {gift.gram} GRAM")
 
 
 if __name__ == "__main__":

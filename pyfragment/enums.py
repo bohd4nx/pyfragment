@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 
-from ton_core import MnemonicType as MnemonicType  # the derivation scheme is tonutils' own enum
+from ton_core import MnemonicType
 
 
 class PaymentMethod(StrEnum):
@@ -142,3 +142,20 @@ class GiftAttribute(StrEnum):
     MODEL = "Model"
     BACKDROP = "Backdrop"
     SYMBOL = "Symbol"
+
+
+# MnemonicType is tonutils' own enum, re-exported here next to the others.
+__all__ = [
+    "ApiError",
+    "ApiMethod",
+    "ApiProvider",
+    "AuctionFilter",
+    "AuctionSort",
+    "GiftAttribute",
+    "GiftView",
+    "MarketplaceType",
+    "MnemonicType",
+    "PaymentMethod",
+    "StateMode",
+    "WalletVersion",
+]
