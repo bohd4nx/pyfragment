@@ -10,6 +10,7 @@ from pyfragment.domains.payments.models import PaymentResult
 from pyfragment.domains.payments.state import state_nonce
 from pyfragment.domains.wallet.transfers import process_transaction
 from pyfragment.enums import ApiMethod, PaymentMethod, StateMode
+from pyfragment.utils.errors import raise_for_error
 
 if TYPE_CHECKING:
     from pyfragment.client.base import BaseClient
@@ -22,10 +23,24 @@ class PurchaseFlow:
     """The Fragment API methods and page that make up one invoice-based purchase flow."""
 
     page_url: str
+    search_method: ApiMethod
     state_method: ApiMethod
     init_method: ApiMethod
     link_method: ApiMethod
     label: str  # human-readable flow name, used in error messages
+    prices_method: ApiMethod | None = None  # the page's price update, when it has one
+
+    async def search(self, client: BaseClient, **data: Any) -> dict[str, Any]:
+        """The recipient search of this page."""
+        return await client.call(self.search_method, data, page_url=self.page_url)
+
+    async def prices(self, client: BaseClient, **data: Any) -> dict[str, Any]:
+        """The price update of this page; Fragment's error for the amounts raises."""
+        if self.prices_method is None:
+            raise ValueError(f"{self.label} has no price update")
+        result = await client.call(self.prices_method, data, page_url=self.page_url)
+        raise_for_error(result)
+        return result
 
     def state_params(self, mode: str = StateMode.NEW, dh: str | None = None, **extra: Any) -> dict[str, Any]:
         """Parameters of an ``update*State`` call of this page, as fragment.com's frontend sends them."""

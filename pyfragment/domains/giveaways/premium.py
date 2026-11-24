@@ -11,7 +11,6 @@ from pyfragment.domains.giveaways.models import PremiumGiveawayResult
 from pyfragment.domains.payments import PurchaseFlow, run_purchase
 from pyfragment.domains.recipients import find_channel
 from pyfragment.enums import ApiMethod, PaymentMethod
-from pyfragment.utils.errors import raise_for_error
 from pyfragment.utils.validation import check_limit, check_months, validate_payment_method
 
 if TYPE_CHECKING:
@@ -22,6 +21,8 @@ logger = logging.getLogger(__name__)
 
 PREMIUM_GIVEAWAY_FLOW = PurchaseFlow(
     page_url=PREMIUM_GIVEAWAY_PAGE,
+    search_method=ApiMethod.SEARCH_PREMIUM_GIVEAWAY_RECIPIENT,
+    prices_method=ApiMethod.UPDATE_PREMIUM_GIVEAWAY_PRICES,
     state_method=ApiMethod.UPDATE_PREMIUM_GIVEAWAY_STATE,
     init_method=ApiMethod.INIT_GIVEAWAY_PREMIUM_REQUEST,
     link_method=ApiMethod.GET_GIVEAWAY_PREMIUM_LINK,
@@ -49,19 +50,10 @@ async def giveaway_premium(
         payment_method,
     ):
         recipient = await find_channel(
-            client,
-            ApiMethod.SEARCH_PREMIUM_GIVEAWAY_RECIPIENT,
-            PREMIUM_GIVEAWAY_FLOW.page_url,
-            {"query": channel, "quantity": winners, "months": months},
-            channel,
+            client, PREMIUM_GIVEAWAY_FLOW, {"query": channel, "quantity": winners, "months": months}, channel
         )
         await PREMIUM_GIVEAWAY_FLOW.open(client, quantity="")
-        prices = await client.call(
-            ApiMethod.UPDATE_PREMIUM_GIVEAWAY_PRICES,
-            {"quantity": winners},
-            page_url=PREMIUM_GIVEAWAY_FLOW.page_url,
-        )
-        raise_for_error(prices)
+        await PREMIUM_GIVEAWAY_FLOW.prices(client, quantity=winners)
         payment = await run_purchase(
             client,
             PREMIUM_GIVEAWAY_FLOW,

@@ -11,7 +11,7 @@ from pyfragment.domains.purchases.models import PremiumPackage, PremiumResult
 from pyfragment.domains.purchases.parser import parse_premium_packages
 from pyfragment.domains.recipients import Recipient, find_user
 from pyfragment.enums import ApiMethod, PaymentMethod
-from pyfragment.exceptions import FragmentAPIError
+from pyfragment.exceptions import ParseError
 from pyfragment.utils.validation import check_months, validate_payment_method
 
 if TYPE_CHECKING:
@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 PREMIUM_FLOW = PurchaseFlow(
     page_url=PREMIUM_PAGE,
+    search_method=ApiMethod.SEARCH_PREMIUM_GIFT_RECIPIENT,
     state_method=ApiMethod.UPDATE_PREMIUM_STATE,
     init_method=ApiMethod.INIT_GIFT_PREMIUM_REQUEST,
     link_method=ApiMethod.GET_GIFT_PREMIUM_LINK,
@@ -30,21 +31,15 @@ PREMIUM_FLOW = PurchaseFlow(
 
 
 async def find_recipient(client: BaseClient, username: str, months: int) -> Recipient:
-    return await find_user(
-        client,
-        ApiMethod.SEARCH_PREMIUM_GIFT_RECIPIENT,
-        PREMIUM_FLOW.page_url,
-        {"query": username, "months": months},
-        username,
-    )
+    return await find_user(client, PREMIUM_FLOW, {"query": username, "months": months}, username)
 
 
 async def get_premium_packages(client: BaseClient) -> list[PremiumPackage]:
     with operation(logger, "get Premium packages"):
-        html = await client._transport.fetch_page(PREMIUM_PAGE)
+        html = await client.fetch_page(PREMIUM_PAGE)
         packages = parse_premium_packages(html)
         if not packages:
-            raise FragmentAPIError("Fragment returned no Premium packages")
+            raise ParseError(ParseError.NOTHING_FOUND.format(what="Premium packages"))
         return packages
 
 

@@ -13,8 +13,7 @@ from pyfragment.domains.purchases.models import StarsPackage, StarsResult
 from pyfragment.domains.purchases.parser import parse_gram_price, parse_stars_packages
 from pyfragment.domains.recipients import Recipient, find_user
 from pyfragment.enums import ApiMethod, PaymentMethod
-from pyfragment.exceptions import FragmentAPIError
-from pyfragment.utils.errors import raise_for_error
+from pyfragment.exceptions import ParseError
 from pyfragment.utils.validation import check_limit, validate_payment_method
 
 if TYPE_CHECKING:
@@ -25,6 +24,8 @@ logger = logging.getLogger(__name__)
 
 STARS_FLOW = PurchaseFlow(
     page_url=STARS_PAGE,
+    search_method=ApiMethod.SEARCH_STARS_RECIPIENT,
+    prices_method=ApiMethod.UPDATE_STARS_PRICES,
     state_method=ApiMethod.UPDATE_STARS_BUY_STATE,
     init_method=ApiMethod.INIT_BUY_STARS_REQUEST,
     link_method=ApiMethod.GET_BUY_STARS_LINK,
@@ -33,29 +34,25 @@ STARS_FLOW = PurchaseFlow(
 
 
 async def find_recipient(client: BaseClient, username: str) -> Recipient:
-    return await find_user(
-        client, ApiMethod.SEARCH_STARS_RECIPIENT, STARS_FLOW.page_url, {"query": username, "quantity": ""}, username
-    )
+    return await find_user(client, STARS_FLOW, {"query": username, "quantity": ""}, username)
 
 
 async def get_stars_price(client: BaseClient, amount: int) -> Decimal:
     check_limit(STARS_PURCHASE, amount)
     with operation(logger, "get Stars price (amount=%s)", amount):
-        result = await client.call(ApiMethod.UPDATE_STARS_PRICES, {"quantity": amount}, page_url=STARS_PAGE)
-        raise_for_error(result)
+        result = await STARS_FLOW.prices(client, quantity=amount)
         price = parse_gram_price(str(result.get("cur_price", "")))
         if price is None or price <= 0:
-            raise FragmentAPIError(f"Fragment returned no price for {amount} Stars")
+            raise ParseError(ParseError.NOTHING_FOUND.format(what=f"price for {amount} Stars"))
         return price
 
 
 async def get_stars_packages(client: BaseClient) -> list[StarsPackage]:
     with operation(logger, "get Stars packages"):
-        result = await client.call(ApiMethod.UPDATE_STARS_PRICES, {"quantity": STARS_PURCHASE.min}, page_url=STARS_PAGE)
-        raise_for_error(result)
+        result = await STARS_FLOW.prices(client, quantity=STARS_PURCHASE.min)
         packages = parse_stars_packages(str(result.get("options_html", "")))
         if not packages:
-            raise FragmentAPIError("Fragment returned no Stars packages")
+            raise ParseError(ParseError.NOTHING_FOUND.format(what="Stars packages"))
         return packages
 
 

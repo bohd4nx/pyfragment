@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from pyfragment.domains.recipients.models import Recipient
-from pyfragment.enums import ApiError, ApiMethod
+from pyfragment.enums import ApiError
 from pyfragment.exceptions import (
     AlreadySubscribedError,
     ChannelNotFoundError,
@@ -15,6 +15,7 @@ from pyfragment.utils.errors import error_text, has_error
 
 if TYPE_CHECKING:
     from pyfragment.client.base import BaseClient
+    from pyfragment.domains.payments.flow import PurchaseFlow
 
 
 def recipient_or_raise(result: dict[str, Any], query: str, not_found_error: ApiError, not_found: FragmentAPIError) -> Recipient:
@@ -33,8 +34,8 @@ def recipient_or_raise(result: dict[str, Any], query: str, not_found_error: ApiE
     raise not_found
 
 
-async def find_user(client: BaseClient, method: ApiMethod, page_url: str, data: dict[str, Any], username: str) -> Recipient:
-    result = await client.call(method, data, page_url=page_url)
+async def find_user(client: BaseClient, flow: PurchaseFlow, data: dict[str, Any], username: str) -> Recipient:
+    result = await flow.search(client, **data)
     if has_error(result, ApiError.ALREADY_SUBSCRIBED):
         raise AlreadySubscribedError(AlreadySubscribedError.PREMIUM_ACTIVE)
     if has_error(result, ApiError.NOT_A_USER):
@@ -47,8 +48,8 @@ async def find_user(client: BaseClient, method: ApiMethod, page_url: str, data: 
     )
 
 
-async def find_channel(client: BaseClient, method: ApiMethod, page_url: str, data: dict[str, Any], channel: str) -> Recipient:
-    result = await client.call(method, data, page_url=page_url)
+async def find_channel(client: BaseClient, flow: PurchaseFlow, data: dict[str, Any], channel: str) -> Recipient:
+    result = await flow.search(client, **data)
     if has_error(result, ApiError.NOT_A_CHANNEL):
         raise ChannelNotFoundError(ChannelNotFoundError.NOT_A_CHANNEL.format(channel=channel))
     return recipient_or_raise(

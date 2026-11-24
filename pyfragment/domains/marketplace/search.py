@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from pyfragment.constants.fragment import FRAGMENT_BASE_URL, GIFTS_PAGE, NUMBERS_PAGE
@@ -19,6 +20,19 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class Listing:
+    """A marketplace section: its ``searchAuctions`` type and the page that section's API hash comes from."""
+
+    kind: MarketplaceType
+    page_url: str
+
+
+USERNAMES_LISTING = Listing(MarketplaceType.USERNAMES, FRAGMENT_BASE_URL)
+NUMBERS_LISTING = Listing(MarketplaceType.NUMBERS, NUMBERS_PAGE)
+GIFTS_LISTING = Listing(MarketplaceType.GIFTS, GIFTS_PAGE)
 
 
 def listing_query(kind: MarketplaceType, query: str, sort: str | None, filter: str | None, **extra: Any) -> dict[str, Any]:
@@ -45,16 +59,17 @@ async def fetch_listing(client: BaseClient, page_url: str, data: dict[str, Any])
 
 async def search_rows(
     client: BaseClient,
-    kind: MarketplaceType,
-    page_url: str,
+    listing: Listing,
     query: str,
     sort: str | None,
     filter: str | None,
     offset_id: str | None,
 ) -> tuple[list[AuctionItem], str | None]:
-    data = listing_query(kind, query, sort, filter, offset_id=offset_id)
-    with operation(logger, "search %s (query=%s, sort=%s, filter=%s, offset_id=%s)", kind, query, sort, filter, offset_id):
-        return parse_auction_rows(await fetch_listing(client, page_url, data))
+    data = listing_query(listing.kind, query, sort, filter, offset_id=offset_id)
+    with operation(
+        logger, "search %s (query=%s, sort=%s, filter=%s, offset_id=%s)", listing.kind, query, sort, filter, offset_id
+    ):
+        return parse_auction_rows(await fetch_listing(client, listing.page_url, data))
 
 
 async def search_usernames(
@@ -64,9 +79,7 @@ async def search_usernames(
     filter: AuctionFilter | str | None = None,
     offset_id: str | None = None,
 ) -> UsernamesResult:
-    items, next_offset_id = await search_rows(
-        client, MarketplaceType.USERNAMES, FRAGMENT_BASE_URL, query, sort, filter, offset_id
-    )
+    items, next_offset_id = await search_rows(client, USERNAMES_LISTING, query, sort, filter, offset_id)
     return UsernamesResult(items=items, next_offset_id=next_offset_id)
 
 
@@ -77,7 +90,7 @@ async def search_numbers(
     filter: AuctionFilter | str | None = None,
     offset_id: str | None = None,
 ) -> NumbersResult:
-    items, next_offset_id = await search_rows(client, MarketplaceType.NUMBERS, NUMBERS_PAGE, query, sort, filter, offset_id)
+    items, next_offset_id = await search_rows(client, NUMBERS_LISTING, query, sort, filter, offset_id)
     return NumbersResult(items=items, next_offset_id=next_offset_id)
 
 
@@ -93,7 +106,7 @@ async def search_gifts(
 ) -> GiftsResult:
     if view is not None:
         view = parse_enum(GiftView, view, ConfigurationError.INVALID_GIFT_VIEW)
-    data = listing_query(MarketplaceType.GIFTS, query, sort, filter, collection=collection, view=view, offset_id=offset)
+    data = listing_query(GIFTS_LISTING.kind, query, sort, filter, collection=collection, view=view, offset_id=offset)
     for trait, values in normalize_gift_attributes(attr).items():
         data[f"attr[{trait}]"] = json.dumps(values)
 
@@ -107,6 +120,6 @@ async def search_gifts(
         view,
         offset,
     ):
-        html = await fetch_listing(client, GIFTS_PAGE, data)
+        html = await fetch_listing(client, GIFTS_LISTING.page_url, data)
         items, next_offset = parse_gift_items(html)
         return GiftsResult(items=items, next_offset=next_offset)

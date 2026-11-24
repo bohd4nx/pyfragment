@@ -20,7 +20,7 @@ def history_url(page: str, newest_first: bool) -> str:
 
 async def get_stars_history(client: BaseClient, newest_first: bool = True) -> list[StarsHistoryEntry]:
     with operation(logger, "get Stars history"):
-        page = await client._transport.fetch_page(history_url(STARS_HISTORY_PAGE, newest_first))
+        page = await client.fetch_page(history_url(STARS_HISTORY_PAGE, newest_first))
         return [
             StarsHistoryEntry(
                 username=row.username, name=row.name, stars=parse_stars(row.quantity), gram=row.gram, date=row.date
@@ -31,7 +31,7 @@ async def get_stars_history(client: BaseClient, newest_first: bool = True) -> li
 
 async def get_premium_history(client: BaseClient, newest_first: bool = True) -> list[PremiumHistoryEntry]:
     with operation(logger, "get Premium history"):
-        page = await client._transport.fetch_page(history_url(PREMIUM_HISTORY_PAGE, newest_first))
+        page = await client.fetch_page(history_url(PREMIUM_HISTORY_PAGE, newest_first))
         return [
             PremiumHistoryEntry(
                 username=row.username, name=row.name, months=parse_months(row.quantity), gram=row.gram, date=row.date
