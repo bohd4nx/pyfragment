@@ -12,7 +12,6 @@ import pytest
 from curl_cffi.requests import AsyncSession
 
 from pyfragment.constants.fragment import (
-    ADS_TOPUP_PAGE,
     BASE_HEADERS,
     GIFTS_PAGE,
     NUMBERS_PAGE,
@@ -28,7 +27,7 @@ from pyfragment.transport import FragmentTransport, get_fragment_hash
 
 pytestmark = pytest.mark.skipif(os.environ.get("FRAGMENT_LIVE") != "1", reason="FRAGMENT_LIVE=1 not set")
 
-PAGES = [STARS_PAGE, STARS_GIVEAWAY_PAGE, PREMIUM_PAGE, PREMIUM_GIVEAWAY_PAGE, ADS_TOPUP_PAGE, NUMBERS_PAGE, GIFTS_PAGE]
+PAGES = [STARS_PAGE, STARS_GIVEAWAY_PAGE, PREMIUM_PAGE, PREMIUM_GIVEAWAY_PAGE, NUMBERS_PAGE, GIFTS_PAGE]
 
 
 @pytest.fixture
@@ -116,7 +115,6 @@ async def test_gift_attribute_names(session: AsyncSession) -> None:
     [
         (ApiMethod.SEARCH_STARS_RECIPIENT, STARS_PAGE, {"query": "x", "quantity": ""}, ApiError.NO_USERS_FOUND),
         (ApiMethod.SEARCH_PREMIUM_GIFT_RECIPIENT, PREMIUM_PAGE, {"query": "x", "months": 3}, ApiError.NO_USERS_FOUND),
-        (ApiMethod.SEARCH_ADS_TOPUP_RECIPIENT, ADS_TOPUP_PAGE, {"query": "x"}, ApiError.NO_USERS_FOUND),
         (
             ApiMethod.SEARCH_STARS_GIVEAWAY_RECIPIENT,
             STARS_GIVEAWAY_PAGE,

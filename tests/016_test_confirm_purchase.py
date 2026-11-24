@@ -5,7 +5,6 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from pyfragment import FragmentClient
-from pyfragment.domains.ads.topup import TOPUP_FLOW
 from pyfragment.domains.payments import confirm_purchase, state_nonce
 from pyfragment.domains.purchases.stars import STARS_FLOW
 from tests.shared import FAKE_ACCOUNT, FAKE_CONFIRM_METHOD, FAKE_REQ_ID, FAKE_TX_BOC
@@ -114,14 +113,3 @@ async def test_zero_confirm_timeout_reports_the_purchase_without_polling(client:
     call_mock.assert_awaited_once()
     assert call_mock.await_args.args[0] == FAKE_CONFIRM_METHOD
     assert confirmed is False
-
-
-@pytest.mark.asyncio
-async def test_ads_pages_are_polled_with_the_mode_only(client: FragmentClient) -> None:
-    # fragment.com's own frontend sends updateAdsTopupState/updateAdsState with {mode} and nothing else.
-    call_mock = AsyncMock(return_value={"ok": True, "need_update": False, "mode": "done"})
-    with patch.object(client, "call", call_mock):
-        await confirm_purchase(client, TOPUP_FLOW, FAKE_ACCOUNT, FAKE_TX_BOC, {})
-
-    assert call_mock.await_args.args[0] == TOPUP_FLOW.state_method
-    assert call_mock.await_args.args[1] == {"mode": "new"}

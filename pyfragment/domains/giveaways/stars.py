@@ -25,7 +25,6 @@ STARS_GIVEAWAY_FLOW = PurchaseFlow(
     init_method=ApiMethod.INIT_GIVEAWAY_STARS_REQUEST,
     link_method=ApiMethod.GET_GIVEAWAY_STARS_LINK,
     label="Stars giveaway",
-    wallet_in_link=False,
 )
 
 

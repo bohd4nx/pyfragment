@@ -645,11 +645,9 @@ async def test_every_kind_of_purchase_goes_into_the_same_message() -> None:
                     client.purchase_stars("@user", amount=50),
                     client.purchase_stars("@user", amount=50, payment_method=PaymentMethod.USDT_GRAM),
                     client.purchase_premium("@user", months=3),
-                    client.topup_gram("@user", amount=1),
-                    client.recharge_ads("@channel", amount=1),
                     client.giveaway_stars("@channel", winners=1, amount=500),
                     client.giveaway_premium("@channel", winners=1, months=3),
                 )
-    assert messages.sizes == [7]
+    assert messages.sizes == [5]
     assert len({result.transaction_id for result in results}) == 1
     assert all(result.confirmed for result in results)

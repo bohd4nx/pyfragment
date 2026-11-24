@@ -38,12 +38,9 @@ async def create_invoice(client: BaseClient, flow: PurchaseFlow, init_data: dict
 async def request_transaction(
     client: BaseClient, flow: PurchaseFlow, req_id: str, link_data: dict[str, Any] | None
 ) -> dict[str, Any]:
-    wallet = {}
-    if flow.wallet_in_link:
-        wallet = wallet_fields(client.ton_wallet.account_info())
     transaction = await client.call(
         flow.link_method,
-        {**wallet, "transaction": 1, "id": req_id, **(link_data or {})},
+        {"transaction": 1, "id": req_id, **(link_data or {})},
         page_url=flow.page_url,
     )
     link = TransactionLink.from_response(transaction)

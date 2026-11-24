@@ -3,9 +3,6 @@ from __future__ import annotations
 from decimal import Decimal
 
 from pyfragment.client.base import BaseClient
-from pyfragment.domains.ads.models import AdsRechargeResult, AdsTopupResult
-from pyfragment.domains.ads.recharge import recharge_ads
-from pyfragment.domains.ads.topup import topup_gram
 from pyfragment.domains.giveaways.models import PremiumGiveawayResult, StarsGiveawayResult
 from pyfragment.domains.giveaways.premium import giveaway_premium
 from pyfragment.domains.giveaways.stars import giveaway_stars
@@ -61,31 +58,6 @@ class PurchaseMethods(BaseClient):
             :class:`StarsResult` with ``transaction_id``, ``username``, ``amount``, ``confirmed``, and ``comment``.
         """
         return await purchase_stars(self, username, amount, show_sender=show_sender, payment_method=payment_method)
-
-    async def topup_gram(self, username: str, amount: int, show_sender: bool = True) -> AdsTopupResult:
-        """Top up GRAM (ex TON) to a recipient's Telegram balance.
-
-        Args:
-            username: Recipient identifier — ``@username``, ``username``, or ``https://t.me/username``.
-            amount: Amount in GRAM (ex TON) — integer from ``1`` to ``1 000 000 000``.
-            show_sender: Show your name as the sender. Defaults to ``True``.
-
-        Returns:
-            :class:`AdsTopupResult` with ``transaction_id``, ``username``, and ``amount``.
-        """
-        return await topup_gram(self, username, amount, show_sender=show_sender)
-
-    async def recharge_ads(self, account: str, amount: int) -> AdsRechargeResult:
-        """Add funds to your own Telegram Ads account.
-
-        Args:
-            account: Channel or bot username the Ads account is linked to (e.g. ``"@mychannel"``).
-            amount: Amount in GRAM (ex TON) — integer from ``1`` to ``1 000 000 000``.
-
-        Returns:
-            :class:`AdsRechargeResult` with ``transaction_id`` and ``amount``.
-        """
-        return await recharge_ads(self, account, amount)
 
     async def get_stars_price(self, amount: int) -> Decimal:
         """Return the current GRAM price for ``amount`` Stars.

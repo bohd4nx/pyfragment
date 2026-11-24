@@ -25,7 +25,6 @@ PREMIUM_GIVEAWAY_FLOW = PurchaseFlow(
     init_method=ApiMethod.INIT_GIVEAWAY_PREMIUM_REQUEST,
     link_method=ApiMethod.GET_GIVEAWAY_PREMIUM_LINK,
     label="Premium giveaway",
-    wallet_in_link=False,
 )
 
 

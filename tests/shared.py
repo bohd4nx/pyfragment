@@ -67,9 +67,6 @@ FAKE_SENT: TransferIntent = TransferIntent(
 FAKE_RESPONSE: dict[str, Any] = {"status": "ok", "data": {"value": 42}}
 
 
-# recharge_ads
-FAKE_ADS_ACCOUNT: str = "@mychannel"
-
 # Anonymous number
 FAKE_HTML_WITH_CODE: str = """
 <table>

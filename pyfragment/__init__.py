@@ -2,7 +2,6 @@ import logging
 from importlib.metadata import version
 
 from pyfragment.client import FragmentClient
-from pyfragment.domains.ads.models import AdsRechargeResult, AdsTopupResult
 from pyfragment.domains.anonymous_numbers.models import LoginCodeResult, TerminateSessionsResult
 from pyfragment.domains.assets.models import MyGiftsResult, MyNumbersResult, MyUsernamesResult
 from pyfragment.domains.giveaways.models import PremiumGiveawayResult, StarsGiveawayResult
@@ -67,8 +66,6 @@ __all__ = [
     "TransferCoordinator",
     "LocalTransferCoordinator",
     "Recipient",
-    "AdsTopupResult",
-    "AdsRechargeResult",
     "AuctionItem",
     "GiftsResult",
     "LoginCodeResult",

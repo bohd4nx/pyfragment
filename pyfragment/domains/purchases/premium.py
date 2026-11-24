@@ -26,7 +26,6 @@ PREMIUM_FLOW = PurchaseFlow(
     init_method=ApiMethod.INIT_GIFT_PREMIUM_REQUEST,
     link_method=ApiMethod.GET_GIFT_PREMIUM_LINK,
     label="Premium purchase",
-    wallet_in_link=False,
 )
 
 

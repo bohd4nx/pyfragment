@@ -60,17 +60,6 @@ class ApiMethod(StrEnum):
     INIT_GIVEAWAY_PREMIUM_REQUEST = "initGiveawayPremiumRequest"
     GET_GIVEAWAY_PREMIUM_LINK = "getGiveawayPremiumLink"
 
-    # GRAM (ex TON) topup for a Telegram user
-    UPDATE_ADS_TOPUP_STATE = "updateAdsTopupState"
-    SEARCH_ADS_TOPUP_RECIPIENT = "searchAdsTopupRecipient"
-    INIT_ADS_TOPUP_REQUEST = "initAdsTopupRequest"
-    GET_ADS_TOPUP_LINK = "getAdsTopupLink"
-
-    # Ads account recharge
-    UPDATE_ADS_STATE = "updateAdsState"
-    INIT_ADS_RECHARGE_REQUEST = "initAdsRechargeRequest"
-    GET_ADS_RECHARGE_LINK = "getAdsRechargeLink"
-
     # Marketplace
     SEARCH_AUCTIONS = "searchAuctions"
 

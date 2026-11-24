@@ -35,18 +35,6 @@ def test_check_limit_accepts_only_whole_numbers_in_range(value: object, expected
 # bool must not slip through as 1
 
 
-@pytest.mark.asyncio
-async def test_topup_gram_rejects_bool(client: FragmentClient) -> None:
-    with pytest.raises(ConfigurationError):
-        await client.topup_gram("@user", True)  # type: ignore[arg-type]
-
-
-@pytest.mark.asyncio
-async def test_recharge_ads_rejects_bool(client: FragmentClient) -> None:
-    with pytest.raises(ConfigurationError):
-        await client.recharge_ads("@channel", True)  # type: ignore[arg-type]
-
-
 # Stars giveaway: Fragment allows 1-5 winners
 
 
@@ -163,13 +151,12 @@ async def test_search_gifts_sends_canonical_attribute_names(client: FragmentClie
         ("purchase_stars", "Please enter a username assigned to a user.", UserNotFoundError),
         ("purchase_premium", "This account is already subscribed to Telegram Premium.", AlreadySubscribedError),
         ("giveaway_stars", "No Telegram channels found.", ChannelNotFoundError),
-        ("topup_gram", "No Telegram users found.", UserNotFoundError),
     ],
 )
 async def test_recipient_search_errors_map_to_exceptions(
     client: FragmentClient, search: str, error: str, exception: type[Exception]
 ) -> None:
-    args = {"purchase_stars": (500,), "purchase_premium": (3,), "giveaway_stars": (1, 500), "topup_gram": (5,)}[search]
+    args = {"purchase_stars": (500,), "purchase_premium": (3,), "giveaway_stars": (1, 500)}[search]
     with patch.object(client, "call", AsyncMock(return_value={"error": error})):
         with pytest.raises(exception):
             await getattr(client, search)("@target", *args)

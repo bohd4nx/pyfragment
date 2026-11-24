@@ -10,13 +10,7 @@ from tonutils.types import DEFAULT_HTTP_RETRY_POLICY
 
 import pyfragment.domains.payments.flow as _flow_mod
 from pyfragment import FragmentClient, LocalTransferCoordinator, SessionExpiredError
-from pyfragment.domains.ads.recharge import RECHARGE_FLOW
-from pyfragment.domains.ads.topup import TOPUP_FLOW
-from pyfragment.domains.giveaways.premium import PREMIUM_GIVEAWAY_FLOW
-from pyfragment.domains.giveaways.stars import STARS_GIVEAWAY_FLOW
 from pyfragment.domains.payments import PurchaseFlow, run_purchase
-from pyfragment.domains.purchases.premium import PREMIUM_FLOW
-from pyfragment.domains.purchases.stars import STARS_FLOW
 from pyfragment.domains.wallet.transfers import process_transaction
 from pyfragment.enums import ApiMethod
 from tests.fake_ton import FakeTon, provider_error, use_fake_ton
@@ -30,18 +24,6 @@ from tests.shared import (
     VALID_SEED,
     fixture_json,
 )
-
-# Which flows send account/device with get*Link, as fragment.com's frontend does
-
-
-@pytest.mark.parametrize("flow", [STARS_FLOW, PREMIUM_FLOW, STARS_GIVEAWAY_FLOW, PREMIUM_GIVEAWAY_FLOW])
-def test_flows_whose_page_sends_only_the_invoice_id_do_not_send_the_wallet(flow: PurchaseFlow) -> None:
-    assert flow.wallet_in_link is False
-
-
-@pytest.mark.parametrize("flow", [TOPUP_FLOW, RECHARGE_FLOW])
-def test_ads_flows_still_send_the_wallet(flow: PurchaseFlow) -> None:
-    assert flow.wallet_in_link is True
 
 
 def make_flow(**options: Any) -> PurchaseFlow:
@@ -71,14 +53,8 @@ async def link_call_data(client: FragmentClient, flow: PurchaseFlow) -> dict[str
 
 @pytest.mark.asyncio
 async def test_link_without_wallet_carries_only_id_transaction_and_link_data(client: FragmentClient) -> None:
-    data = await link_call_data(client, make_flow(wallet_in_link=False))
-    assert data == {"transaction": 1, "id": FAKE_REQ_ID, "show_sender": 0}
-
-
-@pytest.mark.asyncio
-async def test_link_with_wallet_adds_account_and_device(client: FragmentClient) -> None:
     data = await link_call_data(client, make_flow())
-    assert set(data) == {"account", "device", "transaction", "id", "show_sender"}
+    assert data == {"transaction": 1, "id": FAKE_REQ_ID, "show_sender": 0}
 
 
 @pytest.mark.asyncio

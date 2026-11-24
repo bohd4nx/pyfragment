@@ -26,17 +26,9 @@ class PurchaseFlow:
     init_method: ApiMethod
     link_method: ApiMethod
     label: str  # human-readable flow name, used in error messages
-    # Whether the page's update*State calls carry the lv/dh pair: the Stars and Premium pages send it,
-    # the Ads pages only send the mode (as fragment.com's own frontend does).
-    versioned_state: bool = True
-    # Whether the get*Link call carries account/device: fragment.com's Stars, Premium and giveaway pages
-    # send only id/transaction (the wallet comes from the session), the Ads pages still send both.
-    wallet_in_link: bool = True
 
     def state_params(self, mode: str = StateMode.NEW, dh: str | None = None, **extra: Any) -> dict[str, Any]:
         """Parameters of an ``update*State`` call of this page, as fragment.com's frontend sends them."""
-        if not self.versioned_state:
-            return {"mode": mode, **extra}
         return {"mode": mode, "lv": "false", "dh": dh or state_nonce(), **extra}
 
     async def open(self, client: BaseClient, **extra: Any) -> None:

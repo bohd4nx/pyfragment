@@ -29,7 +29,6 @@ STARS_FLOW = PurchaseFlow(
     init_method=ApiMethod.INIT_BUY_STARS_REQUEST,
     link_method=ApiMethod.GET_BUY_STARS_LINK,
     label="Stars purchase",
-    wallet_in_link=False,
 )
 
 

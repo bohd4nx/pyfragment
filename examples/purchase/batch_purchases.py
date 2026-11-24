@@ -1,7 +1,7 @@
 """
 Example: pay for many different purchases at once, grouped into few wallet messages.
 
-Every kind of purchase queues the same way (Stars, Premium, giveaways, GRAM top-up, Ads recharge, in GRAM or USDT),
+Every kind of purchase queues the same way (Stars, Premium, giveaways, in GRAM or USDT),
 and they can be mixed in one group. While one message waits for its block, the next payments pile up; with max_batch
 above 1 everything queued goes out in one message. Share one client so they can group.
 The wallet caps a message: W5 and TG 255, V4R2 4, HighloadV2 254, HighloadV3R1 64516.
@@ -35,7 +35,6 @@ async def main() -> None:
             client.purchase_stars("@username1", amount=500),
             client.purchase_stars("@username2", amount=50, payment_method=PaymentMethod.USDT_GRAM),
             client.purchase_premium("@username3", months=3),
-            client.topup_gram("@username4", amount=1),
             return_exceptions=True,
         )
 
